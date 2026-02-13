@@ -1,0 +1,22 @@
+[package]
+name = "nemo-text-processing"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Rust port of NVIDIA NeMo Text Processing for Inverse Text Normalization"
+repository = "https://github.com/FluidInference/NeMo-text-processing-rs"
+keywords = ["asr", "speech", "normalization", "nlp", "nemo"]
+categories = ["text-processing"]
+
+[lib]
+crate-type = ["lib", "staticlib", "cdylib"]
+
+[dependencies]
+lazy_static = "1"
+
+[dev-dependencies]
+proptest = "1"
+
+[features]
+default = []
+ffi = []  # Enable C FFI bindings
