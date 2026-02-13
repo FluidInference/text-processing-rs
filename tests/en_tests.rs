@@ -5,7 +5,7 @@
 
 mod common;
 
-use nemo_text_processing::normalize;
+use nemo_text_processing::{normalize, normalize_sentence};
 use std::path::Path;
 
 fn print_failures(results: &common::TestResults) {
@@ -167,5 +167,53 @@ fn test_whitelist_cased() {
 fn test_word_cased() {
     let results = common::run_test_file(Path::new("tests/data/en/word_cased.txt"), normalize);
     println!("word_cased: {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    print_failures(&results);
+}
+
+// Sentence-mode tests
+
+#[test]
+fn test_sentence_cardinal_in_context() {
+    assert_eq!(normalize_sentence("I have twenty one apples"), "I have 21 apples");
+    assert_eq!(normalize_sentence("there are three hundred people here"), "there are 300 people here");
+    assert_eq!(normalize_sentence("she is forty two years old"), "she is 42 years old");
+}
+
+#[test]
+fn test_sentence_money_in_context() {
+    assert_eq!(normalize_sentence("five dollars and fifty cents for the coffee"), "$5.50 for the coffee");
+    assert_eq!(normalize_sentence("I paid five dollars for lunch"), "I paid $5 for lunch");
+}
+
+#[test]
+fn test_sentence_passthrough() {
+    assert_eq!(normalize_sentence("hello world"), "hello world");
+    assert_eq!(normalize_sentence("the quick brown fox jumps over the lazy dog"), "the quick brown fox jumps over the lazy dog");
+    assert_eq!(normalize_sentence(""), "");
+}
+
+#[test]
+fn test_sentence_time_in_context() {
+    assert_eq!(normalize_sentence("call me at two thirty pm tomorrow"), "call me at 02:30 p.m. tomorrow");
+}
+
+#[test]
+fn test_sentence_mixed_types() {
+    assert_eq!(normalize_sentence("I paid five dollars for twenty three items"), "I paid $5 for 23 items");
+}
+
+#[test]
+fn test_sentence_ordinal_in_context() {
+    assert_eq!(normalize_sentence("she finished in twenty first place"), "she finished in 21st place");
+}
+
+#[test]
+fn test_sentence_existing_tests_via_sentence() {
+    // Existing normalize() test cases should also work through normalize_sentence()
+    // when the entire input is a single normalizable expression.
+    let results = common::run_test_file(Path::new("tests/data/en/money.txt"), normalize_sentence);
+    println!("money (sentence mode): {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    // Don't assert all pass — sentence mode intentionally excludes some taggers and
+    // limits cardinal span length, so some edge cases may differ. Just print results.
     print_failures(&results);
 }
