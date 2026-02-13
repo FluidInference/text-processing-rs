@@ -24,8 +24,8 @@ pub mod ordinal;
 pub mod telephone;
 pub mod time;
 pub mod whitelist;
+pub mod punctuation;
 pub mod word;
 
 // TODO: Add remaining taggers
 // pub mod fraction;
-// pub mod punctuation;

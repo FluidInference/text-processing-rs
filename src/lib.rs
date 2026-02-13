@@ -16,12 +16,13 @@
 //! assert_eq!(result, "200");
 //! ```
 
+pub mod custom_rules;
 pub mod taggers;
 
 #[cfg(feature = "ffi")]
 pub mod ffi;
 
-use taggers::{cardinal, date, decimal, electronic, measure, money, ordinal, telephone, time, whitelist, word};
+use taggers::{cardinal, date, decimal, electronic, measure, money, ordinal, punctuation, telephone, time, whitelist, word};
 
 /// Normalize spoken-form text to written form.
 ///
@@ -30,8 +31,18 @@ use taggers::{cardinal, date, decimal, electronic, measure, money, ordinal, tele
 pub fn normalize(input: &str) -> String {
     let input = input.trim();
 
-    // Apply whitelist replacements first (abbreviations, special terms)
+    // Apply custom user rules first (highest priority)
+    if let Some(result) = custom_rules::parse(input) {
+        return result;
+    }
+
+    // Apply whitelist replacements (abbreviations, special terms)
     if let Some(result) = whitelist::parse(input) {
+        return result;
+    }
+
+    // Try punctuation ("period" → ".", "comma" → ",")
+    if let Some(result) = punctuation::parse(input) {
         return result;
     }
 
@@ -116,8 +127,14 @@ fn parse_span(span: &str) -> Option<(String, u8)> {
         return None;
     }
 
+    if let Some(result) = custom_rules::parse(span) {
+        return Some((result, 110));
+    }
     if let Some(result) = whitelist::parse(span) {
         return Some((result, 100));
+    }
+    if let Some(result) = punctuation::parse(span) {
+        return Some((result, 98));
     }
     if let Some(result) = money::parse(span) {
         return Some((result, 95));
@@ -293,5 +310,20 @@ mod tests {
     #[test]
     fn test_sentence_single_number() {
         assert_eq!(normalize_sentence("forty two"), "42");
+    }
+
+    #[test]
+    fn test_punctuation() {
+        assert_eq!(normalize("period"), ".");
+        assert_eq!(normalize("comma"), ",");
+        assert_eq!(normalize("question mark"), "?");
+        assert_eq!(normalize("exclamation point"), "!");
+    }
+
+    #[test]
+    fn test_sentence_punctuation() {
+        assert_eq!(normalize_sentence("hello period"), "hello .");
+        assert_eq!(normalize_sentence("yes comma I agree"), "yes , I agree");
+        assert_eq!(normalize_sentence("really question mark"), "really ?");
     }
 }
