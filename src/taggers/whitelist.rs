@@ -36,7 +36,10 @@ lazy_static! {
 /// Patterns that should only match when they're the complete input
 /// (abbreviations that might be part of larger alphanumeric codes)
 fn is_exact_match_only(pattern: &str) -> bool {
-    matches!(pattern, "r t x" | "p c i e x eight" | "cat five e" | "c u d n n")
+    matches!(
+        pattern,
+        "r t x" | "p c i e x eight" | "cat five e" | "c u d n n"
+    )
 }
 
 /// Apply whitelist replacements to input text, preserving original casing where possible.
@@ -117,7 +120,10 @@ mod tests {
     fn test_tech_terms() {
         assert_eq!(parse("r t x"), Some("RTX".to_string()));
         assert_eq!(parse("s and p five hundred"), Some("S&P 500".to_string()));
-        assert_eq!(parse("seven eleven stores"), Some("7-eleven stores".to_string()));
+        assert_eq!(
+            parse("seven eleven stores"),
+            Some("7-eleven stores".to_string())
+        );
         assert_eq!(parse("cat five e"), Some("CAT5e".to_string()));
         assert_eq!(parse("c u d n n"), Some("cuDNN".to_string()));
         assert_eq!(parse("p c i e x eight"), Some("PCIe x8".to_string()));

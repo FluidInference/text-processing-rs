@@ -97,7 +97,8 @@ fn parse_bc_year(input: &str) -> Option<String> {
             let num_part = input.strip_suffix(suffix)?;
             // Try year-style parsing first (seven fifty → 750)
             // This handles patterns like "seven fifty" as 7*100+50
-            let year = parse_old_year(num_part).or_else(|| words_to_number(num_part).map(|n| n as i64))?;
+            let year =
+                parse_old_year(num_part).or_else(|| words_to_number(num_part).map(|n| n as i64))?;
             let era = suffix.replace(" ", "").to_uppercase();
             return Some(format!("{}{}", year, era));
         }
@@ -315,8 +316,16 @@ fn parse_year(input: &str) -> Option<String> {
         if century_prefix == "twenty" {
             let is_teens = matches!(
                 year_suffix,
-                "ten" | "eleven" | "twelve" | "thirteen" | "fourteen" | "fifteen" | "sixteen"
-                    | "seventeen" | "eighteen" | "nineteen"
+                "ten"
+                    | "eleven"
+                    | "twelve"
+                    | "thirteen"
+                    | "fourteen"
+                    | "fifteen"
+                    | "sixteen"
+                    | "seventeen"
+                    | "eighteen"
+                    | "nineteen"
             );
             if is_teens {
                 return parse_year_number(input).map(|y| y.to_string());
@@ -326,15 +335,31 @@ fn parse_year(input: &str) -> Option<String> {
         // For other century prefixes (eleven-nineteen), allow teens and tens
         let is_year_suffix = matches!(
             year_suffix,
-            "ten" | "eleven" | "twelve" | "thirteen" | "fourteen" | "fifteen" | "sixteen"
-                | "seventeen" | "eighteen" | "nineteen" | "twenty" | "thirty" | "forty"
-                | "fifty" | "sixty" | "seventy" | "eighty" | "ninety"
+            "ten"
+                | "eleven"
+                | "twelve"
+                | "thirteen"
+                | "fourteen"
+                | "fifteen"
+                | "sixteen"
+                | "seventeen"
+                | "eighteen"
+                | "nineteen"
+                | "twenty"
+                | "thirty"
+                | "forty"
+                | "fifty"
+                | "sixty"
+                | "seventy"
+                | "eighty"
+                | "ninety"
         );
 
         if is_year_suffix
             && matches!(
                 century_prefix,
-                "eleven" | "twelve"
+                "eleven"
+                    | "twelve"
                     | "thirteen"
                     | "fourteen"
                     | "fifteen"
@@ -352,7 +377,8 @@ fn parse_year(input: &str) -> Option<String> {
     if words.len() >= 3 {
         if matches!(
             words[0],
-            "eleven" | "twelve"
+            "eleven"
+                | "twelve"
                 | "thirteen"
                 | "fourteen"
                 | "fifteen"

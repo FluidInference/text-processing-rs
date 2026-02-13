@@ -219,7 +219,8 @@ fn parse_alphanumeric_code(input: &str) -> Option<String> {
         if !letter_run.is_empty() {
             // If previous output was a number, letters join directly (1080p, 4050ti)
             // Otherwise add space before if result is not empty (unless compact code)
-            if !prev_was_number && !is_compact_code && !result.is_empty() && !result.ends_with(' ') {
+            if !prev_was_number && !is_compact_code && !result.is_empty() && !result.ends_with(' ')
+            {
                 result.push(' ');
             }
             // Check if this should be uppercased (common abbreviations)
@@ -242,7 +243,9 @@ fn parse_alphanumeric_code(input: &str) -> Option<String> {
             let next_word = words[i + 1].to_lowercase();
             if is_tens_word(&next_word) {
                 // "forty fifty" → 4050
-                if let (Some(tens1), Some(tens2)) = (words_to_number(&word_lower), words_to_number(&next_word)) {
+                if let (Some(tens1), Some(tens2)) =
+                    (words_to_number(&word_lower), words_to_number(&next_word))
+                {
                     let combined = (tens1 / 10) * 1000 + tens2;
                     result.push_str(&combined.to_string());
                     i += 2;
@@ -256,7 +259,9 @@ fn parse_alphanumeric_code(input: &str) -> Option<String> {
         if i + 1 < words.len() && is_teen_word(&word_lower) {
             let next_word = words[i + 1].to_lowercase();
             if is_tens_word(&next_word) {
-                if let (Some(teen), Some(tens)) = (words_to_number(&word_lower), words_to_number(&next_word)) {
+                if let (Some(teen), Some(tens)) =
+                    (words_to_number(&word_lower), words_to_number(&next_word))
+                {
                     let combined = teen * 100 + tens;
                     result.push_str(&combined.to_string());
                     i += 2;
@@ -340,14 +345,25 @@ fn is_number_word(word: &str) -> bool {
 fn is_teen_word(word: &str) -> bool {
     matches!(
         word,
-        "ten" | "eleven" | "twelve" | "thirteen" | "fourteen" | "fifteen" | "sixteen"
-            | "seventeen" | "eighteen" | "nineteen"
+        "ten"
+            | "eleven"
+            | "twelve"
+            | "thirteen"
+            | "fourteen"
+            | "fifteen"
+            | "sixteen"
+            | "seventeen"
+            | "eighteen"
+            | "nineteen"
     )
 }
 
 fn should_uppercase_abbrev(s: &str) -> bool {
     // Common uppercase abbreviations in product names
-    matches!(s, "rtx" | "gtx" | "rx" | "amd" | "cpu" | "gpu" | "usb" | "hdmi")
+    matches!(
+        s,
+        "rtx" | "gtx" | "rx" | "amd" | "cpu" | "gpu" | "usb" | "hdmi"
+    )
 }
 
 fn should_join_letters_to_number(s: &str) -> bool {
@@ -530,10 +546,38 @@ fn parse_digit_sequence_with_double(input: &str) -> Option<String> {
 /// Check if input contains digit words
 fn has_digit_content(input: &str) -> bool {
     let digit_words = [
-        "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
-        "oh", "o", "double", "triple", "ten", "eleven", "twelve", "thirteen", "fourteen",
-        "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "thirty",
-        "forty", "fifty", "sixty", "seventy", "eighty", "ninety",
+        "zero",
+        "one",
+        "two",
+        "three",
+        "four",
+        "five",
+        "six",
+        "seven",
+        "eight",
+        "nine",
+        "oh",
+        "o",
+        "double",
+        "triple",
+        "ten",
+        "eleven",
+        "twelve",
+        "thirteen",
+        "fourteen",
+        "fifteen",
+        "sixteen",
+        "seventeen",
+        "eighteen",
+        "nineteen",
+        "twenty",
+        "thirty",
+        "forty",
+        "fifty",
+        "sixty",
+        "seventy",
+        "eighty",
+        "ninety",
     ];
 
     for word in input.split_whitespace() {
@@ -547,8 +591,16 @@ fn has_digit_content(input: &str) -> bool {
 /// Check if input has scale words (indicates cardinal, not phone)
 fn has_scale_words(input: &str) -> bool {
     let scale_words = [
-        "hundred", "thousand", "million", "billion", "trillion",
-        "quadrillion", "quintillion", "sextillion", "crore", "lakh",
+        "hundred",
+        "thousand",
+        "million",
+        "billion",
+        "trillion",
+        "quadrillion",
+        "quintillion",
+        "sextillion",
+        "crore",
+        "lakh",
     ];
 
     for word in input.split_whitespace() {

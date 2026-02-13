@@ -258,7 +258,10 @@ mod tests {
     #[test]
     fn test_negative() {
         assert_eq!(parse("minus sixty"), Some("-60".to_string()));
-        assert_eq!(parse("minus twenty five thousand thirty seven"), Some("-25037".to_string()));
+        assert_eq!(
+            parse("minus twenty five thousand thirty seven"),
+            Some("-25037".to_string())
+        );
     }
 
     #[test]

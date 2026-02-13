@@ -22,7 +22,10 @@ pub mod taggers;
 #[cfg(feature = "ffi")]
 pub mod ffi;
 
-use taggers::{cardinal, date, decimal, electronic, measure, money, ordinal, punctuation, telephone, time, whitelist, word};
+use taggers::{
+    cardinal, date, decimal, electronic, measure, money, ordinal, punctuation, telephone, time,
+    whitelist, word,
+};
 
 /// Normalize spoken-form text to written form.
 ///
@@ -203,7 +206,11 @@ pub fn normalize_sentence_with_max_span(input: &str, max_span_tokens: usize) -> 
         return trimmed.to_string();
     }
 
-    let max_span = if max_span_tokens == 0 { 1 } else { max_span_tokens };
+    let max_span = if max_span_tokens == 0 {
+        1
+    } else {
+        max_span_tokens
+    };
     let tokens: Vec<&str> = trimmed.split_whitespace().collect();
     let mut out: Vec<String> = Vec::with_capacity(tokens.len());
     let mut i = 0usize;
@@ -276,7 +283,10 @@ mod tests {
 
     #[test]
     fn test_sentence_cardinal() {
-        assert_eq!(normalize_sentence("I have twenty one apples"), "I have 21 apples");
+        assert_eq!(
+            normalize_sentence("I have twenty one apples"),
+            "I have 21 apples"
+        );
     }
 
     #[test]
@@ -290,7 +300,10 @@ mod tests {
     #[test]
     fn test_sentence_passthrough() {
         assert_eq!(normalize_sentence("hello world"), "hello world");
-        assert_eq!(normalize_sentence("the quick brown fox"), "the quick brown fox");
+        assert_eq!(
+            normalize_sentence("the quick brown fox"),
+            "the quick brown fox"
+        );
     }
 
     #[test]

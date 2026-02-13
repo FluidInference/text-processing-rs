@@ -139,7 +139,11 @@ pub unsafe extern "C" fn nemo_remove_rule(spoken: *const c_char) -> i32 {
         Err(_) => return 0,
     };
 
-    if custom_rules::remove_rule(spoken_str) { 1 } else { 0 }
+    if custom_rules::remove_rule(spoken_str) {
+        1
+    } else {
+        0
+    }
 }
 
 /// Clear all custom normalization rules.

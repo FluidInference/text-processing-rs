@@ -5,89 +5,149 @@
 
 mod common;
 
-use nemo_text_processing::{custom_rules, normalize, normalize_sentence, normalize_sentence_with_max_span};
+use nemo_text_processing::{
+    custom_rules, normalize, normalize_sentence, normalize_sentence_with_max_span,
+};
 use std::path::Path;
 
 fn print_failures(results: &common::TestResults) {
     for f in &results.failures {
-        println!("  FAIL: '{}' => '{}' (expected '{}')", f.input, f.got, f.expected);
+        println!(
+            "  FAIL: '{}' => '{}' (expected '{}')",
+            f.input, f.got, f.expected
+        );
     }
 }
 
 #[test]
 fn test_cardinal() {
     let results = common::run_test_file(Path::new("tests/data/en/cardinal.txt"), normalize);
-    println!("cardinal: {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    println!(
+        "cardinal: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
     print_failures(&results);
 }
 
 #[test]
 fn test_money() {
     let results = common::run_test_file(Path::new("tests/data/en/money.txt"), normalize);
-    println!("money: {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    println!(
+        "money: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
     print_failures(&results);
 }
 
 #[test]
 fn test_ordinal() {
     let results = common::run_test_file(Path::new("tests/data/en/ordinal.txt"), normalize);
-    println!("ordinal: {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    println!(
+        "ordinal: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
     print_failures(&results);
 }
 
 #[test]
 fn test_time() {
     let results = common::run_test_file(Path::new("tests/data/en/time.txt"), normalize);
-    println!("time: {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    println!(
+        "time: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
     print_failures(&results);
 }
 
 #[test]
 fn test_date() {
     let results = common::run_test_file(Path::new("tests/data/en/date.txt"), normalize);
-    println!("date: {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    println!(
+        "date: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
     print_failures(&results);
 }
 
 #[test]
 fn test_decimal() {
     let results = common::run_test_file(Path::new("tests/data/en/decimal.txt"), normalize);
-    println!("decimal: {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    println!(
+        "decimal: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
     print_failures(&results);
 }
 
 #[test]
 fn test_measure() {
     let results = common::run_test_file(Path::new("tests/data/en/measure.txt"), normalize);
-    println!("measure: {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    println!(
+        "measure: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
     print_failures(&results);
 }
 
 #[test]
 fn test_telephone() {
     let results = common::run_test_file(Path::new("tests/data/en/telephone.txt"), normalize);
-    println!("telephone: {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    println!(
+        "telephone: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
     print_failures(&results);
 }
 
 #[test]
 fn test_electronic() {
     let results = common::run_test_file(Path::new("tests/data/en/electronic.txt"), normalize);
-    println!("electronic: {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    println!(
+        "electronic: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
     print_failures(&results);
 }
 
 #[test]
 fn test_whitelist() {
     let results = common::run_test_file(Path::new("tests/data/en/whitelist.txt"), normalize);
-    println!("whitelist: {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    println!(
+        "whitelist: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
     print_failures(&results);
 }
 
 #[test]
 fn test_word() {
     let results = common::run_test_file(Path::new("tests/data/en/word.txt"), normalize);
-    println!("word: {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    println!(
+        "word: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
     print_failures(&results);
 }
 
@@ -96,77 +156,132 @@ fn test_word() {
 #[test]
 fn test_cardinal_cased() {
     let results = common::run_test_file(Path::new("tests/data/en/cardinal_cased.txt"), normalize);
-    println!("cardinal_cased: {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    println!(
+        "cardinal_cased: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
     print_failures(&results);
 }
 
 #[test]
 fn test_date_cased() {
     let results = common::run_test_file(Path::new("tests/data/en/date_cased.txt"), normalize);
-    println!("date_cased: {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    println!(
+        "date_cased: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
     print_failures(&results);
 }
 
 #[test]
 fn test_decimal_cased() {
     let results = common::run_test_file(Path::new("tests/data/en/decimal_cased.txt"), normalize);
-    println!("decimal_cased: {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    println!(
+        "decimal_cased: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
     print_failures(&results);
 }
 
 #[test]
 fn test_electronic_cased() {
     let results = common::run_test_file(Path::new("tests/data/en/electronic_cased.txt"), normalize);
-    println!("electronic_cased: {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    println!(
+        "electronic_cased: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
     print_failures(&results);
 }
 
 #[test]
 fn test_measure_cased() {
     let results = common::run_test_file(Path::new("tests/data/en/measure_cased.txt"), normalize);
-    println!("measure_cased: {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    println!(
+        "measure_cased: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
     print_failures(&results);
 }
 
 #[test]
 fn test_money_cased() {
     let results = common::run_test_file(Path::new("tests/data/en/money_cased.txt"), normalize);
-    println!("money_cased: {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    println!(
+        "money_cased: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
     print_failures(&results);
 }
 
 #[test]
 fn test_ordinal_cased() {
     let results = common::run_test_file(Path::new("tests/data/en/ordinal_cased.txt"), normalize);
-    println!("ordinal_cased: {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    println!(
+        "ordinal_cased: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
     print_failures(&results);
 }
 
 #[test]
 fn test_telephone_cased() {
     let results = common::run_test_file(Path::new("tests/data/en/telephone_cased.txt"), normalize);
-    println!("telephone_cased: {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    println!(
+        "telephone_cased: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
     print_failures(&results);
 }
 
 #[test]
 fn test_time_cased() {
     let results = common::run_test_file(Path::new("tests/data/en/time_cased.txt"), normalize);
-    println!("time_cased: {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    println!(
+        "time_cased: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
     print_failures(&results);
 }
 
 #[test]
 fn test_whitelist_cased() {
     let results = common::run_test_file(Path::new("tests/data/en/whitelist_cased.txt"), normalize);
-    println!("whitelist_cased: {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    println!(
+        "whitelist_cased: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
     print_failures(&results);
 }
 
 #[test]
 fn test_word_cased() {
     let results = common::run_test_file(Path::new("tests/data/en/word_cased.txt"), normalize);
-    println!("word_cased: {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    println!(
+        "word_cased: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
     print_failures(&results);
 }
 
@@ -174,37 +289,64 @@ fn test_word_cased() {
 
 #[test]
 fn test_sentence_cardinal_in_context() {
-    assert_eq!(normalize_sentence("I have twenty one apples"), "I have 21 apples");
-    assert_eq!(normalize_sentence("there are three hundred people here"), "there are 300 people here");
-    assert_eq!(normalize_sentence("she is forty two years old"), "she is 42 years old");
+    assert_eq!(
+        normalize_sentence("I have twenty one apples"),
+        "I have 21 apples"
+    );
+    assert_eq!(
+        normalize_sentence("there are three hundred people here"),
+        "there are 300 people here"
+    );
+    assert_eq!(
+        normalize_sentence("she is forty two years old"),
+        "she is 42 years old"
+    );
 }
 
 #[test]
 fn test_sentence_money_in_context() {
-    assert_eq!(normalize_sentence("five dollars and fifty cents for the coffee"), "$5.50 for the coffee");
-    assert_eq!(normalize_sentence("I paid five dollars for lunch"), "I paid $5 for lunch");
+    assert_eq!(
+        normalize_sentence("five dollars and fifty cents for the coffee"),
+        "$5.50 for the coffee"
+    );
+    assert_eq!(
+        normalize_sentence("I paid five dollars for lunch"),
+        "I paid $5 for lunch"
+    );
 }
 
 #[test]
 fn test_sentence_passthrough() {
     assert_eq!(normalize_sentence("hello world"), "hello world");
-    assert_eq!(normalize_sentence("the quick brown fox jumps over the lazy dog"), "the quick brown fox jumps over the lazy dog");
+    assert_eq!(
+        normalize_sentence("the quick brown fox jumps over the lazy dog"),
+        "the quick brown fox jumps over the lazy dog"
+    );
     assert_eq!(normalize_sentence(""), "");
 }
 
 #[test]
 fn test_sentence_time_in_context() {
-    assert_eq!(normalize_sentence("call me at two thirty pm tomorrow"), "call me at 02:30 p.m. tomorrow");
+    assert_eq!(
+        normalize_sentence("call me at two thirty pm tomorrow"),
+        "call me at 02:30 p.m. tomorrow"
+    );
 }
 
 #[test]
 fn test_sentence_mixed_types() {
-    assert_eq!(normalize_sentence("I paid five dollars for twenty three items"), "I paid $5 for 23 items");
+    assert_eq!(
+        normalize_sentence("I paid five dollars for twenty three items"),
+        "I paid $5 for 23 items"
+    );
 }
 
 #[test]
 fn test_sentence_ordinal_in_context() {
-    assert_eq!(normalize_sentence("she finished in twenty first place"), "she finished in 21st place");
+    assert_eq!(
+        normalize_sentence("she finished in twenty first place"),
+        "she finished in 21st place"
+    );
 }
 
 #[test]
@@ -212,7 +354,12 @@ fn test_sentence_existing_tests_via_sentence() {
     // Existing normalize() test cases should also work through normalize_sentence()
     // when the entire input is a single normalizable expression.
     let results = common::run_test_file(Path::new("tests/data/en/money.txt"), normalize_sentence);
-    println!("money (sentence mode): {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    println!(
+        "money (sentence mode): {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
     // Don't assert all pass — sentence mode intentionally excludes some taggers and
     // limits cardinal span length, so some edge cases may differ. Just print results.
     print_failures(&results);
@@ -270,15 +417,9 @@ fn test_sentence_punctuation_inline() {
         "he said . and left"
     );
     // Comma in sentence
-    assert_eq!(
-        normalize_sentence("yes comma I agree"),
-        "yes , I agree"
-    );
+    assert_eq!(normalize_sentence("yes comma I agree"), "yes , I agree");
     // Question mark at end
-    assert_eq!(
-        normalize_sentence("really question mark"),
-        "really ?"
-    );
+    assert_eq!(normalize_sentence("really question mark"), "really ?");
     // Multiple punctuation tokens
     assert_eq!(
         normalize_sentence("hello exclamation point how are you question mark"),
@@ -293,9 +434,15 @@ fn test_sentence_no_false_positives() {
     // "the" should NOT trigger anything
     assert_eq!(normalize_sentence("the cat sat"), "the cat sat");
     // Common English words that look like they could match
-    assert_eq!(normalize_sentence("I went to the store"), "I went to the store");
+    assert_eq!(
+        normalize_sentence("I went to the store"),
+        "I went to the store"
+    );
     // "at" should NOT become "@" in normal sentences
-    assert_eq!(normalize_sentence("meet me at the park"), "meet me at the park");
+    assert_eq!(
+        normalize_sentence("meet me at the park"),
+        "meet me at the park"
+    );
     // "a" should not trigger anything
     assert_eq!(normalize_sentence("a big house"), "a big house");
     // Long sentences of pure natural language
@@ -351,8 +498,14 @@ fn test_punctuation_no_partial_match() {
     // "dashboard" should NOT match "dash"
     assert_eq!(normalize("dashboard"), "dashboard");
     // In sentence mode too
-    assert_eq!(normalize_sentence("the periodic table"), "the periodic table");
-    assert_eq!(normalize_sentence("the commander arrived"), "the commander arrived");
+    assert_eq!(
+        normalize_sentence("the periodic table"),
+        "the periodic table"
+    );
+    assert_eq!(
+        normalize_sentence("the commander arrived"),
+        "the commander arrived"
+    );
 }
 
 // --- Custom rules (single test to avoid parallel race on global state) ---
@@ -365,7 +518,10 @@ fn test_custom_rules_all() {
     custom_rules::add_rule("gee pee tee", "GPT");
     custom_rules::add_rule("ay eye", "AI");
     assert_eq!(normalize("gee pee tee"), "GPT");
-    assert_eq!(normalize_sentence("I use gee pee tee for ay eye tasks"), "I use GPT for AI tasks");
+    assert_eq!(
+        normalize_sentence("I use gee pee tee for ay eye tasks"),
+        "I use GPT for AI tasks"
+    );
 
     // Custom rules override built-in taggers
     custom_rules::add_rule("five", "FIVE_OVERRIDE");
@@ -418,16 +574,10 @@ fn test_sentence_adjacent_spans() {
     // Two number spans right next to each other — note the sliding window tries
     // longest span first, so "twenty one forty two" → 2043 as one cardinal.
     // This is correct behavior: the algorithm prefers the longest match.
-    assert_eq!(
-        normalize_sentence("twenty one forty two"),
-        "2043"
-    );
+    assert_eq!(normalize_sentence("twenty one forty two"), "2043");
     // "and" is a number conjunction in English ("one hundred and twenty"),
     // so "twenty one and forty two" → 2043 as one cardinal
-    assert_eq!(
-        normalize_sentence("twenty one and forty two"),
-        "2043"
-    );
+    assert_eq!(normalize_sentence("twenty one and forty two"), "2043");
     // With a non-number word separator, they parse as two spans
     assert_eq!(
         normalize_sentence("twenty one versus forty two"),
@@ -435,10 +585,7 @@ fn test_sentence_adjacent_spans() {
     );
     // "twenty one five dollars" — money tagger matches the longest span including
     // the number prefix, so this becomes "$26" (twenty-one + five = 26 dollars)
-    assert_eq!(
-        normalize_sentence("twenty one five dollars"),
-        "$26"
-    );
+    assert_eq!(normalize_sentence("twenty one five dollars"), "$26");
     // With a separator, they split correctly
     assert_eq!(
         normalize_sentence("twenty one then five dollars"),
@@ -482,7 +629,10 @@ fn test_sentence_date_in_context() {
 #[test]
 fn test_sentence_ordinal_positions() {
     assert_eq!(normalize_sentence("first place winner"), "1st place winner");
-    assert_eq!(normalize_sentence("the twenty first century"), "the 21st century");
+    assert_eq!(
+        normalize_sentence("the twenty first century"),
+        "the 21st century"
+    );
     assert_eq!(normalize_sentence("she came in third"), "she came in 3rd");
 }
 
@@ -522,7 +672,9 @@ fn test_asr_realistic_dictation() {
         "the total comes to $99.99"
     );
     assert_eq!(
-        normalize_sentence("i owe you twenty five dollars and thirty cents for the pizza we ordered last tuesday"),
+        normalize_sentence(
+            "i owe you twenty five dollars and thirty cents for the pizza we ordered last tuesday"
+        ),
         "i owe you $25.30 for the pizza we ordered last tuesday"
     );
 }
@@ -536,7 +688,10 @@ fn test_sentence_large_numbers() {
     let result = normalize_sentence("one billion");
     println!("one billion => {}", result);
     // "three point five million" → decimal handles the prefix
-    assert_eq!(normalize_sentence("three point five million"), "3.5 million");
+    assert_eq!(
+        normalize_sentence("three point five million"),
+        "3.5 million"
+    );
 }
 
 // --- Negative numbers in sentence ---
@@ -594,9 +749,18 @@ fn test_sentence_punctuation_dictation() {
 fn test_sentence_ordinal_as_adjective() {
     // These are technically "wrong" in Rust (ordinal fires on adjectives),
     // but Swift's NLTagger layer would protect them. Documenting actual behavior.
-    assert_eq!(normalize_sentence("the first time I saw one hundred people"), "the 1st time I saw 100 people");
-    assert_eq!(normalize_sentence("she was the second person to arrive"), "she was the 2nd person to arrive");
-    assert_eq!(normalize_sentence("he lives on the third floor"), "he lives on the 3rd floor");
+    assert_eq!(
+        normalize_sentence("the first time I saw one hundred people"),
+        "the 1st time I saw 100 people"
+    );
+    assert_eq!(
+        normalize_sentence("she was the second person to arrive"),
+        "she was the 2nd person to arrive"
+    );
+    assert_eq!(
+        normalize_sentence("he lives on the third floor"),
+        "he lives on the 3rd floor"
+    );
 }
 
 // --- Words NLTagger would protect that Rust catches ---
@@ -632,7 +796,10 @@ fn test_sentence_money_edge_cases() {
 fn test_sentence_time_edge_cases() {
     assert_eq!(normalize_sentence("half past two"), "02:30");
     // "noon" is natural language, not caught
-    assert_eq!(normalize_sentence("the meeting is at noon"), "the meeting is at noon");
+    assert_eq!(
+        normalize_sentence("the meeting is at noon"),
+        "the meeting is at noon"
+    );
 }
 
 // --- Special values ---
