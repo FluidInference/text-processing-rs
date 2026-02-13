@@ -43,7 +43,9 @@ fn extract_period_and_tz(original: &str, input_lower: &str) -> (String, String, 
     let mut timezone = String::new();
 
     // Check for timezone suffixes (match on lowercase, extract from original)
-    let tz_patterns = ["g m t", "gmt", "e s t", "est", "p s t", "pst", "c s t", "cst", "m s t", "mst"];
+    let tz_patterns = [
+        "g m t", "gmt", "e s t", "est", "p s t", "pst", "c s t", "cst", "m s t", "mst",
+    ];
     for tz in &tz_patterns {
         if time_part.ends_with(tz) {
             // Extract timezone from original to preserve casing
@@ -56,8 +58,8 @@ fn extract_period_and_tz(original: &str, input_lower: &str) -> (String, String, 
 
     // Check for period (am/pm) - match on lowercase, preserve original casing
     let period_patterns = [
-        (" a m", 4),      // " a m" = 4 chars
-        (" am", 3),       // " am" = 3 chars
+        (" a m", 4), // " a m" = 4 chars
+        (" am", 3),  // " am" = 3 chars
         (" p m", 4),
         (" pm", 3),
         (" in the morning", 16),
@@ -68,11 +70,25 @@ fn extract_period_and_tz(original: &str, input_lower: &str) -> (String, String, 
     for (pattern, len) in &period_patterns {
         if time_part.ends_with(pattern) {
             // Get the suffix from original to check casing
-            let suffix_start = original.len().saturating_sub(timezone.len() + if timezone.is_empty() { 0 } else {
-                // Account for spaces in original timezone
-                tz_patterns.iter().find(|p| p.replace(" ", "") == timezone).map(|p| p.len()).unwrap_or(timezone.len())
-            });
-            let time_original = if timezone.is_empty() { original } else { &original[..suffix_start] }.trim();
+            let suffix_start = original.len().saturating_sub(
+                timezone.len()
+                    + if timezone.is_empty() {
+                        0
+                    } else {
+                        // Account for spaces in original timezone
+                        tz_patterns
+                            .iter()
+                            .find(|p| p.replace(" ", "") == timezone)
+                            .map(|p| p.len())
+                            .unwrap_or(timezone.len())
+                    },
+            );
+            let time_original = if timezone.is_empty() {
+                original
+            } else {
+                &original[..suffix_start]
+            }
+            .trim();
 
             // Check if AM/PM is uppercase in original
             let period_start = time_original.len().saturating_sub(*len);
@@ -102,7 +118,11 @@ fn format_period_with_case(orig_suffix: &str, pattern: &str) -> String {
     }
 
     // Check if it looks uppercase (A M, AM, P M, PM)
-    let is_uppercase = orig_suffix.trim().chars().filter(|c| c.is_alphabetic()).all(|c| c.is_uppercase());
+    let is_uppercase = orig_suffix
+        .trim()
+        .chars()
+        .filter(|c| c.is_alphabetic())
+        .all(|c| c.is_uppercase());
 
     if is_uppercase {
         if orig_upper.contains('A') {
@@ -298,10 +318,7 @@ fn parse_minute(input: &str) -> Option<i64> {
     // Reject patterns like "nine nine" which are digit sequences
     if words.len() == 2 {
         // First word must be a tens word (twenty, thirty, etc.)
-        let is_tens = matches!(
-            words[0],
-            "twenty" | "thirty" | "forty" | "fifty"
-        );
+        let is_tens = matches!(words[0], "twenty" | "thirty" | "forty" | "fifty");
         if !is_tens {
             return None;
         }
@@ -334,13 +351,19 @@ mod tests {
         // conflict with year patterns like "eleven fifty five" → 1155
         assert_eq!(parse("eleven forty five"), None);
         // But with am/pm it works
-        assert_eq!(parse("eleven forty five a m"), Some("11:45 a.m.".to_string()));
+        assert_eq!(
+            parse("eleven forty five a m"),
+            Some("11:45 a.m.".to_string())
+        );
     }
 
     #[test]
     fn test_with_period() {
         assert_eq!(parse("two p m"), Some("02:00 p.m.".to_string()));
-        assert_eq!(parse("eleven fifty five p m"), Some("11:55 p.m.".to_string()));
+        assert_eq!(
+            parse("eleven fifty five p m"),
+            Some("11:55 p.m.".to_string())
+        );
         assert_eq!(parse("seven a m"), Some("07:00 a.m.".to_string()));
     }
 
@@ -377,7 +400,10 @@ mod tests {
     #[test]
     fn test_rejects_phone_like_input() {
         // These should NOT be parsed as time - they're phone numbers
-        assert_eq!(parse("one two three one two three five six seven eight"), None);
+        assert_eq!(
+            parse("one two three one two three five six seven eight"),
+            None
+        );
         assert_eq!(parse("seven nine nine"), None);
     }
 }

@@ -202,7 +202,6 @@ fn get_unit_mappings() -> Vec<(&'static str, &'static str)> {
         (" astronomical units", "au"),
         (" miles per hour", "mph"),
         (" kilometers per hour", "km/h"),
-
         // Square/cubic variations
         (" square kilometers", "km²"),
         (" square kilometer", "km²"),
@@ -216,7 +215,6 @@ fn get_unit_mappings() -> Vec<(&'static str, &'static str)> {
         (" cubic meter", "m³"),
         (" cubic deci meters", "dm³"),
         (" cubic decimeters", "dm³"),
-
         // Data units
         (" peta bytes", "pb"),
         (" petabytes", "pb"),
@@ -228,7 +226,6 @@ fn get_unit_mappings() -> Vec<(&'static str, &'static str)> {
         (" kilobytes", "kb"),
         (" kilobits", "kb"),
         (" bytes", "b"),
-
         // Power/Energy
         (" megawatts", "mW"),
         (" megawatt", "mW"),
@@ -238,32 +235,27 @@ fn get_unit_mappings() -> Vec<(&'static str, &'static str)> {
         (" watts", "W"),
         (" watt", "W"),
         (" horsepower", "hp"),
-
         // Data rates
         (" gigabits per second", "gbps"),
         (" gigabit per second", "gbps"),
         (" megabits per second", "mbps"),
         (" megabit per second", "mbps"),
-
         // Temperature
         (" degrees celsius", "°C"),
         (" degree celsius", "°C"),
         (" degrees fahrenheit", "°F"),
         (" degree fahrenheit", "°F"),
         (" kelvin", "K"),
-
         // Frequency
         (" megahertz", "mhz"),
         (" kilohertz", "khz"),
         (" hertz", "hz"),
-
         // Electrical
         (" milli volt", "mv"),
         (" millivolts", "mv"),
         (" volts", "v"),
         (" volt", "v"),
         (" mega siemens", "ms"),
-
         // Length
         (" micrometers", "μm"),
         (" micrometer", "μm"),
@@ -283,13 +275,11 @@ fn get_unit_mappings() -> Vec<(&'static str, &'static str)> {
         (" mile", "mi"),
         (" ounces", "oz"),
         (" ounce", "oz"),
-
         // Mass
         (" kilograms", "kg"),
         (" kilogram", "kg"),
         (" grams", "g"),
         (" gram", "g"),
-
         // Volume
         (" kilo liters", "kl"),
         (" milliliters", "ml"),
@@ -297,19 +287,15 @@ fn get_unit_mappings() -> Vec<(&'static str, &'static str)> {
         (" liters", "l"),
         (" liter", "l"),
         (" c c", "cc"),
-
         // Area
         (" hectares", "ha"),
         (" hectare", "ha"),
-
         // Time
         (" hours", "h"),
         (" hour", "h"),
-
         // Light
         (" lumens", "lm"),
         (" lumen", "lm"),
-
         // Percent
         (" percent", "%"),
     ]
@@ -351,7 +337,10 @@ mod tests {
 
     #[test]
     fn test_negative() {
-        assert_eq!(parse("minus sixty six kilograms"), Some("-66 kg".to_string()));
+        assert_eq!(
+            parse("minus sixty six kilograms"),
+            Some("-66 kg".to_string())
+        );
     }
 
     #[test]

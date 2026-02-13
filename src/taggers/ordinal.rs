@@ -170,7 +170,10 @@ mod tests {
     #[test]
     fn test_thousands() {
         assert_eq!(parse("one thousandth"), Some("1000th".to_string()));
-        assert_eq!(parse("eleven hundred twenty first"), Some("1121st".to_string()));
+        assert_eq!(
+            parse("eleven hundred twenty first"),
+            Some("1121st".to_string())
+        );
     }
 
     #[test]

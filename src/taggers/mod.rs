@@ -21,6 +21,7 @@ pub mod electronic;
 pub mod measure;
 pub mod money;
 pub mod ordinal;
+pub mod punctuation;
 pub mod telephone;
 pub mod time;
 pub mod whitelist;
@@ -28,4 +29,3 @@ pub mod word;
 
 // TODO: Add remaining taggers
 // pub mod fraction;
-// pub mod punctuation;

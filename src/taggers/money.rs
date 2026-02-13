@@ -115,9 +115,7 @@ fn parse_decimal_dollars(input: &str) -> Option<String> {
 
     // Pattern: "point X dollars" (no integer part)
     if input.starts_with("point ") && input.ends_with(" dollars") {
-        let decimal_part = input
-            .strip_prefix("point ")?
-            .strip_suffix(" dollars")?;
+        let decimal_part = input.strip_prefix("point ")?.strip_suffix(" dollars")?;
         let decimal = parse_decimal_digits(decimal_part)?;
         return Some(format!("$.{}", decimal));
     }
@@ -333,7 +331,10 @@ mod tests {
         assert_eq!(parse("five dollars"), Some("$5".to_string()));
         assert_eq!(parse("twenty dollars"), Some("$20".to_string()));
         assert_eq!(parse("one hundred dollars"), Some("$100".to_string()));
-        assert_eq!(parse("fifteen thousand dollars"), Some("$15000".to_string()));
+        assert_eq!(
+            parse("fifteen thousand dollars"),
+            Some("$15000".to_string())
+        );
     }
 
     #[test]
@@ -354,8 +355,14 @@ mod tests {
 
     #[test]
     fn test_dollars_implied_cents() {
-        assert_eq!(parse("seventy five dollars sixty three"), Some("$75.63".to_string()));
-        assert_eq!(parse("twenty nine dollars fifty"), Some("$29.50".to_string()));
+        assert_eq!(
+            parse("seventy five dollars sixty three"),
+            Some("$75.63".to_string())
+        );
+        assert_eq!(
+            parse("twenty nine dollars fifty"),
+            Some("$29.50".to_string())
+        );
     }
 
     #[test]
@@ -367,8 +374,14 @@ mod tests {
 
     #[test]
     fn test_large_amounts() {
-        assert_eq!(parse("fifty million dollars"), Some("$50 million".to_string()));
-        assert_eq!(parse("fifty billion dollars"), Some("$50 billion".to_string()));
+        assert_eq!(
+            parse("fifty million dollars"),
+            Some("$50 million".to_string())
+        );
+        assert_eq!(
+            parse("fifty billion dollars"),
+            Some("$50 billion".to_string())
+        );
         assert_eq!(
             parse("two point five billion dollars"),
             Some("$2.5 billion".to_string())

@@ -159,13 +159,22 @@ mod tests {
 
     #[test]
     fn test_negative() {
-        assert_eq!(parse("minus sixty point two four zero zero"), Some("-60.2400".to_string()));
+        assert_eq!(
+            parse("minus sixty point two four zero zero"),
+            Some("-60.2400".to_string())
+        );
     }
 
     #[test]
     fn test_with_scale() {
-        assert_eq!(parse("five point two million"), Some("5.2 million".to_string()));
+        assert_eq!(
+            parse("five point two million"),
+            Some("5.2 million".to_string())
+        );
         assert_eq!(parse("fifty billion"), Some("50 billion".to_string()));
-        assert_eq!(parse("four point eight five billion"), Some("4.85 billion".to_string()));
+        assert_eq!(
+            parse("four point eight five billion"),
+            Some("4.85 billion".to_string())
+        );
     }
 }

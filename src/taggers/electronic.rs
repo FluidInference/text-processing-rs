@@ -243,10 +243,7 @@ mod tests {
 
     #[test]
     fn test_simple_email() {
-        assert_eq!(
-            parse("a at gmail dot com"),
-            Some("a@gmail.com".to_string())
-        );
+        assert_eq!(parse("a at gmail dot com"), Some("a@gmail.com".to_string()));
     }
 
     #[test]
