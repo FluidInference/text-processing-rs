@@ -1,8 +1,6 @@
-# NeMo-text-processing-rs
+# text-processing-rs
 
 A Rust port of [NVIDIA NeMo Text Processing](https://github.com/NVIDIA/NeMo-text-processing) for Inverse Text Normalization (ITN).
-
-Created by [FluidAudio](https://github.com/FluidInference).
 
 ## What it does
 
