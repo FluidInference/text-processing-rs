@@ -1,0 +1,5 @@
+# Electronic TN: written~spoken
+test@gmail.com~t e s t at g m a i l dot c o m
+http://www.example.com~h t t p colon slash slash w w w dot e x a m p l e dot c o m
+https://google.com~h t t p s colon slash slash g o o g l e dot c o m
+www.example.com~w w w dot e x a m p l e dot c o m

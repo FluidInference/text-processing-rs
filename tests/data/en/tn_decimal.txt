@@ -1,0 +1,9 @@
+# Decimal TN: written~spoken
+3.14~three point one four
+0.5~zero point five
+1.0~one point zero
+10.25~ten point two five
+-3.14~minus three point one four
+1.5 billion~one point five billion
+4.85 billion~four point eight five billion
+2.5 million~two point five million

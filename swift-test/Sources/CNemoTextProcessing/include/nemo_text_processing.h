@@ -1,37 +1,26 @@
 #ifndef NEMO_TEXT_PROCESSING_H
 #define NEMO_TEXT_PROCESSING_H
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**
- * Normalize spoken-form text to written form.
- *
- * @param input Null-terminated UTF-8 string of spoken text
- * @return Newly allocated string with written form, or NULL on error.
- *         Must be freed with nemo_free_string().
- *
- * Example:
- *   char* result = nemo_normalize("two hundred");
- *   // result is "200"
- *   nemo_free_string(result);
- */
 char* nemo_normalize(const char* input);
-
-/**
- * Free a string allocated by nemo_normalize.
- *
- * @param s Pointer returned by nemo_normalize, or NULL (no-op)
- */
+char* nemo_normalize_sentence(const char* input);
+char* nemo_normalize_sentence_with_max_span(const char* input, uint32_t max_span_tokens);
+void nemo_add_rule(const char* spoken, const char* written);
+int32_t nemo_remove_rule(const char* spoken);
+void nemo_clear_rules(void);
+uint32_t nemo_rule_count(void);
 void nemo_free_string(char* s);
-
-/**
- * Get the library version.
- *
- * @return Static version string, do not free.
- */
 const char* nemo_version(void);
+
+/* Text Normalization (written → spoken) */
+char* nemo_tn_normalize(const char* input);
+char* nemo_tn_normalize_sentence(const char* input);
+char* nemo_tn_normalize_sentence_with_max_span(const char* input, uint32_t max_span_tokens);
 
 #ifdef __cplusplus
 }

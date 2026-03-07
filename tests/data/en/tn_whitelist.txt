@@ -1,0 +1,9 @@
+# Whitelist TN: written~spoken
+Dr.~doctor
+Mrs.~misses
+Mr.~mister
+St.~saint
+e.g.~for example
+i.e.~that is
+etc.~et cetera
+vs.~versus
