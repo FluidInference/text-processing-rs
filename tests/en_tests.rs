@@ -5,10 +5,10 @@
 
 mod common;
 
+use std::path::Path;
 use text_processing_rs::{
     custom_rules, normalize, normalize_sentence, normalize_sentence_with_max_span,
 };
-use std::path::Path;
 
 fn print_failures(results: &common::TestResults) {
     for f in &results.failures {
