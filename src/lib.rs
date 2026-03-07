@@ -1,6 +1,6 @@
-//! # NeMo-text-processing-rs
+//! # text-processing-rs
 //!
-//! Rust port of NVIDIA NeMo Text Processing for Inverse Text Normalization.
+//! Inverse Text Normalization (ITN) — convert spoken-form ASR output to written form.
 //!
 //! Converts spoken-form text to written form:
 //! - "two hundred thirty two" → "232"
@@ -10,7 +10,7 @@
 //! ## Usage
 //!
 //! ```
-//! use nemo_text_processing::normalize;
+//! use text_processing_rs::normalize;
 //!
 //! let result = normalize("two hundred");
 //! assert_eq!(result, "200");
@@ -178,7 +178,7 @@ fn parse_span(span: &str) -> Option<(String, u8)> {
 /// Uses a default max span of 16 tokens.
 ///
 /// ```
-/// use nemo_text_processing::normalize_sentence;
+/// use text_processing_rs::normalize_sentence;
 ///
 /// assert_eq!(normalize_sentence("I have twenty one apples"), "I have 21 apples");
 /// assert_eq!(normalize_sentence("hello world"), "hello world");
@@ -195,7 +195,7 @@ pub fn normalize_sentence(input: &str) -> String {
 /// Larger values catch more patterns but do more work per token.
 ///
 /// ```
-/// use nemo_text_processing::normalize_sentence_with_max_span;
+/// use text_processing_rs::normalize_sentence_with_max_span;
 ///
 /// // Short span: only catches small expressions
 /// assert_eq!(normalize_sentence_with_max_span("I have twenty one apples", 4), "I have 21 apples");
