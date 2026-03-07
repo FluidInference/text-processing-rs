@@ -1,14 +1,14 @@
 //! English inverse text normalization tests.
 //!
-//! Test cases sourced from NeMo text processing:
+//! Test cases sourced from NVIDIA NeMo text processing:
 //! https://github.com/NVIDIA/NeMo-text-processing
 
 mod common;
 
-use nemo_text_processing::{
+use std::path::Path;
+use text_processing_rs::{
     custom_rules, normalize, normalize_sentence, normalize_sentence_with_max_span,
 };
-use std::path::Path;
 
 fn print_failures(results: &common::TestResults) {
     for f in &results.failures {

@@ -1,11 +1,11 @@
 [package]
-name = "nemo-text-processing"
+name = "text-processing-rs"
 version = "0.1.0"
 edition = "2021"
 license = "Apache-2.0"
-description = "Rust port of NVIDIA NeMo Text Processing for Inverse Text Normalization"
-repository = "https://github.com/FluidInference/NeMo-text-processing-rs"
-keywords = ["asr", "speech", "normalization", "nlp", "nemo"]
+description = "Inverse Text Normalization (ITN) — convert spoken-form ASR output to written form"
+repository = "https://github.com/FluidInference/text-processing-rs"
+keywords = ["asr", "speech", "normalization", "nlp", "itn"]
 categories = ["text-processing"]
 
 [lib]

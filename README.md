@@ -1,6 +1,6 @@
 # text-processing-rs
 
-A Rust port of [NVIDIA NeMo Text Processing](https://github.com/NVIDIA/NeMo-text-processing) for Inverse Text Normalization (ITN).
+Inverse Text Normalization (ITN) for Rust — convert spoken-form ASR output to written form.
 
 ## What it does
 
@@ -20,7 +20,7 @@ Converts spoken-form ASR output to written form:
 ### Rust
 
 ```rust
-use nemo_text_processing::normalize;
+use text_processing_rs::normalize;
 
 let result = normalize("two hundred");
 assert_eq!(result, "200");
@@ -43,7 +43,7 @@ let money = NemoTextProcessing.normalize("five dollars and fifty cents")
 
 ## Compatibility
 
-**98.6% compatible** with NeMo text processing test suite (1200/1217 tests passing).
+**98.6% compatible** with the original NeMo test suite (1200/1217 tests passing).
 
 | Category | Status |
 |----------|--------|
@@ -96,7 +96,7 @@ Output:
 
 ## License
 
-Apache 2.0 (same as [NeMo Text Processing](https://github.com/NVIDIA/NeMo-text-processing))
+Apache 2.0
 
 ## Acknowledgments
 

@@ -26,17 +26,17 @@ cargo build --release --features ffi --target aarch64-apple-ios-sim
 echo "Creating universal macOS library..."
 mkdir -p "$BUILD_DIR/macos"
 lipo -create \
-    target/aarch64-apple-darwin/release/libnemo_text_processing.a \
-    target/x86_64-apple-darwin/release/libnemo_text_processing.a \
-    -output "$BUILD_DIR/macos/libnemo_text_processing.a"
+    target/aarch64-apple-darwin/release/libtext_processing_rs.a \
+    target/x86_64-apple-darwin/release/libtext_processing_rs.a \
+    -output "$BUILD_DIR/macos/libtext_processing_rs.a"
 
 echo "Creating XCFramework..."
 xcodebuild -create-xcframework \
-    -library "$BUILD_DIR/macos/libnemo_text_processing.a" \
+    -library "$BUILD_DIR/macos/libtext_processing_rs.a" \
     -headers swift/include \
-    -library target/aarch64-apple-ios/release/libnemo_text_processing.a \
+    -library target/aarch64-apple-ios/release/libtext_processing_rs.a \
     -headers swift/include \
-    -library target/aarch64-apple-ios-sim/release/libnemo_text_processing.a \
+    -library target/aarch64-apple-ios-sim/release/libtext_processing_rs.a \
     -headers swift/include \
     -output "$OUTPUT_DIR/NemoTextProcessing.xcframework"
 
