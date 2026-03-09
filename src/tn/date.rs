@@ -139,14 +139,16 @@ fn parse_month_day_year(input: &str) -> Option<String> {
     let (day_str, year_part) = if let Some(comma_pos) = rest.find(',') {
         (&rest[..comma_pos], Some(rest[comma_pos + 1..].trim()))
     } else {
-        // Could be "January 5 2025" (space-separated)
+        // Could be "January 5 2025" or "January 5 2025." (space-separated, optional trailing punct)
         let parts: Vec<&str> = rest.splitn(2, ' ').collect();
-        if parts.len() == 2
-            && parts[0].chars().all(|c| c.is_ascii_digit())
-            && parts[1].chars().all(|c| c.is_ascii_digit())
-            && parts[1].len() == 4
-        {
-            (parts[0], Some(parts[1]))
+        if parts.len() == 2 && parts[0].chars().all(|c| c.is_ascii_digit()) {
+            let year_clean = parts[1]
+                .trim_end_matches(|c: char| c == '.' || c == ',' || c == '!' || c == '?');
+            if year_clean.chars().all(|c| c.is_ascii_digit()) && year_clean.len() == 4 {
+                (parts[0], Some(year_clean))
+            } else {
+                (rest, None)
+            }
         } else {
             (rest, None)
         }
@@ -172,7 +174,11 @@ fn parse_month_day_year(input: &str) -> Option<String> {
     let day_ordinal = ordinal_word(day);
 
     if let Some(year_str) = year_part {
-        let year_str = year_str.trim();
+        // Strip trailing sentence punctuation (e.g. "2026." → "2026") so that
+        // "March 8, 2026." correctly parses the year instead of dropping it.
+        let year_str = year_str
+            .trim()
+            .trim_end_matches(|c: char| c == '.' || c == ',' || c == '!' || c == '?');
         if !year_str.is_empty() && year_str.chars().all(|c| c.is_ascii_digit()) {
             let year: u32 = year_str.parse().ok()?;
             let year_words = verbalize_year(year)?;

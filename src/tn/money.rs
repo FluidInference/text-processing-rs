@@ -85,6 +85,16 @@ pub fn parse(input: &str) -> Option<String> {
     // Check for scale suffix: "$2.5 billion"
     let (amount_str, scale) = extract_scale(rest);
 
+    // Without a scale suffix, the amount must be purely numeric (digits, dots, commas).
+    // This prevents "$10.20 on March 8" from matching as money and consuming trailing words.
+    if scale.is_none()
+        && !amount_str
+            .chars()
+            .all(|c| c.is_ascii_digit() || c == '.' || c == ',')
+    {
+        return None;
+    }
+
     // Parse the numeric amount
     if let Some(scale_word) = scale {
         // With scale: "$2.5 billion" → "two point five billion dollars"
