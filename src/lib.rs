@@ -269,7 +269,7 @@ pub fn normalize_sentence_with_max_span(input: &str, max_span_tokens: usize) -> 
 /// Returns original text if no tagger matches.
 ///
 /// ```
-/// use nemo_text_processing::tn_normalize;
+/// use text_processing_rs::tn_normalize;
 ///
 /// let result = tn_normalize("$5.50");
 /// assert_eq!(result, "five dollars and fifty cents");
@@ -359,7 +359,7 @@ fn tn_parse_span(span: &str) -> Option<(String, u8)> {
 /// this function scans for normalizable spans within a larger sentence.
 ///
 /// ```
-/// use nemo_text_processing::tn_normalize_sentence;
+/// use text_processing_rs::tn_normalize_sentence;
 ///
 /// assert_eq!(tn_normalize_sentence("I paid $5 for 23 items"), "I paid five dollars for twenty three items");
 /// ```

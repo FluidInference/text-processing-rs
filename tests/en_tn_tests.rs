@@ -4,7 +4,7 @@
 
 mod common;
 
-use nemo_text_processing::{tn_normalize, tn_normalize_sentence};
+use text_processing_rs::{tn_normalize, tn_normalize_sentence};
 use std::path::Path;
 
 fn print_failures(results: &common::TestResults) {
@@ -207,7 +207,7 @@ fn test_tn_sentence_mixed() {
 #[test]
 fn test_tn_roundtrip_cardinal() {
     // Verify that ITN(TN(written)) ≈ written for simple cardinals
-    use nemo_text_processing::normalize;
+    use text_processing_rs::normalize;
 
     let cases = &["123", "42", "1000", "21"];
     for &written in cases {
