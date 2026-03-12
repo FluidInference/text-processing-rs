@@ -223,7 +223,10 @@ mod tests {
         assert_eq!(number_to_words(10000), "ichi man");
         assert_eq!(number_to_words(20000), "ni man");
         assert_eq!(number_to_words(50000), "go man");
-        assert_eq!(number_to_words(12345), "ichi man ni sen sanbyaku yon juu go");
+        assert_eq!(
+            number_to_words(12345),
+            "ichi man ni sen sanbyaku yon juu go"
+        );
     }
 
     #[test]

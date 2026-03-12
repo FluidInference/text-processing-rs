@@ -140,7 +140,10 @@ mod tests {
     #[test]
     fn test_24h() {
         assert_eq!(parse("14:00"), Some("shi si dian zheng".to_string()));
-        assert_eq!(parse("23:59"), Some("er shi san dian wu shi jiu fen".to_string()));
+        assert_eq!(
+            parse("23:59"),
+            Some("er shi san dian wu shi jiu fen".to_string())
+        );
     }
 
     #[test]

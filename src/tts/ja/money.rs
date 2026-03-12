@@ -227,10 +227,7 @@ mod tests {
         assert_eq!(parse("\u{00A5}100"), Some("hyaku en".to_string()));
         assert_eq!(parse("\u{00A5}1500"), Some("sen go hyaku en".to_string()));
         assert_eq!(parse("\u{00A5}1"), Some("ichi en".to_string()));
-        assert_eq!(
-            parse("\u{00A5}10000"),
-            Some("ichi man en".to_string())
-        );
+        assert_eq!(parse("\u{00A5}10000"), Some("ichi man en".to_string()));
     }
 
     #[test]
@@ -242,10 +239,7 @@ mod tests {
     #[test]
     fn test_dollar() {
         assert_eq!(parse("$100"), Some("hyaku doru".to_string()));
-        assert_eq!(
-            parse("$5.50"),
-            Some("go doru go juu sento".to_string())
-        );
+        assert_eq!(parse("$5.50"), Some("go doru go juu sento".to_string()));
         assert_eq!(parse("$1"), Some("ichi doru".to_string()));
     }
 
@@ -269,14 +263,8 @@ mod tests {
 
     #[test]
     fn test_dollars_and_cents() {
-        assert_eq!(
-            parse("$1.01"),
-            Some("ichi doru ichi sento".to_string())
-        );
-        assert_eq!(
-            parse("$0.99"),
-            Some("kyuu juu kyuu sento".to_string())
-        );
+        assert_eq!(parse("$1.01"), Some("ichi doru ichi sento".to_string()));
+        assert_eq!(parse("$0.99"), Some("kyuu juu kyuu sento".to_string()));
     }
 
     #[test]
@@ -285,10 +273,7 @@ mod tests {
             parse("\u{00A5}2.5 man"),
             Some("ni ten go man en".to_string())
         );
-        assert_eq!(
-            parse("$50 oku"),
-            Some("go juu oku doru".to_string())
-        );
+        assert_eq!(parse("$50 oku"), Some("go juu oku doru".to_string()));
     }
 
     #[test]

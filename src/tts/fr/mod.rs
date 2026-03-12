@@ -18,8 +18,8 @@ pub mod whitelist;
 
 /// Ones words indexed by value (0..20).
 const ONES: [&str; 20] = [
-    "zero", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf", "dix",
-    "onze", "douze", "treize", "quatorze", "quinze", "seize", "dix-sept", "dix-huit", "dix-neuf",
+    "zero", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf", "dix", "onze",
+    "douze", "treize", "quatorze", "quinze", "seize", "dix-sept", "dix-huit", "dix-neuf",
 ];
 
 /// Tens words indexed by tens digit (2..7 → index 0..5).
@@ -89,7 +89,10 @@ fn unsigned_to_words(n: u64) -> String {
     }
 
     if remaining > 0 {
-        parts.push(chunk_to_words(remaining as u32, remaining < 1000 && parts.is_empty()));
+        parts.push(chunk_to_words(
+            remaining as u32,
+            remaining < 1000 && parts.is_empty(),
+        ));
     }
 
     parts.join(" ")

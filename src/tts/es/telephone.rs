@@ -142,9 +142,7 @@ mod tests {
     fn test_with_country_code() {
         assert_eq!(
             parse("+34-91-123-4567"),
-            Some(
-                "mas tres cuatro, nueve uno, uno dos tres, cuatro cinco seis siete".to_string()
-            )
+            Some("mas tres cuatro, nueve uno, uno dos tres, cuatro cinco seis siete".to_string())
         );
     }
 

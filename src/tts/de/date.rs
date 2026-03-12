@@ -129,8 +129,8 @@ fn parse_german_date(input: &str) -> Option<String> {
     let day_word = ordinal_word_ter(day);
 
     if tokens.len() >= 3 {
-        let year_str = tokens[2]
-            .trim_end_matches(|c: char| c == '.' || c == ',' || c == '!' || c == '?');
+        let year_str =
+            tokens[2].trim_end_matches(|c: char| c == '.' || c == ',' || c == '!' || c == '?');
         if year_str.chars().all(|c| c.is_ascii_digit()) && year_str.len() == 4 {
             let year: u32 = year_str.parse().ok()?;
             let year_words = verbalize_year(year)?;
@@ -305,9 +305,7 @@ mod tests {
         );
         assert_eq!(
             parse("31.12.1999"),
-            Some(
-                "einunddreissigster dezember eintausend neunhundertneunundneunzig".to_string()
-            )
+            Some("einunddreissigster dezember eintausend neunhundertneunundneunzig".to_string())
         );
     }
 
@@ -317,10 +315,7 @@ mod tests {
             parse("1980s"),
             Some("die eintausend neunhundertachtziger jahre".to_string())
         );
-        assert_eq!(
-            parse("2000s"),
-            Some("die zweitausender jahre".to_string())
-        );
+        assert_eq!(parse("2000s"), Some("die zweitausender jahre".to_string()));
         assert_eq!(
             parse("1990s"),
             Some("die eintausend neunhundertneunziger jahre".to_string())

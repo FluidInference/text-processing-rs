@@ -102,19 +102,13 @@ mod tests {
 
     #[test]
     fn test_comma_decimal() {
-        assert_eq!(
-            parse("3,14"),
-            Some("drei komma eins vier".to_string())
-        );
+        assert_eq!(parse("3,14"), Some("drei komma eins vier".to_string()));
         assert_eq!(parse("0,5"), Some("null komma fuenf".to_string()));
     }
 
     #[test]
     fn test_period_decimal() {
-        assert_eq!(
-            parse("3.14"),
-            Some("drei komma eins vier".to_string())
-        );
+        assert_eq!(parse("3.14"), Some("drei komma eins vier".to_string()));
     }
 
     #[test]

@@ -142,9 +142,7 @@ mod tests {
     fn test_with_country_code() {
         assert_eq!(
             parse("+91-98765-43210"),
-            Some(
-                "plus nau ek, nau aath saat chhah paanch, chaar teen do ek shunya".to_string()
-            )
+            Some("plus nau ek, nau aath saat chhah paanch, chaar teen do ek shunya".to_string())
         );
     }
 

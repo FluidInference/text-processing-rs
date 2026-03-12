@@ -50,7 +50,15 @@ const YEN: Currency = Currency {
 };
 
 /// Scale suffixes recognized after a currency amount.
-const SCALE_SUFFIXES: &[&str] = &["billiard", "billion", "milliards", "milliard", "millions", "million", "mille"];
+const SCALE_SUFFIXES: &[&str] = &[
+    "billiard",
+    "billion",
+    "milliards",
+    "milliard",
+    "millions",
+    "million",
+    "mille",
+];
 
 /// Parse a written money expression to spoken French.
 pub fn parse(input: &str) -> Option<String> {
@@ -275,7 +283,10 @@ mod tests {
             Some("cinq dollars et cinquante cents".to_string())
         );
         assert_eq!(parse("$1.01"), Some("un dollar et un cent".to_string()));
-        assert_eq!(parse("$0.99"), Some("quatre-vingt-dix-neuf cents".to_string()));
+        assert_eq!(
+            parse("$0.99"),
+            Some("quatre-vingt-dix-neuf cents".to_string())
+        );
     }
 
     #[test]

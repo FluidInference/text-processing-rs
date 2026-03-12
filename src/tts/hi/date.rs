@@ -25,19 +25,19 @@ const MONTHS_EN: &[(&str, &str, u32)] = &[
 
 /// Month names by index (1-based) in romanized Hindi.
 const MONTH_NAMES: &[&str] = &[
-    "",          // 0 placeholder
-    "janvari",   // 1
-    "farvari",   // 2
-    "march",     // 3
-    "aprail",    // 4
-    "mai",       // 5
-    "june",      // 6
-    "julai",     // 7
-    "agast",     // 8
-    "sitambar",  // 9
-    "aktubar",   // 10
-    "navambar",  // 11
-    "disambar",  // 12
+    "",         // 0 placeholder
+    "janvari",  // 1
+    "farvari",  // 2
+    "march",    // 3
+    "aprail",   // 4
+    "mai",      // 5
+    "june",     // 6
+    "julai",    // 7
+    "agast",    // 8
+    "sitambar", // 9
+    "aktubar",  // 10
+    "navambar", // 11
+    "disambar", // 12
 ];
 
 /// Parse a written date to spoken romanized Hindi.
@@ -122,8 +122,8 @@ fn parse_day_month_year(input: &str) -> Option<String> {
     let day_word = number_to_words(day as i64);
 
     if tokens.len() >= 3 {
-        let year_str = tokens[2]
-            .trim_end_matches(|c: char| c == '.' || c == ',' || c == '!' || c == '?');
+        let year_str =
+            tokens[2].trim_end_matches(|c: char| c == '.' || c == ',' || c == '!' || c == '?');
         if year_str.chars().all(|c| c.is_ascii_digit()) && year_str.len() == 4 {
             let year: u32 = year_str.parse().ok()?;
             let year_words = number_to_words(year as i64);
@@ -293,10 +293,7 @@ mod tests {
             parse("1980s"),
             Some("ek hazaar nau sau assi ka dashak".to_string())
         );
-        assert_eq!(
-            parse("2000s"),
-            Some("do hazaar ka dashak".to_string())
-        );
+        assert_eq!(parse("2000s"), Some("do hazaar ka dashak".to_string()));
         assert_eq!(
             parse("1990s"),
             Some("ek hazaar nau sau nabbe ka dashak".to_string())
@@ -305,19 +302,10 @@ mod tests {
 
     #[test]
     fn test_year_verbalization() {
-        assert_eq!(
-            number_to_words(2025),
-            "do hazaar pachchees".to_string()
-        );
+        assert_eq!(number_to_words(2025), "do hazaar pachchees".to_string());
         assert_eq!(number_to_words(2000), "do hazaar".to_string());
-        assert_eq!(
-            number_to_words(1990),
-            "ek hazaar nau sau nabbe".to_string()
-        );
-        assert_eq!(
-            number_to_words(1900),
-            "ek hazaar nau sau".to_string()
-        );
+        assert_eq!(number_to_words(1990), "ek hazaar nau sau nabbe".to_string());
+        assert_eq!(number_to_words(1900), "ek hazaar nau sau".to_string());
     }
 
     #[test]

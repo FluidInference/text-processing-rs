@@ -102,10 +102,7 @@ mod tests {
 
     #[test]
     fn test_negative_decimal() {
-        assert_eq!(
-            parse("-3.14"),
-            Some("mainasu san ten ichi yon".to_string())
-        );
+        assert_eq!(parse("-3.14"), Some("mainasu san ten ichi yon".to_string()));
         assert_eq!(parse("-0.5"), Some("mainasu zero ten go".to_string()));
     }
 
@@ -116,14 +113,8 @@ mod tests {
 
     #[test]
     fn test_with_quantity() {
-        assert_eq!(
-            parse("1.5 man"),
-            Some("ichi ten go man".to_string())
-        );
-        assert_eq!(
-            parse("4.85 oku"),
-            Some("yon ten hachi go oku".to_string())
-        );
+        assert_eq!(parse("1.5 man"), Some("ichi ten go man".to_string()));
+        assert_eq!(parse("4.85 oku"), Some("yon ten hachi go oku".to_string()));
     }
 
     #[test]

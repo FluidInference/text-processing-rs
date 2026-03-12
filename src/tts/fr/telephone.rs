@@ -134,9 +134,7 @@ mod tests {
     fn test_standard_phone() {
         assert_eq!(
             parse("01-23-45-67-89"),
-            Some(
-                "zero un, deux trois, quatre cinq, six sept, huit neuf".to_string()
-            )
+            Some("zero un, deux trois, quatre cinq, six sept, huit neuf".to_string())
         );
     }
 
@@ -144,9 +142,7 @@ mod tests {
     fn test_with_country_code() {
         assert_eq!(
             parse("+33-1-23-45-67-89"),
-            Some(
-                "plus trois trois, un, deux trois, quatre cinq, six sept, huit neuf".to_string()
-            )
+            Some("plus trois trois, un, deux trois, quatre cinq, six sept, huit neuf".to_string())
         );
     }
 

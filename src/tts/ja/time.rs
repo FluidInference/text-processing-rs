@@ -190,10 +190,7 @@ mod tests {
 
     #[test]
     fn test_colon_format() {
-        assert_eq!(
-            parse("14:30"),
-            Some("juu yo ji san juppun".to_string())
-        );
+        assert_eq!(parse("14:30"), Some("juu yo ji san juppun".to_string()));
         assert_eq!(parse("9:00"), Some("ku ji".to_string()));
         assert_eq!(parse("7:15"), Some("shichi ji juu go fun".to_string()));
         assert_eq!(parse("4:00"), Some("yo ji".to_string()));
@@ -219,14 +216,8 @@ mod tests {
 
     #[test]
     fn test_compound_minutes() {
-        assert_eq!(
-            parse("3:21"),
-            Some("san ji ni juu ippun".to_string())
-        );
-        assert_eq!(
-            parse("3:45"),
-            Some("san ji yon juu go fun".to_string())
-        );
+        assert_eq!(parse("3:21"), Some("san ji ni juu ippun".to_string()));
+        assert_eq!(parse("3:45"), Some("san ji yon juu go fun".to_string()));
     }
 
     #[test]

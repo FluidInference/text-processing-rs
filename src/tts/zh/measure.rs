@@ -255,10 +255,7 @@ mod tests {
 
     #[test]
     fn test_negative() {
-        assert_eq!(
-            parse("-66 kg"),
-            Some("fu liu shi liu gongjin".to_string())
-        );
+        assert_eq!(parse("-66 kg"), Some("fu liu shi liu gongjin".to_string()));
     }
 
     #[test]
@@ -269,10 +266,7 @@ mod tests {
 
     #[test]
     fn test_decimal_with_empty_integer() {
-        assert_eq!(
-            parse(".5 kg"),
-            Some("ling dian wu gongjin".to_string())
-        );
+        assert_eq!(parse(".5 kg"), Some("ling dian wu gongjin".to_string()));
     }
 
     #[test]

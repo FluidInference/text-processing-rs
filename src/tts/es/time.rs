@@ -89,7 +89,10 @@ mod tests {
     #[test]
     fn test_24h() {
         assert_eq!(parse("14:00"), Some("catorce en punto".to_string()));
-        assert_eq!(parse("23:59"), Some("veintitres cincuenta y nueve".to_string()));
+        assert_eq!(
+            parse("23:59"),
+            Some("veintitres cincuenta y nueve".to_string())
+        );
     }
 
     #[test]

@@ -118,7 +118,11 @@ pub fn parse(input: &str) -> Option<String> {
             .filter(|c| c.is_ascii_digit() || *c == '.' || *c == ',')
             .collect();
 
-        if clean.is_empty() || !clean.chars().all(|c| c.is_ascii_digit() || c == '.' || c == ',') {
+        if clean.is_empty()
+            || !clean
+                .chars()
+                .all(|c| c.is_ascii_digit() || c == '.' || c == ',')
+        {
             continue;
         }
 

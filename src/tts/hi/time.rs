@@ -128,10 +128,7 @@ mod tests {
     fn test_midnight_and_noon() {
         assert_eq!(parse("0:00"), Some("shunya baje".to_string()));
         assert_eq!(parse("12:00"), Some("baarah baje".to_string()));
-        assert_eq!(
-            parse("0:30"),
-            Some("shunya baj kar tees minat".to_string())
-        );
+        assert_eq!(parse("0:30"), Some("shunya baj kar tees minat".to_string()));
     }
 
     #[test]

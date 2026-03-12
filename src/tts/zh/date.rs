@@ -319,39 +319,21 @@ mod tests {
 
     #[test]
     fn test_decade() {
-        assert_eq!(
-            parse("1980s"),
-            Some("yi jiu ba ling nian dai".to_string())
-        );
+        assert_eq!(parse("1980s"), Some("yi jiu ba ling nian dai".to_string()));
         assert_eq!(
             parse("2000s"),
             Some("er ling ling ling nian dai".to_string())
         );
-        assert_eq!(
-            parse("1990s"),
-            Some("yi jiu jiu ling nian dai".to_string())
-        );
+        assert_eq!(parse("1990s"), Some("yi jiu jiu ling nian dai".to_string()));
     }
 
     #[test]
     fn test_year_verbalization() {
         // In Chinese, year digits are spelled individually
-        assert_eq!(
-            spell_digits("2025"),
-            "er ling er wu".to_string()
-        );
-        assert_eq!(
-            spell_digits("2000"),
-            "er ling ling ling".to_string()
-        );
-        assert_eq!(
-            spell_digits("1990"),
-            "yi jiu jiu ling".to_string()
-        );
-        assert_eq!(
-            spell_digits("1900"),
-            "yi jiu ling ling".to_string()
-        );
+        assert_eq!(spell_digits("2025"), "er ling er wu".to_string());
+        assert_eq!(spell_digits("2000"), "er ling ling ling".to_string());
+        assert_eq!(spell_digits("1990"), "yi jiu jiu ling".to_string());
+        assert_eq!(spell_digits("1900"), "yi jiu ling ling".to_string());
     }
 
     #[test]

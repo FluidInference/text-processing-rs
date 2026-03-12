@@ -101,19 +101,13 @@ mod tests {
 
     #[test]
     fn test_comma_decimal() {
-        assert_eq!(
-            parse("3,14"),
-            Some("trois virgule un quatre".to_string())
-        );
+        assert_eq!(parse("3,14"), Some("trois virgule un quatre".to_string()));
         assert_eq!(parse("0,5"), Some("zero virgule cinq".to_string()));
     }
 
     #[test]
     fn test_period_decimal() {
-        assert_eq!(
-            parse("3.14"),
-            Some("trois virgule un quatre".to_string())
-        );
+        assert_eq!(parse("3.14"), Some("trois virgule un quatre".to_string()));
     }
 
     #[test]

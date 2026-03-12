@@ -284,14 +284,8 @@ mod tests {
 
     #[test]
     fn test_dollars_and_cents() {
-        assert_eq!(
-            parse("$1.01"),
-            Some("ek dollar aur ek cent".to_string())
-        );
-        assert_eq!(
-            parse("$0.99"),
-            Some("ninyaanbe cents".to_string())
-        );
+        assert_eq!(parse("$1.01"), Some("ek dollar aur ek cent".to_string()));
+        assert_eq!(parse("$0.99"), Some("ninyaanbe cents".to_string()));
     }
 
     #[test]
@@ -300,10 +294,7 @@ mod tests {
             parse("\u{20B9}2.5 lakh"),
             Some("do dashmlav paanch lakh rupaye".to_string())
         );
-        assert_eq!(
-            parse("$50 crore"),
-            Some("pachaas crore dollar".to_string())
-        );
+        assert_eq!(parse("$50 crore"), Some("pachaas crore dollar".to_string()));
     }
 
     #[test]

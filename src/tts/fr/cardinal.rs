@@ -34,10 +34,7 @@ pub fn parse(input: &str) -> Option<String> {
 
     // Strip thousands separators (spaces, dots, commas used as thousands sep)
     // French uses space or dot as thousands separator
-    let clean: String = digits_part
-        .chars()
-        .filter(|c| c.is_ascii_digit())
-        .collect();
+    let clean: String = digits_part.chars().filter(|c| c.is_ascii_digit()).collect();
     let n: i64 = clean.parse().ok()?;
 
     if is_negative {

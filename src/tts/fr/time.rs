@@ -109,11 +109,7 @@ fn format_time(hour: u32, minute: u32) -> String {
     if minute == 0 {
         format!("{} heures", hour_words)
     } else {
-        format!(
-            "{} heures {}",
-            hour_words,
-            number_to_words(minute as i64)
-        )
+        format!("{} heures {}", hour_words, number_to_words(minute as i64))
     }
 }
 
@@ -123,20 +119,14 @@ mod tests {
 
     #[test]
     fn test_h_format() {
-        assert_eq!(
-            parse("14h30"),
-            Some("quatorze heures trente".to_string())
-        );
+        assert_eq!(parse("14h30"), Some("quatorze heures trente".to_string()));
         assert_eq!(parse("14h"), Some("quatorze heures".to_string()));
         assert_eq!(parse("8h15"), Some("huit heures quinze".to_string()));
     }
 
     #[test]
     fn test_colon_format() {
-        assert_eq!(
-            parse("14:30"),
-            Some("quatorze heures trente".to_string())
-        );
+        assert_eq!(parse("14:30"), Some("quatorze heures trente".to_string()));
         assert_eq!(parse("2:00"), Some("deux heures".to_string()));
     }
 

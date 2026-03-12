@@ -142,9 +142,7 @@ mod tests {
     fn test_with_country_code() {
         assert_eq!(
             parse("+81-3-1234-5678"),
-            Some(
-                "purasu hachi ichi, san, ichi ni san yon, go roku nana hachi".to_string()
-            )
+            Some("purasu hachi ichi, san, ichi ni san yon, go roku nana hachi".to_string())
         );
     }
 

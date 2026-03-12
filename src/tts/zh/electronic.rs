@@ -137,8 +137,7 @@ mod tests {
         assert_eq!(
             parse("http://www.example.com"),
             Some(
-                "h t t p mao hao xie gang xie gang w w w dian e x a m p l e dian c o m"
-                    .to_string()
+                "h t t p mao hao xie gang xie gang w w w dian e x a m p l e dian c o m".to_string()
             )
         );
     }

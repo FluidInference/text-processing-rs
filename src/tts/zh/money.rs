@@ -274,14 +274,8 @@ mod tests {
 
     #[test]
     fn test_dollars_and_cents() {
-        assert_eq!(
-            parse("$5.50"),
-            Some("wu dian wu ling meiyuan".to_string())
-        );
-        assert_eq!(
-            parse("$1.01"),
-            Some("yi dian ling yi meiyuan".to_string())
-        );
+        assert_eq!(parse("$5.50"), Some("wu dian wu ling meiyuan".to_string()));
+        assert_eq!(parse("$1.01"), Some("yi dian ling yi meiyuan".to_string()));
         assert_eq!(
             parse("$0.99"),
             Some("ling dian jiu jiu meiyuan".to_string())
@@ -290,14 +284,8 @@ mod tests {
 
     #[test]
     fn test_large_amounts() {
-        assert_eq!(
-            parse("$2.5 yi"),
-            Some("er dian wu yi meiyuan".to_string())
-        );
-        assert_eq!(
-            parse("$50 wan"),
-            Some("wu shi wan meiyuan".to_string())
-        );
+        assert_eq!(parse("$2.5 yi"), Some("er dian wu yi meiyuan".to_string()));
+        assert_eq!(parse("$50 wan"), Some("wu shi wan meiyuan".to_string()));
     }
 
     #[test]

@@ -34,10 +34,7 @@ pub fn parse(input: &str) -> Option<String> {
     }
 
     // Strip thousands separators
-    let clean: String = digits_part
-        .chars()
-        .filter(|c| c.is_ascii_digit())
-        .collect();
+    let clean: String = digits_part.chars().filter(|c| c.is_ascii_digit()).collect();
     let n: i64 = clean.parse().ok()?;
 
     if is_negative {
@@ -57,23 +54,14 @@ mod tests {
         assert_eq!(parse("1"), Some("eins".to_string()));
         assert_eq!(parse("21"), Some("einundzwanzig".to_string()));
         assert_eq!(parse("100"), Some("einhundert".to_string()));
-        assert_eq!(
-            parse("123"),
-            Some("einhundertdreiundzwanzig".to_string())
-        );
+        assert_eq!(parse("123"), Some("einhundertdreiundzwanzig".to_string()));
     }
 
     #[test]
     fn test_negative() {
-        assert_eq!(
-            parse("-42"),
-            Some("minus zweiundvierzig".to_string())
-        );
+        assert_eq!(parse("-42"), Some("minus zweiundvierzig".to_string()));
         assert_eq!(parse("-1"), Some("minus eins".to_string()));
-        assert_eq!(
-            parse("-1000"),
-            Some("minus eintausend".to_string())
-        );
+        assert_eq!(parse("-1000"), Some("minus eintausend".to_string()));
     }
 
     #[test]

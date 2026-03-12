@@ -77,7 +77,10 @@ fn test_es_sentence() {
 fn test_de_cardinal() {
     assert_eq!(tn_normalize_lang("21", "de"), "einundzwanzig");
     assert_eq!(tn_normalize_lang("123", "de"), "einhundertdreiundzwanzig");
-    assert_eq!(tn_normalize_lang("2025", "de"), "zweitausendfuenfundzwanzig");
+    assert_eq!(
+        tn_normalize_lang("2025", "de"),
+        "zweitausendfuenfundzwanzig"
+    );
 }
 
 #[test]
@@ -90,10 +93,7 @@ fn test_de_money() {
 
 #[test]
 fn test_de_time() {
-    assert_eq!(
-        tn_normalize_lang("14:30", "de"),
-        "vierzehn uhr dreissig"
-    );
+    assert_eq!(tn_normalize_lang("14:30", "de"), "vierzehn uhr dreissig");
     assert_eq!(tn_normalize_lang("0:00", "de"), "mitternacht");
     assert_eq!(tn_normalize_lang("12:00", "de"), "mittag");
 }
@@ -123,10 +123,7 @@ fn test_zh_money() {
 
 #[test]
 fn test_zh_time() {
-    assert_eq!(
-        tn_normalize_lang("14:30", "zh"),
-        "shi si dian san shi fen"
-    );
+    assert_eq!(tn_normalize_lang("14:30", "zh"), "shi si dian san shi fen");
     assert_eq!(tn_normalize_lang("12:00", "zh"), "shi er dian zheng");
 }
 
@@ -185,10 +182,7 @@ fn test_ja_money() {
 
 #[test]
 fn test_ja_time() {
-    assert_eq!(
-        tn_normalize_lang("14:30", "ja"),
-        "juu yo ji san juppun"
-    );
+    assert_eq!(tn_normalize_lang("14:30", "ja"), "juu yo ji san juppun");
     assert_eq!(tn_normalize_lang("9:00", "ja"), "ku ji");
 }
 
@@ -221,14 +215,8 @@ fn test_same_input_different_languages() {
 
 #[test]
 fn test_unknown_lang_falls_back_to_english() {
-    assert_eq!(
-        tn_normalize_lang("123", "xx"),
-        "one hundred twenty three"
-    );
-    assert_eq!(
-        tn_normalize_lang("123", ""),
-        "one hundred twenty three"
-    );
+    assert_eq!(tn_normalize_lang("123", "xx"), "one hundred twenty three");
+    assert_eq!(tn_normalize_lang("123", ""), "one hundred twenty three");
 }
 
 #[test]

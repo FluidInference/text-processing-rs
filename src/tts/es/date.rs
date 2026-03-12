@@ -314,10 +314,7 @@ mod tests {
             parse("1980s"),
             Some("los anos mil novecientos ochenta".to_string())
         );
-        assert_eq!(
-            parse("2000s"),
-            Some("los anos dos mil".to_string())
-        );
+        assert_eq!(parse("2000s"), Some("los anos dos mil".to_string()));
         assert_eq!(
             parse("1990s"),
             Some("los anos mil novecientos noventa".to_string())
@@ -335,10 +332,7 @@ mod tests {
             verbalize_year(1990),
             Some("mil novecientos noventa".to_string())
         );
-        assert_eq!(
-            verbalize_year(1900),
-            Some("mil novecientos".to_string())
-        );
+        assert_eq!(verbalize_year(1900), Some("mil novecientos".to_string()));
     }
 
     #[test]

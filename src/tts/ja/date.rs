@@ -331,10 +331,7 @@ mod tests {
             parse("1980s"),
             Some("sen kyuu hyaku hachi juu nen dai".to_string())
         );
-        assert_eq!(
-            parse("2000s"),
-            Some("ni sen nen dai".to_string())
-        );
+        assert_eq!(parse("2000s"), Some("ni sen nen dai".to_string()));
         assert_eq!(
             parse("1990s"),
             Some("sen kyuu hyaku kyuu juu nen dai".to_string())
@@ -343,19 +340,10 @@ mod tests {
 
     #[test]
     fn test_year_verbalization() {
-        assert_eq!(
-            number_to_words(2025),
-            "ni sen ni juu go".to_string()
-        );
+        assert_eq!(number_to_words(2025), "ni sen ni juu go".to_string());
         assert_eq!(number_to_words(2000), "ni sen".to_string());
-        assert_eq!(
-            number_to_words(1990),
-            "sen kyuu hyaku kyuu juu".to_string()
-        );
-        assert_eq!(
-            number_to_words(1900),
-            "sen kyuu hyaku".to_string()
-        );
+        assert_eq!(number_to_words(1990), "sen kyuu hyaku kyuu juu".to_string());
+        assert_eq!(number_to_words(1900), "sen kyuu hyaku".to_string());
     }
 
     #[test]

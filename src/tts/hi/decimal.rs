@@ -92,10 +92,7 @@ mod tests {
 
     #[test]
     fn test_basic_decimal() {
-        assert_eq!(
-            parse("3.14"),
-            Some("teen dashmlav ek chaar".to_string())
-        );
+        assert_eq!(parse("3.14"), Some("teen dashmlav ek chaar".to_string()));
         assert_eq!(parse("0.5"), Some("shunya dashmlav paanch".to_string()));
     }
 

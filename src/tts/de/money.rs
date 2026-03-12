@@ -285,14 +285,8 @@ mod tests {
             parse("$5.50"),
             Some("fuenf dollar und fuenfzig cent".to_string())
         );
-        assert_eq!(
-            parse("$1.01"),
-            Some("ein dollar und eins cent".to_string())
-        );
-        assert_eq!(
-            parse("$0.99"),
-            Some("neunundneunzig cent".to_string())
-        );
+        assert_eq!(parse("$1.01"), Some("ein dollar und eins cent".to_string()));
+        assert_eq!(parse("$0.99"), Some("neunundneunzig cent".to_string()));
     }
 
     #[test]

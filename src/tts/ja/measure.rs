@@ -120,7 +120,11 @@ pub fn parse(input: &str) -> Option<String> {
             .filter(|c| c.is_ascii_digit() || *c == '.' || *c == ',')
             .collect();
 
-        if clean.is_empty() || !clean.chars().all(|c| c.is_ascii_digit() || c == '.' || c == ',') {
+        if clean.is_empty()
+            || !clean
+                .chars()
+                .all(|c| c.is_ascii_digit() || c == '.' || c == ',')
+        {
             continue;
         }
 
@@ -192,10 +196,7 @@ mod tests {
 
     #[test]
     fn test_negative() {
-        assert_eq!(
-            parse("-5\u{00B0}C"),
-            Some("mainasu go do".to_string())
-        );
+        assert_eq!(parse("-5\u{00B0}C"), Some("mainasu go do".to_string()));
         assert_eq!(
             parse("-66 kg"),
             Some("mainasu roku juu roku kiroguramu".to_string())
@@ -210,10 +211,7 @@ mod tests {
 
     #[test]
     fn test_decimal_with_empty_integer() {
-        assert_eq!(
-            parse(".5 kg"),
-            Some("zero ten go kiroguramu".to_string())
-        );
+        assert_eq!(parse(".5 kg"), Some("zero ten go kiroguramu".to_string()));
     }
 
     #[test]

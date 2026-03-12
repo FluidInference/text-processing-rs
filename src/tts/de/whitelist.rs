@@ -76,7 +76,10 @@ mod tests {
         assert_eq!(parse("z.B."), Some("zum beispiel".to_string()));
         assert_eq!(parse("d.h."), Some("das heisst".to_string()));
         assert_eq!(parse("usw."), Some("und so weiter".to_string()));
-        assert_eq!(parse("GmbH"), Some("gesellschaft mit beschraenkter haftung".to_string()));
+        assert_eq!(
+            parse("GmbH"),
+            Some("gesellschaft mit beschraenkter haftung".to_string())
+        );
     }
 
     #[test]

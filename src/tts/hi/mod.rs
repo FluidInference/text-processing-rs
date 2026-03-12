@@ -163,11 +163,11 @@ fn unsigned_to_words(n: u64) -> String {
     // Above crore we use "arab" (10^9), "kharab" (10^11) etc. but for simplicity
     // we handle up to crores by repeating crore groups.
     let scales: &[(u64, &str)] = &[
-        (1_00_00_00_00_00_000, "kharab"),   // 10^12 (lakh crore)
-        (1_00_00_00_00_000, "arab"),        // 10^9 (hundred crore)
-        (1_00_00_000, "crore"),             // 10^7
-        (1_00_000, "lakh"),                 // 10^5
-        (1_000, "hazaar"),                  // 10^3
+        (1_00_00_00_00_00_000, "kharab"), // 10^12 (lakh crore)
+        (1_00_00_00_00_000, "arab"),      // 10^9 (hundred crore)
+        (1_00_00_000, "crore"),           // 10^7
+        (1_00_000, "lakh"),               // 10^5
+        (1_000, "hazaar"),                // 10^3
     ];
 
     for &(scale_value, scale_name) in scales {
@@ -273,9 +273,15 @@ mod tests {
     fn test_lakhs_and_crores() {
         assert_eq!(number_to_words(100000), "ek lakh");
         assert_eq!(number_to_words(200000), "do lakh");
-        assert_eq!(number_to_words(1234567), "baarah lakh chautees hazaar paanch sau sarsath");
+        assert_eq!(
+            number_to_words(1234567),
+            "baarah lakh chautees hazaar paanch sau sarsath"
+        );
         assert_eq!(number_to_words(10000000), "ek crore");
-        assert_eq!(number_to_words(12345678), "ek crore teis lakh paintaalees hazaar chhah sau athahattar");
+        assert_eq!(
+            number_to_words(12345678),
+            "ek crore teis lakh paintaalees hazaar chhah sau athahattar"
+        );
     }
 
     #[test]

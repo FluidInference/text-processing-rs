@@ -105,14 +105,8 @@ mod tests {
 
     #[test]
     fn test_with_quantity() {
-        assert_eq!(
-            parse("1.5 yi"),
-            Some("yi dian wu yi".to_string())
-        );
-        assert_eq!(
-            parse("4.85 wan"),
-            Some("si dian ba wu wan".to_string())
-        );
+        assert_eq!(parse("1.5 yi"), Some("yi dian wu yi".to_string()));
+        assert_eq!(parse("4.85 wan"), Some("si dian ba wu wan".to_string()));
     }
 
     #[test]

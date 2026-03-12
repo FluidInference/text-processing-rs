@@ -144,7 +144,8 @@ mod tests {
         assert_eq!(
             parse("https://google.fr"),
             Some(
-                "h t t p s deux-points barre oblique barre oblique g o o g l e point f r".to_string()
+                "h t t p s deux-points barre oblique barre oblique g o o g l e point f r"
+                    .to_string()
             )
         );
     }

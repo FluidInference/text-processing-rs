@@ -61,20 +61,14 @@ mod tests {
         assert_eq!(parse("1 000"), Some("mil".to_string()));
         assert_eq!(parse("1.000"), Some("mil".to_string()));
         assert_eq!(parse("1,000"), Some("mil".to_string()));
-        assert_eq!(
-            parse("1 000 000"),
-            Some("un millon".to_string())
-        );
+        assert_eq!(parse("1 000 000"), Some("un millon".to_string()));
     }
 
     #[test]
     fn test_negative() {
         assert_eq!(parse("-42"), Some("menos cuarenta y dos".to_string()));
         assert_eq!(parse("-1"), Some("menos uno".to_string()));
-        assert_eq!(
-            parse("-1000"),
-            Some("menos mil".to_string())
-        );
+        assert_eq!(parse("-1000"), Some("menos mil".to_string()));
     }
 
     #[test]

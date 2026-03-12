@@ -128,9 +128,7 @@ mod tests {
         );
         assert_eq!(
             parse("user123@example.co.jp"),
-            Some(
-                "u s e r ichi ni san atto e x a m p l e dotto c o dotto j p".to_string()
-            )
+            Some("u s e r ichi ni san atto e x a m p l e dotto c o dotto j p".to_string())
         );
     }
 

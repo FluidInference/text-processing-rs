@@ -102,11 +102,7 @@ fn format_time(hour: u32, minute: u32) -> String {
     if minute == 0 {
         format!("{} uhr", hour_words)
     } else {
-        format!(
-            "{} uhr {}",
-            hour_words,
-            number_to_words(minute as i64)
-        )
+        format!("{} uhr {}", hour_words, number_to_words(minute as i64))
     }
 }
 
@@ -116,10 +112,7 @@ mod tests {
 
     #[test]
     fn test_colon_format() {
-        assert_eq!(
-            parse("14:30"),
-            Some("vierzehn uhr dreissig".to_string())
-        );
+        assert_eq!(parse("14:30"), Some("vierzehn uhr dreissig".to_string()));
         assert_eq!(parse("2:00"), Some("zwei uhr".to_string()));
         assert_eq!(parse("8:15"), Some("acht uhr fuenfzehn".to_string()));
     }
@@ -137,18 +130,12 @@ mod tests {
     fn test_special_hours() {
         assert_eq!(parse("0:00"), Some("mitternacht".to_string()));
         assert_eq!(parse("12:00"), Some("mittag".to_string()));
-        assert_eq!(
-            parse("0:30"),
-            Some("null uhr dreissig".to_string())
-        );
+        assert_eq!(parse("0:30"), Some("null uhr dreissig".to_string()));
     }
 
     #[test]
     fn test_24h() {
-        assert_eq!(
-            parse("14:00"),
-            Some("vierzehn uhr".to_string())
-        );
+        assert_eq!(parse("14:00"), Some("vierzehn uhr".to_string()));
         assert_eq!(
             parse("23:59"),
             Some("dreiundzwanzig uhr neunundfuenfzig".to_string())

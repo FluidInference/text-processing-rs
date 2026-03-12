@@ -41,14 +41,7 @@ const TEENS: [&str; 7] = [
 
 /// Tens words indexed by tens digit (2..9 → index 0..7).
 const TENS: [&str; 8] = [
-    "zwanzig",
-    "dreissig",
-    "vierzig",
-    "fuenfzig",
-    "sechzig",
-    "siebzig",
-    "achtzig",
-    "neunzig",
+    "zwanzig", "dreissig", "vierzig", "fuenfzig", "sechzig", "siebzig", "achtzig", "neunzig",
 ];
 
 /// Convert an integer to German words.
@@ -265,10 +258,7 @@ mod tests {
     fn test_millions() {
         assert_eq!(number_to_words(1000000), "eine million");
         assert_eq!(number_to_words(2000000), "zwei millionen");
-        assert_eq!(
-            number_to_words(2000003),
-            "zwei millionen drei"
-        );
+        assert_eq!(number_to_words(2000003), "zwei millionen drei");
     }
 
     #[test]
