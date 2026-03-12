@@ -10,10 +10,9 @@ lazy_static! {
     static ref WHITELIST: HashSet<&'static str> = {
         let mut s = HashSet::new();
         // Common French words that might be confused with numbers
+        // Note: "premier" and "première" are handled by ordinal parser
         s.insert("un");
         s.insert("une");
-        s.insert("premier");
-        s.insert("première");
         s
     };
 }

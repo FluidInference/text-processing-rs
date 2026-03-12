@@ -42,13 +42,17 @@ fn parse_century(input: &str) -> Option<String> {
     let without_siecle = input.strip_suffix(" siècle")?;
 
     // Extract the ordinal number before "ième"
-    if let Some(num_part) = without_siecle.strip_suffix("ième") {
-        let num_part = num_part.trim_end_matches('-').trim();
-        let number = if num_part.is_empty() {
+    if let Some(stem) = without_siecle.strip_suffix("ième") {
+        let stem = stem.trim_end_matches('-').trim();
+        if stem.is_empty() {
             return None;
-        } else {
-            words_to_number(num_part)? as i64
-        };
+        }
+
+        // Reconstruct cardinal form (e.g., "dix-neuv" → "dix neuf")
+        let cardinal = reconstruct_cardinal(stem)?;
+
+        // Parse to number
+        let number = words_to_number(&cardinal)? as i64;
 
         // Convert to Roman numerals
         return Some(format!("{}ᵉ siècle", int_to_roman(number)));
@@ -87,6 +91,7 @@ fn int_to_roman(mut num: i64) -> String {
 
 /// Reconstruct cardinal form from ordinal stem
 /// E.g., "quatr" → "quatre", "onz" → "onze", "mill" → "mille"
+/// For compounds: "cent-onz" → "cent onze", "dix-neuv" → "dix neuf"
 fn reconstruct_cardinal(stem: &str) -> Option<String> {
     // Direct mapping for common ordinal stems that need reconstruction
     let mappings = [
@@ -105,24 +110,55 @@ fn reconstruct_cardinal(stem: &str) -> Option<String> {
         ("quarant", "quarante"),
         ("cinquant", "cinquante"),
         ("soixant", "soixante"),
+        ("sept", "sept"),  // stays same
+        ("huit", "huit"),  // stays same
         ("cent", "cent"),  // stays same
         ("mill", "mille"),
         ("million", "million"),  // stays same
         ("milliard", "milliard"),  // stays same
     ];
 
+    // Handle compound numbers with hyphens or spaces
+    if stem.contains('-') || stem.contains(' ') {
+        // Split and reconstruct each part
+        let parts: Vec<&str> = if stem.contains('-') {
+            stem.split('-').collect()
+        } else {
+            stem.split_whitespace().collect()
+        };
+
+        let reconstructed: Vec<String> = parts
+            .iter()
+            .filter_map(|part| {
+                // Try to map each part
+                for (ord_stem, cardinal) in &mappings {
+                    if part == ord_stem || part.starts_with(ord_stem) {
+                        return Some(cardinal.to_string());
+                    }
+                }
+                // If no mapping, keep as is
+                if !part.is_empty() {
+                    Some(part.to_string())
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        if !reconstructed.is_empty() {
+            return Some(reconstructed.join(" "));
+        }
+    }
+
+    // Simple (non-compound) ordinal stem
     for (ord_stem, cardinal) in &mappings {
-        if stem == *ord_stem || stem.starts_with(*ord_stem) {
-            // For compound ordinals like "vingt-et-un", keep the full stem
-            if stem.contains('-') || stem.contains(' ') {
-                return Some(stem.to_string());
-            }
+        if stem == *ord_stem {
             return Some(cardinal.to_string());
         }
     }
 
-    // If no mapping found, assume stem is already in cardinal form or compound
-    if stem.contains('-') || stem.contains(' ') || !stem.is_empty() {
+    // If no mapping found, return as-is if non-empty
+    if !stem.is_empty() {
         Some(stem.to_string())
     } else {
         None
