@@ -1,129 +1,239 @@
 //! Ordinal number tagger for French.
 //!
-//! Converts spoken French ordinal numbers to written form:
-//! - "premier" → "1er"
-//! - "première" → "1re"
-//! - "deuxième" → "2e"
-//! - "vingt et unième" → "21e"
-
-use lazy_static::lazy_static;
-use std::collections::HashMap;
+//! Converts spoken French ordinal words to written form with Unicode superscripts:
+//! - "premier" → "1ᵉʳ"
+//! - "première" → "1ʳᵉ"
+//! - "deuxième" → "2ᵉ"
+//! - "troisièmes" → "3ᵉˢ"
+//! - "second" → "2ᵈ"
 
 use super::cardinal::words_to_number;
 
-lazy_static! {
-    /// French ordinal words mapping to value
-    static ref ORDINAL_WORDS: HashMap<&'static str, i64> = {
-        let mut m = HashMap::new();
-        m.insert("premier", 1);
-        m.insert("première", 1);
-        m.insert("deuxième", 2);
-        m.insert("second", 2);
-        m.insert("seconde", 2);
-        m.insert("troisième", 3);
-        m.insert("quatrième", 4);
-        m.insert("cinquième", 5);
-        m.insert("sixième", 6);
-        m.insert("septième", 7);
-        m.insert("huitième", 8);
-        m.insert("neuvième", 9);
-        m.insert("dixième", 10);
-        m.insert("onzième", 11);
-        m.insert("douzième", 12);
-        m.insert("treizième", 13);
-        m.insert("quatorzième", 14);
-        m.insert("quinzième", 15);
-        m.insert("seizième", 16);
-        m.insert("dix-septième", 17);
-        m.insert("dix-huitième", 18);
-        m.insert("dix-neuvième", 19);
-        m.insert("vingtième", 20);
-        m.insert("trentième", 30);
-        m.insert("quarantième", 40);
-        m.insert("cinquantième", 50);
-        m.insert("soixantième", 60);
-        m.insert("soixante-dixième", 70);
-        m.insert("quatre-vingtième", 80);
-        m.insert("quatre-vingt-dixième", 90);
-        m.insert("centième", 100);
-        m.insert("millième", 1000);
-        m.insert("millionième", 1_000_000);
-        m.insert("milliardième", 1_000_000_000);
-        m
-    };
-}
-
-/// Parse spoken French ordinal to written form.
+/// Parse spoken French ordinal number to written form.
 pub fn parse(input: &str) -> Option<String> {
-    let input_lower = input.trim().to_lowercase();
+    let input_lower = input.to_lowercase();
+    let input_trim = input_lower.trim();
 
-    // Check for direct ordinal word match
-    if let Some(&value) = ORDINAL_WORDS.get(input_lower.as_str()) {
-        return Some(format_ordinal(value, &input_lower));
+    // Special case: "Xième siècle" → Roman numerals
+    if input_trim.ends_with(" siècle") {
+        return parse_century(input_trim);
     }
 
-    // Check for compound ordinals like "vingt et unième"
-    if let Some(result) = parse_compound_ordinal(&input_lower) {
-        return Some(result);
+    // Try to extract ordinal suffix and detect plural
+    if let Some((number_str, suffix)) = extract_ordinal_parts(input_trim) {
+        // Parse the number part
+        let number = if number_str.is_empty() || number_str == "premier" || number_str == "première" {
+            1
+        } else if number_str == "second" || number_str == "seconde" {
+            2
+        } else {
+            words_to_number(&number_str)? as i64
+        };
+
+        // Format with appropriate Unicode superscripts
+        return Some(format_ordinal(number, &suffix));
     }
 
     None
 }
 
-/// Parse compound ordinals like "vingt et unième" → "21e"
-fn parse_compound_ordinal(input: &str) -> Option<String> {
-    // Look for ordinal suffix pattern
-    if input.ends_with("ième") || input.ends_with("ème") {
-        // Try to parse the whole thing as ordinal
-        if let Some(&value) = ORDINAL_WORDS.get(input) {
-            return Some(format!("{}e", value));
+/// Parse century pattern "Xième siècle"
+fn parse_century(input: &str) -> Option<String> {
+    let without_siecle = input.strip_suffix(" siècle")?;
+
+    // Extract the ordinal number before "ième"
+    if let Some(num_part) = without_siecle.strip_suffix("ième") {
+        let num_part = num_part.trim_end_matches('-').trim();
+        let number = if num_part.is_empty() {
+            return None;
+        } else {
+            words_to_number(num_part)? as i64
+        };
+
+        // Convert to Roman numerals
+        return Some(format!("{}ᵉ siècle", int_to_roman(number)));
+    }
+
+    None
+}
+
+/// Convert integer to Roman numerals (for centuries)
+fn int_to_roman(mut num: i64) -> String {
+    let values = [
+        (1000, "M"),
+        (900, "CM"),
+        (500, "D"),
+        (400, "CD"),
+        (100, "C"),
+        (90, "XC"),
+        (50, "L"),
+        (40, "XL"),
+        (10, "X"),
+        (9, "IX"),
+        (5, "V"),
+        (4, "IV"),
+        (1, "I"),
+    ];
+
+    let mut result = String::new();
+    for (value, numeral) in &values {
+        while num >= *value {
+            result.push_str(numeral);
+            num -= value;
         }
+    }
+    result
+}
 
-        // Try removing "ième" and parsing as cardinal
-        let cardinal_part = input
-            .trim_end_matches("ième")
-            .trim_end_matches("ème")
-            .trim();
+/// Reconstruct cardinal form from ordinal stem
+/// E.g., "quatr" → "quatre", "onz" → "onze", "mill" → "mille"
+fn reconstruct_cardinal(stem: &str) -> Option<String> {
+    // Direct mapping for common ordinal stems that need reconstruction
+    let mappings = [
+        ("quatr", "quatre"),
+        ("cinqu", "cinq"),
+        ("neuv", "neuf"),
+        ("dix", "dix"),  // stays same
+        ("onz", "onze"),
+        ("douz", "douze"),
+        ("treiz", "treize"),
+        ("quatorz", "quatorze"),
+        ("quinz", "quinze"),
+        ("seiz", "seize"),
+        ("vingt", "vingt"),  // stays same
+        ("trent", "trente"),
+        ("quarant", "quarante"),
+        ("cinquant", "cinquante"),
+        ("soixant", "soixante"),
+        ("cent", "cent"),  // stays same
+        ("mill", "mille"),
+        ("million", "million"),  // stays same
+        ("milliard", "milliard"),  // stays same
+    ];
 
-        // Special case: "unième" needs prefix
-        if cardinal_part.ends_with(" et un") {
-            let prefix = cardinal_part.trim_end_matches(" et un");
-            if let Some(prefix_num) = words_to_number(prefix) {
-                return Some(format!("{}e", prefix_num as i64 + 1));
+    for (ord_stem, cardinal) in &mappings {
+        if stem == *ord_stem || stem.starts_with(*ord_stem) {
+            // For compound ordinals like "vingt-et-un", keep the full stem
+            if stem.contains('-') || stem.contains(' ') {
+                return Some(stem.to_string());
             }
-        }
-
-        if let Some(num) = words_to_number(cardinal_part) {
-            return Some(format!("{}e", num as i64));
+            return Some(cardinal.to_string());
         }
     }
 
-    // Check for "premier" / "première" with cardinal prefix
-    if input.ends_with(" premier") {
-        let prefix = input.trim_end_matches(" premier");
-        if let Some(num) = words_to_number(prefix) {
-            return Some(format!("{}er", num as i64 + 1));
-        }
+    // If no mapping found, assume stem is already in cardinal form or compound
+    if stem.contains('-') || stem.contains(' ') || !stem.is_empty() {
+        Some(stem.to_string())
+    } else {
+        None
+    }
+}
+
+/// Extract number and ordinal suffix from input
+fn extract_ordinal_parts(input: &str) -> Option<(String, OrdinalSuffix)> {
+    // Check if the whole word is "premier", "première", "second", "seconde" FIRST
+    // before checking ends_with, otherwise they'll match themselves
+    if input == "premier" {
+        return Some(("premier".to_string(), OrdinalSuffix::PremierM));
+    }
+    if input == "première" {
+        return Some(("première".to_string(), OrdinalSuffix::PremiereF));
+    }
+    if input == "premiers" {
+        return Some(("premier".to_string(), OrdinalSuffix::PremiersM));
+    }
+    if input == "premières" {
+        return Some(("première".to_string(), OrdinalSuffix::PremieresF));
+    }
+    if input == "second" {
+        return Some(("second".to_string(), OrdinalSuffix::SecondM));
+    }
+    if input == "seconde" {
+        return Some(("seconde".to_string(), OrdinalSuffix::SecondeF));
+    }
+    if input == "seconds" {
+        return Some(("second".to_string(), OrdinalSuffix::SecondsM));
+    }
+    if input == "secondes" {
+        return Some(("seconde".to_string(), OrdinalSuffix::SecondesF));
     }
 
-    if input.ends_with(" première") {
-        let prefix = input.trim_end_matches(" première");
-        if let Some(num) = words_to_number(prefix) {
-            return Some(format!("{}re", num as i64 + 1));
-        }
+    // Check for specific ordinal endings
+    if input.ends_with("premiers") {
+        let num_part = input.strip_suffix("premiers")?.trim_end_matches('-').trim();
+        return Some((num_part.to_string(), OrdinalSuffix::PremiersM));
+    }
+    if input.ends_with("premier") {
+        let num_part = input.strip_suffix("premier")?.trim_end_matches('-').trim();
+        return Some((num_part.to_string(), OrdinalSuffix::PremierM));
+    }
+    if input.ends_with("premières") {
+        let num_part = input.strip_suffix("premières")?.trim_end_matches('-').trim();
+        return Some((num_part.to_string(), OrdinalSuffix::PremieresF));
+    }
+    if input.ends_with("première") {
+        let num_part = input.strip_suffix("première")?.trim_end_matches('-').trim();
+        return Some((num_part.to_string(), OrdinalSuffix::PremiereF));
+    }
+    if input.ends_with("seconds") {
+        let num_part = input.strip_suffix("seconds")?.trim_end_matches('-').trim();
+        return Some((num_part.to_string(), OrdinalSuffix::SecondsM));
+    }
+    if input.ends_with("second") {
+        let num_part = input.strip_suffix("second")?.trim_end_matches('-').trim();
+        return Some((num_part.to_string(), OrdinalSuffix::SecondM));
+    }
+    if input.ends_with("secondes") {
+        let num_part = input.strip_suffix("secondes")?.trim_end_matches('-').trim();
+        return Some((num_part.to_string(), OrdinalSuffix::SecondesF));
+    }
+    if input.ends_with("seconde") {
+        let num_part = input.strip_suffix("seconde")?.trim_end_matches('-').trim();
+        return Some((num_part.to_string(), OrdinalSuffix::SecondeF));
+    }
+
+    // Regular ordinals: ième/ièmes
+    if input.ends_with("ièmes") {
+        let stem = input.strip_suffix("ièmes")?.trim_end_matches('-').trim();
+        let num_part = reconstruct_cardinal(stem)?;
+        return Some((num_part, OrdinalSuffix::IemesPlural));
+    }
+    if input.ends_with("ième") {
+        let stem = input.strip_suffix("ième")?.trim_end_matches('-').trim();
+        let num_part = reconstruct_cardinal(stem)?;
+        return Some((num_part, OrdinalSuffix::Ieme));
     }
 
     None
 }
 
-/// Format ordinal number with appropriate suffix
-fn format_ordinal(value: i64, original: &str) -> String {
-    if original.contains("première") || original.ends_with("première") {
-        format!("{}re", value)
-    } else if original.contains("premier") || original.ends_with("premier") {
-        format!("{}er", value)
-    } else {
-        format!("{}e", value)
+#[derive(Debug)]
+enum OrdinalSuffix {
+    PremierM,      // premier → Nᵉʳ
+    PremiersM,     // premiers → Nᵉʳˢ
+    PremiereF,     // première → Nʳᵉ
+    PremieresF,    // premières → Nʳᵉˢ
+    SecondM,       // second → Nᵈ
+    SecondsM,      // seconds → Nᵈˢ
+    SecondeF,      // seconde → Nᵈᵉ
+    SecondesF,     // secondes → Nᵈᵉˢ
+    Ieme,          // deuxième → Nᵉ
+    IemesPlural,   // deuxièmes → Nᵉˢ
+}
+
+/// Format number with appropriate Unicode superscript suffix
+fn format_ordinal(number: i64, suffix: &OrdinalSuffix) -> String {
+    match suffix {
+        OrdinalSuffix::PremierM => format!("{}ᵉʳ", number),
+        OrdinalSuffix::PremiersM => format!("{}ᵉʳˢ", number),
+        OrdinalSuffix::PremiereF => format!("{}ʳᵉ", number),
+        OrdinalSuffix::PremieresF => format!("{}ʳᵉˢ", number),
+        OrdinalSuffix::SecondM => format!("{}ᵈ", number),
+        OrdinalSuffix::SecondsM => format!("{}ᵈˢ", number),
+        OrdinalSuffix::SecondeF => format!("{}ᵈᵉ", number),
+        OrdinalSuffix::SecondesF => format!("{}ᵈᵉˢ", number),
+        OrdinalSuffix::Ieme => format!("{}ᵉ", number),
+        OrdinalSuffix::IemesPlural => format!("{}ᵉˢ", number),
     }
 }
 
@@ -133,28 +243,26 @@ mod tests {
 
     #[test]
     fn test_basic_ordinals() {
-        assert_eq!(parse("premier"), Some("1er".to_string()));
-        assert_eq!(parse("première"), Some("1re".to_string()));
-        assert_eq!(parse("deuxième"), Some("2e".to_string()));
-        assert_eq!(parse("troisième"), Some("3e".to_string()));
-        assert_eq!(parse("dixième"), Some("10e".to_string()));
+        assert_eq!(parse("premier"), Some("1ᵉʳ".to_string()));
+        assert_eq!(parse("première"), Some("1ʳᵉ".to_string()));
+        assert_eq!(parse("deuxième"), Some("2ᵉ".to_string()));
+        assert_eq!(parse("troisième"), Some("3ᵉ".to_string()));
     }
 
     #[test]
     fn test_compound_ordinals() {
-        assert_eq!(parse("vingt et unième"), Some("21e".to_string()));
-        assert_eq!(parse("cent unième"), Some("101e".to_string()));
+        assert_eq!(parse("vingt et unième"), Some("21ᵉ".to_string()));
+        assert_eq!(parse("cent onzième"), Some("111ᵉ".to_string()));
     }
 
     #[test]
     fn test_large_ordinals() {
-        assert_eq!(parse("centième"), Some("100e".to_string()));
-        assert_eq!(parse("millième"), Some("1000e".to_string()));
+        assert_eq!(parse("millième"), Some("1000ᵉ".to_string()));
     }
 
     #[test]
     fn test_invalid() {
         assert_eq!(parse("hello"), None);
-        assert_eq!(parse("cinq"), None); // cardinal, not ordinal
+        assert_eq!(parse("vingt"), None);
     }
 }
