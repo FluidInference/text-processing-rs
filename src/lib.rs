@@ -151,20 +151,21 @@ fn normalize_lang_fr(input: &str) -> String {
     if let Some(result) = asr::fr::measure::parse(input) {
         return result;
     }
-    if let Some(result) = asr::fr::decimal::parse(input) {
-        return result;
-    }
-    if let Some(result) = asr::fr::telephone::parse(input) {
-        return result;
-    }
     if let Some(result) = asr::fr::electronic::parse(input) {
         return result;
     }
     if let Some(result) = asr::fr::ordinal::parse(input) {
         return result;
     }
+    if let Some(result) = asr::fr::decimal::parse(input) {
+        return result;
+    }
     if let Some(num) = asr::fr::cardinal::parse(input) {
         return num;
+    }
+    // Telephone last since it can match numbers
+    if let Some(result) = asr::fr::telephone::parse(input) {
+        return result;
     }
 
     // No match - return original

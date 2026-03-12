@@ -34,10 +34,8 @@ pub fn parse(input: &str) -> Option<String> {
 fn parse_euros_and_centimes(input: &str) -> Option<String> {
     // Pattern: "X euros et Y centimes"
     if let Some((euros_part, rest)) = input.split_once(" euros et ") {
-        if rest.ends_with(" centimes") || rest.ends_with(" cents") {
-            let centimes_words = rest
-                .trim_end_matches(" centimes")
-                .trim_end_matches(" cents");
+        if rest.ends_with(" centimes") {
+            let centimes_words = rest.trim_end_matches(" centimes");
             let euros = if euros_part == "zero" {
                 0
             } else {
@@ -54,10 +52,8 @@ fn parse_euros_and_centimes(input: &str) -> Option<String> {
 
     // Pattern: "X euro et Y centimes" (singular)
     if let Some((euros_part, rest)) = input.split_once(" euro et ") {
-        if rest.ends_with(" centimes") || rest.ends_with(" cents") {
-            let centimes_words = rest
-                .trim_end_matches(" centimes")
-                .trim_end_matches(" cents");
+        if rest.ends_with(" centimes") {
+            let centimes_words = rest.trim_end_matches(" centimes");
             let euros = if euros_part == "zero" {
                 0
             } else {
@@ -102,10 +98,9 @@ fn parse_euros(input: &str) -> Option<String> {
 
 /// Parse "X centimes" pattern
 fn parse_centimes(input: &str) -> Option<String> {
-    if input.ends_with(" centimes") || input.ends_with(" cents") {
-        let centimes_words = input
-            .trim_end_matches(" centimes")
-            .trim_end_matches(" cents");
+    // Only match "centimes", not "cents" (which is plural of "cent" = hundred)
+    if input.ends_with(" centimes") {
+        let centimes_words = input.trim_end_matches(" centimes");
         let centimes = if centimes_words == "zero" {
             0
         } else {

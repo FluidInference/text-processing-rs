@@ -42,6 +42,11 @@ lazy_static! {
         m.insert("quarante", 40);
         m.insert("cinquante", 50);
         m.insert("soixante", 60);
+        // Belgian/Swiss French
+        m.insert("septante", 70);
+        m.insert("huitante", 80);
+        m.insert("octante", 80);
+        m.insert("nonante", 90);
         m
     };
 
@@ -67,18 +72,36 @@ lazy_static! {
 
 /// Parse spoken French cardinal number to string representation.
 pub fn parse(input: &str) -> Option<String> {
-    let input = input.to_lowercase();
-    let input = input.trim();
+    let input_lower = input.to_lowercase();
+    let input_trim = input_lower.trim();
 
-    if input == "zero" {
+    if input_trim == "zero" {
         return Some("zero".to_string());
     }
 
+    // Don't parse single digit words (0-9)
+    let single_digits = [
+        "un", "une", "deux", "trois", "quatre",
+        "cinq", "six", "sept", "huit", "neuf",
+    ];
+    if single_digits.contains(&input_trim) {
+        return None;
+    }
+
+    // Don't parse space-separated simple compounds without scale words or "et"
+    // E.g. "quarante trois" should not parse, but "vingt et un" and "cent vingt" should
+    if input_trim.contains(' ') && !contains_scale_word(input_trim) && !input_trim.contains(" et ") {
+        // Special case: "moins" + single word (like "moins soixante")
+        if !input_trim.starts_with("moins ") || input_trim.matches(' ').count() > 1 {
+            return None;
+        }
+    }
+
     // Check for negative
-    let (is_negative, rest) = if input.starts_with("moins ") {
-        (true, input.strip_prefix("moins ")?)
+    let (is_negative, rest) = if input_trim.starts_with("moins ") {
+        (true, input_trim.strip_prefix("moins ")?)
     } else {
-        (false, input)
+        (false, input_trim)
     };
 
     let num = words_to_number(rest)?;
@@ -88,6 +111,20 @@ pub fn parse(input: &str) -> Option<String> {
     } else {
         Some(num.to_string())
     }
+}
+
+/// Check if input contains scale words (cent, mille, million, etc.)
+fn contains_scale_word(input: &str) -> bool {
+    let scale_words = [
+        "cent", "cents",
+        "mille", "mil",
+        "million", "millions",
+        "milliard", "milliards",
+        "billion", "billions",
+        "billiard", "billiards",
+        "trillion", "trillions",
+    ];
+    scale_words.iter().any(|&word| input.contains(word))
 }
 
 pub(super) fn words_to_number(input: &str) -> Option<i128> {
@@ -104,6 +141,7 @@ pub(super) fn words_to_number(input: &str) -> Option<i128> {
 
     let mut result: i128 = 0;
     let mut current: i128 = 0;
+    let mut last_val: i128 = 0; // Track last value added for "quatre-vingt" handling
 
     for token in tokens {
         // Check if it's a scale word
@@ -115,6 +153,7 @@ pub(super) fn words_to_number(input: &str) -> Option<i128> {
                 } else {
                     current *= 100;
                 }
+                last_val = 0;
             } else {
                 // "mille", "million", etc.
                 if current == 0 {
@@ -122,21 +161,27 @@ pub(super) fn words_to_number(input: &str) -> Option<i128> {
                 }
                 result += current * scale;
                 current = 0;
+                last_val = 0;
             }
         } else if let Some(&val) = ONES.get(token) {
             current += val as i128;
+            last_val = val as i128;
         } else if let Some(&val) = TENS.get(token) {
             current += val as i128;
+            last_val = val as i128;
         } else if token == "dix" {
             // Special handling for "soixante-dix" (70), "quatre-vingt-dix" (90)
             current += 10;
+            last_val = 10;
         } else if token == "vingts" || token == "vingt" {
-            // "quatre-vingts" = 4 * 20, but "vingt" alone or after 100s = +20
-            if current >= 2 && current <= 4 {
-                // Special case: quatre-vingts (80), used for 80, 90 constructions
-                current *= 20;
+            // "quatre-vingts" = 4 * 20, check LAST value added, not total current
+            if last_val >= 2 && last_val <= 4 {
+                // Remove the last value and multiply by 20
+                current = current - last_val + (last_val * 20);
+                last_val = last_val * 20;
             } else {
                 current += 20;
+                last_val = 20;
             }
         } else {
             return None; // Unknown word
