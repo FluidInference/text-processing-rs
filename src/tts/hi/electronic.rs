@@ -1,0 +1,157 @@
+//! Electronic TN tagger for Hindi (romanized).
+//!
+//! Converts written emails and URLs to spoken form with Hindi romanized digit words:
+//! - "test@gmail.com" -> "t e s t at g m a i l dot c o m"
+//! - "http://www.example.com" -> "h t t p colon slash slash w w w dot e x a m p l e dot c o m"
+//! - Digits are spoken in Hindi: 0 -> "shunya", 1 -> "ek", etc.
+
+/// Parse an email or URL to spoken form (Hindi romanized).
+pub fn parse(input: &str) -> Option<String> {
+    let trimmed = input.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    // Email detection: contains @ with text on both sides
+    if trimmed.contains('@') {
+        return parse_email(trimmed);
+    }
+
+    // URL detection: starts with http://, https://, or www.
+    let lower = trimmed.to_lowercase();
+    if lower.starts_with("http://") || lower.starts_with("https://") || lower.starts_with("www.") {
+        return parse_url(trimmed);
+    }
+
+    None
+}
+
+/// Parse an email address to spoken form.
+fn parse_email(input: &str) -> Option<String> {
+    let parts: Vec<&str> = input.splitn(2, '@').collect();
+    if parts.len() != 2 || parts[0].is_empty() || parts[1].is_empty() {
+        return None;
+    }
+
+    let local = spell_domain(parts[0]);
+    let domain = spell_domain(parts[1]);
+
+    Some(format!("{} at {}", local, domain))
+}
+
+/// Parse a URL to spoken form.
+fn parse_url(input: &str) -> Option<String> {
+    let mut result = String::new();
+    let lower = input.to_lowercase();
+
+    let rest = if lower.starts_with("https://") {
+        result.push_str("h t t p s colon slash slash");
+        &input["https://".len()..]
+    } else if lower.starts_with("http://") {
+        result.push_str("h t t p colon slash slash");
+        &input["http://".len()..]
+    } else {
+        input
+    };
+
+    if !result.is_empty() && !rest.is_empty() {
+        result.push(' ');
+    }
+
+    result.push_str(&spell_domain(rest));
+
+    Some(result)
+}
+
+/// Spell out a domain name, using "dot" for periods.
+fn spell_domain(domain: &str) -> String {
+    let parts: Vec<&str> = domain.split('.').collect();
+    let spelled: Vec<String> = parts.iter().map(|p| spell_electronic(p)).collect();
+    spelled.join(" dot ")
+}
+
+/// Spell out an electronic string.
+///
+/// Letters are spelled individually with spaces.
+/// Digits use Hindi romanized words.
+/// Special characters use their English technical names.
+fn spell_electronic(s: &str) -> String {
+    let mut parts: Vec<String> = Vec::new();
+
+    for c in s.chars() {
+        match c {
+            '-' => parts.push("dash".to_string()),
+            '_' => parts.push("underscore".to_string()),
+            '/' => parts.push("slash".to_string()),
+            '~' => parts.push("tilde".to_string()),
+            ':' => parts.push("colon".to_string()),
+            c if c.is_ascii_alphabetic() => {
+                parts.push(c.to_lowercase().to_string());
+            }
+            c if c.is_ascii_digit() => {
+                parts.push(digit_word_hi(c));
+            }
+            _ => {
+                // Skip unknown characters
+            }
+        }
+    }
+
+    parts.join(" ")
+}
+
+fn digit_word_hi(c: char) -> String {
+    match c {
+        '0' => "shunya",
+        '1' => "ek",
+        '2' => "do",
+        '3' => "teen",
+        '4' => "chaar",
+        '5' => "paanch",
+        '6' => "chhah",
+        '7' => "saat",
+        '8' => "aath",
+        '9' => "nau",
+        _ => "",
+    }
+    .to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_email() {
+        assert_eq!(
+            parse("user1@mail.com"),
+            Some("u s e r ek at m a i l dot c o m".to_string())
+        );
+        assert_eq!(
+            parse("test@gmail.com"),
+            Some("t e s t at g m a i l dot c o m".to_string())
+        );
+    }
+
+    #[test]
+    fn test_url_http() {
+        assert_eq!(
+            parse("http://site2.com"),
+            Some("h t t p colon slash slash s i t e do dot c o m".to_string())
+        );
+    }
+
+    #[test]
+    fn test_www_url() {
+        assert_eq!(
+            parse("www.example.com"),
+            Some("w w w dot e x a m p l e dot c o m".to_string())
+        );
+    }
+
+    #[test]
+    fn test_non_electronic() {
+        assert_eq!(parse("hello"), None);
+        assert_eq!(parse("12345"), None);
+    }
+}

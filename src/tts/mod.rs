@@ -1,10 +1,13 @@
-//! Text Normalization taggers for English.
+//! Text Normalization taggers.
 //!
 //! Converts written-form text to spoken form (the reverse of ITN):
-//! - "200" → "two hundred"
-//! - "$5.50" → "five dollars and fifty cents"
-//! - "January 5, 2025" → "january fifth twenty twenty five"
+//! - "200" → "two hundred" (English)
+//! - "$5.50" → "five dollars and fifty cents" (English)
+//! - "January 5, 2025" → "january fifth twenty twenty five" (English)
+//!
+//! Supports multiple languages via submodules.
 
+// English (default)
 pub mod cardinal;
 pub mod date;
 pub mod decimal;
@@ -15,6 +18,14 @@ pub mod ordinal;
 pub mod telephone;
 pub mod time;
 pub mod whitelist;
+
+// Additional languages
+pub mod de;
+pub mod es;
+pub mod fr;
+pub mod hi;
+pub mod ja;
+pub mod zh;
 
 /// Ones words indexed by value (0..20).
 const ONES: [&str; 20] = [

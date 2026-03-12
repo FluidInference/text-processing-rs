@@ -5,7 +5,8 @@ use std::ptr;
 
 use crate::{
     custom_rules, normalize, normalize_sentence, normalize_sentence_with_max_span, tn_normalize,
-    tn_normalize_sentence, tn_normalize_sentence_with_max_span,
+    tn_normalize_lang, tn_normalize_sentence, tn_normalize_sentence_lang,
+    tn_normalize_sentence_with_max_span, tn_normalize_sentence_with_max_span_lang,
 };
 
 /// Normalize spoken-form text to written form.
@@ -241,6 +242,106 @@ pub unsafe extern "C" fn nemo_tn_normalize_sentence_with_max_span(
     };
 
     let result = tn_normalize_sentence_with_max_span(c_str, max_span_tokens as usize);
+
+    match CString::new(result) {
+        Ok(c_string) => c_string.into_raw(),
+        Err(_) => ptr::null_mut(),
+    }
+}
+
+// ── Language-aware TN FFI ──────────────────────────────────────────────
+
+/// Normalize written-form text to spoken form for a specific language.
+///
+/// Supported language codes: "en", "fr", "es", "de", "zh", "hi", "ja".
+/// Falls back to English for unrecognized codes.
+///
+/// # Safety
+/// - `input` and `lang` must be valid null-terminated UTF-8 strings
+/// - Returns a newly allocated string that must be freed with `nemo_free_string`
+#[no_mangle]
+pub unsafe extern "C" fn nemo_tn_normalize_lang(
+    input: *const c_char,
+    lang: *const c_char,
+) -> *mut c_char {
+    if input.is_null() || lang.is_null() {
+        return ptr::null_mut();
+    }
+
+    let input_str = match CStr::from_ptr(input).to_str() {
+        Ok(s) => s,
+        Err(_) => return ptr::null_mut(),
+    };
+    let lang_str = match CStr::from_ptr(lang).to_str() {
+        Ok(s) => s,
+        Err(_) => return ptr::null_mut(),
+    };
+
+    let result = tn_normalize_lang(input_str, lang_str);
+
+    match CString::new(result) {
+        Ok(c_string) => c_string.into_raw(),
+        Err(_) => ptr::null_mut(),
+    }
+}
+
+/// Normalize a full sentence (TN) for a specific language.
+///
+/// # Safety
+/// - `input` and `lang` must be valid null-terminated UTF-8 strings
+/// - Returns a newly allocated string that must be freed with `nemo_free_string`
+#[no_mangle]
+pub unsafe extern "C" fn nemo_tn_normalize_sentence_lang(
+    input: *const c_char,
+    lang: *const c_char,
+) -> *mut c_char {
+    if input.is_null() || lang.is_null() {
+        return ptr::null_mut();
+    }
+
+    let input_str = match CStr::from_ptr(input).to_str() {
+        Ok(s) => s,
+        Err(_) => return ptr::null_mut(),
+    };
+    let lang_str = match CStr::from_ptr(lang).to_str() {
+        Ok(s) => s,
+        Err(_) => return ptr::null_mut(),
+    };
+
+    let result = tn_normalize_sentence_lang(input_str, lang_str);
+
+    match CString::new(result) {
+        Ok(c_string) => c_string.into_raw(),
+        Err(_) => ptr::null_mut(),
+    }
+}
+
+/// Normalize a full sentence (TN) for a specific language with configurable max span.
+///
+/// # Safety
+/// - `input` and `lang` must be valid null-terminated UTF-8 strings
+/// - Returns a newly allocated string that must be freed with `nemo_free_string`
+#[no_mangle]
+pub unsafe extern "C" fn nemo_tn_normalize_sentence_with_max_span_lang(
+    input: *const c_char,
+    lang: *const c_char,
+    max_span_tokens: u32,
+) -> *mut c_char {
+    if input.is_null() || lang.is_null() {
+        return ptr::null_mut();
+    }
+
+    let input_str = match CStr::from_ptr(input).to_str() {
+        Ok(s) => s,
+        Err(_) => return ptr::null_mut(),
+    };
+    let lang_str = match CStr::from_ptr(lang).to_str() {
+        Ok(s) => s,
+        Err(_) => return ptr::null_mut(),
+    };
+
+    let result =
+        tn_normalize_sentence_with_max_span_lang(input_str, lang_str, max_span_tokens as usize);
 
     match CString::new(result) {
         Ok(c_string) => c_string.into_raw(),

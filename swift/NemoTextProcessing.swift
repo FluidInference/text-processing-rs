@@ -137,6 +137,72 @@ public enum NemoTextProcessing {
         return String(cString: resultPtr)
     }
 
+    // MARK: - Language-Specific Text Normalization
+
+    /// Normalize written-form text to spoken form for a specific language.
+    ///
+    /// Supported languages: "en", "fr", "es", "de", "zh", "hi", "ja".
+    /// Falls back to English for unrecognized language codes.
+    ///
+    /// - Parameters:
+    ///   - input: Written-form text
+    ///   - language: ISO 639-1 language code
+    /// - Returns: Spoken-form text, or original if no normalization applies
+    ///
+    /// Example:
+    /// ```swift
+    /// let result = NemoTextProcessing.tnNormalize("123", language: "fr")
+    /// // result is "cent vingt-trois"
+    /// ```
+    public static func tnNormalize(_ input: String, language: String) -> String {
+        guard let inputC = input.cString(using: .utf8),
+              let langC = language.cString(using: .utf8) else {
+            return input
+        }
+        guard let resultPtr = nemo_tn_normalize_lang(inputC, langC) else {
+            return input
+        }
+        defer { nemo_free_string(resultPtr) }
+        return String(cString: resultPtr)
+    }
+
+    /// Normalize a full sentence for a specific language, replacing written-form spans with spoken form.
+    ///
+    /// - Parameters:
+    ///   - input: Sentence containing written-form spans
+    ///   - language: ISO 639-1 language code
+    /// - Returns: Sentence with written-form spans replaced with spoken form
+    public static func tnNormalizeSentence(_ input: String, language: String) -> String {
+        guard let inputC = input.cString(using: .utf8),
+              let langC = language.cString(using: .utf8) else {
+            return input
+        }
+        guard let resultPtr = nemo_tn_normalize_sentence_lang(inputC, langC) else {
+            return input
+        }
+        defer { nemo_free_string(resultPtr) }
+        return String(cString: resultPtr)
+    }
+
+    /// Normalize a full sentence for a specific language with a configurable max span size.
+    ///
+    /// - Parameters:
+    ///   - input: Sentence containing written-form spans
+    ///   - language: ISO 639-1 language code
+    ///   - maxSpanTokens: Maximum consecutive tokens per normalizable span (default 16)
+    /// - Returns: Sentence with written-form spans replaced with spoken form
+    public static func tnNormalizeSentence(_ input: String, language: String, maxSpanTokens: UInt32) -> String {
+        guard let inputC = input.cString(using: .utf8),
+              let langC = language.cString(using: .utf8) else {
+            return input
+        }
+        guard let resultPtr = nemo_tn_normalize_sentence_with_max_span_lang(inputC, langC, maxSpanTokens) else {
+            return input
+        }
+        defer { nemo_free_string(resultPtr) }
+        return String(cString: resultPtr)
+    }
+
     // MARK: - Custom Rules
 
     /// Add a custom spoken→written normalization rule.

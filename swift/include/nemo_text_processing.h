@@ -101,6 +101,39 @@ char* nemo_tn_normalize_sentence(const char* input);
 char* nemo_tn_normalize_sentence_with_max_span(const char* input, uint32_t max_span_tokens);
 
 /**
+ * Text Normalization: convert written-form text to spoken form for a specific language.
+ *
+ * Supported language codes: "en", "fr", "es", "de", "zh", "hi", "ja".
+ * Falls back to English for unrecognized codes.
+ *
+ * @param input Null-terminated UTF-8 string of written text
+ * @param lang Null-terminated language code (e.g. "fr", "de")
+ * @return Newly allocated string with spoken form, or NULL on error.
+ *         Must be freed with nemo_free_string().
+ */
+char* nemo_tn_normalize_lang(const char* input, const char* lang);
+
+/**
+ * Text Normalization: normalize a full sentence for a specific language.
+ *
+ * @param input Null-terminated UTF-8 string
+ * @param lang Null-terminated language code (e.g. "fr", "de")
+ * @return Newly allocated string, must be freed with nemo_free_string().
+ */
+char* nemo_tn_normalize_sentence_lang(const char* input, const char* lang);
+
+/**
+ * Text Normalization: normalize a full sentence for a specific language
+ * with configurable max span size.
+ *
+ * @param input Null-terminated UTF-8 string
+ * @param lang Null-terminated language code (e.g. "fr", "de")
+ * @param max_span_tokens Maximum number of consecutive tokens per span (default 16)
+ * @return Newly allocated string, must be freed with nemo_free_string().
+ */
+char* nemo_tn_normalize_sentence_with_max_span_lang(const char* input, const char* lang, uint32_t max_span_tokens);
+
+/**
  * Free a string allocated by nemo_normalize or nemo_normalize_sentence.
  *
  * @param s Pointer returned by nemo_normalize, or NULL (no-op)

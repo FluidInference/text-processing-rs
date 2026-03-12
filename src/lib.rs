@@ -111,8 +111,146 @@ pub fn normalize(input: &str) -> String {
 
 /// Normalize with language selection (future use).
 pub fn normalize_with_lang(input: &str, _lang: &str) -> String {
-    // TODO: Language-specific taggers
+    // TODO: Language-specific ITN taggers
     normalize(input)
+}
+
+// ── Multi-language TN helpers ──────────────────────────────────────────
+
+/// Try TN taggers for a specific language.
+///
+/// Each language module provides: money, measure, date, time, ordinal, decimal, cardinal.
+fn tn_normalize_for_lang(input: &str, lang: &str) -> String {
+    let input = input.trim();
+
+    match lang {
+        "fr" => tn_normalize_lang_fr(input),
+        "es" => tn_normalize_lang_es(input),
+        "de" => tn_normalize_lang_de(input),
+        "zh" => tn_normalize_lang_zh(input),
+        "hi" => tn_normalize_lang_hi(input),
+        "ja" => tn_normalize_lang_ja(input),
+        _ => tn_normalize(input),
+    }
+}
+
+fn tn_normalize_lang_fr(input: &str) -> String {
+    if let Some(r) = tts::fr::whitelist::parse(input) { return r; }
+    if let Some(r) = tts::fr::money::parse(input) { return r; }
+    if let Some(r) = tts::fr::measure::parse(input) { return r; }
+    if let Some(r) = tts::fr::date::parse(input) { return r; }
+    if let Some(r) = tts::fr::time::parse(input) { return r; }
+    if let Some(r) = tts::fr::electronic::parse(input) { return r; }
+    if let Some(r) = tts::fr::telephone::parse(input) { return r; }
+    if let Some(r) = tts::fr::ordinal::parse(input) { return r; }
+    if let Some(r) = tts::fr::decimal::parse(input) { return r; }
+    if let Some(r) = tts::fr::cardinal::parse(input) { return r; }
+    input.to_string()
+}
+
+fn tn_normalize_lang_es(input: &str) -> String {
+    if let Some(r) = tts::es::whitelist::parse(input) { return r; }
+    if let Some(r) = tts::es::money::parse(input) { return r; }
+    if let Some(r) = tts::es::measure::parse(input) { return r; }
+    if let Some(r) = tts::es::date::parse(input) { return r; }
+    if let Some(r) = tts::es::time::parse(input) { return r; }
+    if let Some(r) = tts::es::electronic::parse(input) { return r; }
+    if let Some(r) = tts::es::telephone::parse(input) { return r; }
+    if let Some(r) = tts::es::ordinal::parse(input) { return r; }
+    if let Some(r) = tts::es::decimal::parse(input) { return r; }
+    if let Some(r) = tts::es::cardinal::parse(input) { return r; }
+    input.to_string()
+}
+
+fn tn_normalize_lang_de(input: &str) -> String {
+    if let Some(r) = tts::de::whitelist::parse(input) { return r; }
+    if let Some(r) = tts::de::money::parse(input) { return r; }
+    if let Some(r) = tts::de::measure::parse(input) { return r; }
+    if let Some(r) = tts::de::date::parse(input) { return r; }
+    if let Some(r) = tts::de::time::parse(input) { return r; }
+    if let Some(r) = tts::de::electronic::parse(input) { return r; }
+    if let Some(r) = tts::de::telephone::parse(input) { return r; }
+    if let Some(r) = tts::de::ordinal::parse(input) { return r; }
+    if let Some(r) = tts::de::decimal::parse(input) { return r; }
+    if let Some(r) = tts::de::cardinal::parse(input) { return r; }
+    input.to_string()
+}
+
+fn tn_normalize_lang_zh(input: &str) -> String {
+    if let Some(r) = tts::zh::whitelist::parse(input) { return r; }
+    if let Some(r) = tts::zh::money::parse(input) { return r; }
+    if let Some(r) = tts::zh::measure::parse(input) { return r; }
+    if let Some(r) = tts::zh::date::parse(input) { return r; }
+    if let Some(r) = tts::zh::time::parse(input) { return r; }
+    if let Some(r) = tts::zh::electronic::parse(input) { return r; }
+    if let Some(r) = tts::zh::telephone::parse(input) { return r; }
+    if let Some(r) = tts::zh::ordinal::parse(input) { return r; }
+    if let Some(r) = tts::zh::decimal::parse(input) { return r; }
+    if let Some(r) = tts::zh::cardinal::parse(input) { return r; }
+    input.to_string()
+}
+
+fn tn_normalize_lang_hi(input: &str) -> String {
+    if let Some(r) = tts::hi::whitelist::parse(input) { return r; }
+    if let Some(r) = tts::hi::money::parse(input) { return r; }
+    if let Some(r) = tts::hi::measure::parse(input) { return r; }
+    if let Some(r) = tts::hi::date::parse(input) { return r; }
+    if let Some(r) = tts::hi::time::parse(input) { return r; }
+    if let Some(r) = tts::hi::electronic::parse(input) { return r; }
+    if let Some(r) = tts::hi::telephone::parse(input) { return r; }
+    if let Some(r) = tts::hi::ordinal::parse(input) { return r; }
+    if let Some(r) = tts::hi::decimal::parse(input) { return r; }
+    if let Some(r) = tts::hi::cardinal::parse(input) { return r; }
+    input.to_string()
+}
+
+fn tn_normalize_lang_ja(input: &str) -> String {
+    if let Some(r) = tts::ja::whitelist::parse(input) { return r; }
+    if let Some(r) = tts::ja::money::parse(input) { return r; }
+    if let Some(r) = tts::ja::measure::parse(input) { return r; }
+    if let Some(r) = tts::ja::date::parse(input) { return r; }
+    if let Some(r) = tts::ja::time::parse(input) { return r; }
+    if let Some(r) = tts::ja::electronic::parse(input) { return r; }
+    if let Some(r) = tts::ja::telephone::parse(input) { return r; }
+    if let Some(r) = tts::ja::ordinal::parse(input) { return r; }
+    if let Some(r) = tts::ja::decimal::parse(input) { return r; }
+    if let Some(r) = tts::ja::cardinal::parse(input) { return r; }
+    input.to_string()
+}
+
+/// TN parse span for a specific language.
+fn tn_parse_span_lang(span: &str, lang: &str) -> Option<(String, u8)> {
+    if span.is_empty() {
+        return None;
+    }
+
+    macro_rules! try_lang_taggers {
+        ($mod:path) => {{
+            use $mod as lang;
+            if let Some(r) = lang::whitelist::parse(span) { return Some((r, 100)); }
+            if let Some(r) = lang::money::parse(span) { return Some((r, 95)); }
+            if let Some(r) = lang::measure::parse(span) { return Some((r, 90)); }
+            if let Some(r) = lang::date::parse(span) { return Some((r, 88)); }
+            if let Some(r) = lang::time::parse(span) { return Some((r, 85)); }
+            if let Some(r) = lang::electronic::parse(span) { return Some((r, 82)); }
+            if let Some(r) = lang::telephone::parse(span) { return Some((r, 78)); }
+            if let Some(r) = lang::ordinal::parse(span) { return Some((r, 75)); }
+            if let Some(r) = lang::decimal::parse(span) { return Some((r, 73)); }
+            if let Some(r) = lang::cardinal::parse(span) { return Some((r, 70)); }
+        }};
+    }
+
+    match lang {
+        "fr" => { try_lang_taggers!(tts::fr); }
+        "es" => { try_lang_taggers!(tts::es); }
+        "de" => { try_lang_taggers!(tts::de); }
+        "zh" => { try_lang_taggers!(tts::zh); }
+        "hi" => { try_lang_taggers!(tts::hi); }
+        "ja" => { try_lang_taggers!(tts::ja); }
+        _ => { return tn_parse_span(span); }
+    }
+
+    None
 }
 
 /// Default maximum token span to consider when scanning a sentence.
@@ -365,6 +503,93 @@ fn tn_parse_span(span: &str) -> Option<(String, u8)> {
 /// ```
 pub fn tn_normalize_sentence(input: &str) -> String {
     tn_normalize_sentence_with_max_span(input, DEFAULT_MAX_SPAN_TOKENS)
+}
+
+/// Normalize written-form text to spoken form for a specific language.
+///
+/// Supported languages: "en", "fr", "es", "de", "zh", "hi", "ja".
+/// Falls back to English for unrecognized language codes.
+///
+/// ```
+/// use text_processing_rs::tn_normalize_lang;
+///
+/// assert_eq!(tn_normalize_lang("123", "fr"), "cent vingt-trois");
+/// assert_eq!(tn_normalize_lang("123", "en"), "one hundred twenty three");
+/// ```
+pub fn tn_normalize_lang(input: &str, lang: &str) -> String {
+    tn_normalize_for_lang(input, lang)
+}
+
+/// Normalize a full sentence (TN) for a specific language.
+///
+/// Supported languages: "en", "fr", "es", "de", "zh", "hi", "ja".
+/// Falls back to English for unrecognized language codes.
+pub fn tn_normalize_sentence_lang(input: &str, lang: &str) -> String {
+    tn_normalize_sentence_with_max_span_lang(input, lang, DEFAULT_MAX_SPAN_TOKENS)
+}
+
+/// Normalize a full sentence (TN) for a specific language with configurable max span.
+pub fn tn_normalize_sentence_with_max_span_lang(
+    input: &str,
+    lang: &str,
+    max_span_tokens: usize,
+) -> String {
+    match lang {
+        "en" | "" => tn_normalize_sentence_with_max_span(input, max_span_tokens),
+        _ => {
+            let trimmed = input.trim();
+            if trimmed.is_empty() {
+                return trimmed.to_string();
+            }
+
+            let max_span = if max_span_tokens == 0 { 1 } else { max_span_tokens };
+            let tokens: Vec<&str> = trimmed.split_whitespace().collect();
+            let mut out: Vec<String> = Vec::with_capacity(tokens.len());
+            let mut i = 0usize;
+
+            while i < tokens.len() {
+                let max_end = usize::min(tokens.len(), i + max_span);
+                let mut best: Option<(usize, String, u8)> = None;
+
+                for end in (i + 1..=max_end).rev() {
+                    let span = tokens[i..end].join(" ");
+                    let Some((candidate, score)) = tn_parse_span_lang(&span, lang) else {
+                        continue;
+                    };
+
+                    let candidate_trimmed = candidate.trim();
+                    if candidate_trimmed.is_empty() || candidate_trimmed == span {
+                        continue;
+                    }
+
+                    let candidate_len = end - i;
+                    match &best {
+                        None => {
+                            best = Some((end, candidate, score));
+                        }
+                        Some((best_end, _, best_score)) => {
+                            let best_len = *best_end - i;
+                            if candidate_len > best_len
+                                || (candidate_len == best_len && score > *best_score)
+                            {
+                                best = Some((end, candidate, score));
+                            }
+                        }
+                    }
+                }
+
+                if let Some((end, replacement, _)) = best {
+                    out.push(replacement);
+                    i = end;
+                } else {
+                    out.push(tokens[i].to_string());
+                    i += 1;
+                }
+            }
+
+            out.join(" ")
+        }
+    }
 }
 
 /// Normalize a full sentence (TN) with a configurable max span size.
