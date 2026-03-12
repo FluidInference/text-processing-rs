@@ -42,7 +42,34 @@ pub fn number_to_words(n: i64) -> String {
     }
 
     if n < 0 {
-        return format!("minus {}", number_to_words(-n));
+        // Use wrapping negation and cast to u64 to handle i64::MIN safely,
+        // since -i64::MIN overflows i64 but fits in u64.
+        let abs_val = (n as u64).wrapping_neg();
+        let mut parts: Vec<String> = Vec::new();
+        let mut remaining = abs_val;
+
+        let scales: &[(u64, &str)] = &[
+            (1_000_000_000_000_000_000, "quintillion"),
+            (1_000_000_000_000_000, "quadrillion"),
+            (1_000_000_000_000, "trillion"),
+            (1_000_000_000, "billion"),
+            (1_000_000, "million"),
+            (1_000, "thousand"),
+        ];
+
+        for &(scale_value, scale_name) in scales {
+            if remaining >= scale_value {
+                let chunk = remaining / scale_value;
+                remaining %= scale_value;
+                parts.push(format!("{} {}", chunk_to_words(chunk as u32), scale_name));
+            }
+        }
+
+        if remaining > 0 {
+            parts.push(chunk_to_words(remaining as u32));
+        }
+
+        return format!("minus {}", parts.join(" "));
     }
 
     let mut parts: Vec<String> = Vec::new();

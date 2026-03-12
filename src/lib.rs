@@ -17,13 +17,13 @@
 //! ```
 
 pub mod custom_rules;
-pub mod taggers;
-pub mod tn;
+pub mod asr;
+pub mod tts;
 
 #[cfg(feature = "ffi")]
 pub mod ffi;
 
-use taggers::{
+use asr::{
     cardinal, date, decimal, electronic, measure, money, ordinal, punctuation, telephone, time,
     whitelist, word,
 };
@@ -277,34 +277,34 @@ pub fn normalize_sentence_with_max_span(input: &str, max_span_tokens: usize) -> 
 pub fn tn_normalize(input: &str) -> String {
     let input = input.trim();
 
-    if let Some(result) = tn::whitelist::parse(input) {
+    if let Some(result) = tts::whitelist::parse(input) {
         return result;
     }
-    if let Some(result) = tn::money::parse(input) {
+    if let Some(result) = tts::money::parse(input) {
         return result;
     }
-    if let Some(result) = tn::measure::parse(input) {
+    if let Some(result) = tts::measure::parse(input) {
         return result;
     }
-    if let Some(result) = tn::date::parse(input) {
+    if let Some(result) = tts::date::parse(input) {
         return result;
     }
-    if let Some(result) = tn::time::parse(input) {
+    if let Some(result) = tts::time::parse(input) {
         return result;
     }
-    if let Some(result) = tn::electronic::parse(input) {
+    if let Some(result) = tts::electronic::parse(input) {
         return result;
     }
-    if let Some(result) = tn::telephone::parse(input) {
+    if let Some(result) = tts::telephone::parse(input) {
         return result;
     }
-    if let Some(result) = tn::ordinal::parse(input) {
+    if let Some(result) = tts::ordinal::parse(input) {
         return result;
     }
-    if let Some(result) = tn::decimal::parse(input) {
+    if let Some(result) = tts::decimal::parse(input) {
         return result;
     }
-    if let Some(result) = tn::cardinal::parse(input) {
+    if let Some(result) = tts::cardinal::parse(input) {
         return result;
     }
 
@@ -319,34 +319,34 @@ fn tn_parse_span(span: &str) -> Option<(String, u8)> {
         return None;
     }
 
-    if let Some(result) = tn::whitelist::parse(span) {
+    if let Some(result) = tts::whitelist::parse(span) {
         return Some((result, 100));
     }
-    if let Some(result) = tn::money::parse(span) {
+    if let Some(result) = tts::money::parse(span) {
         return Some((result, 95));
     }
-    if let Some(result) = tn::measure::parse(span) {
+    if let Some(result) = tts::measure::parse(span) {
         return Some((result, 90));
     }
-    if let Some(result) = tn::date::parse(span) {
+    if let Some(result) = tts::date::parse(span) {
         return Some((result, 88));
     }
-    if let Some(result) = tn::time::parse(span) {
+    if let Some(result) = tts::time::parse(span) {
         return Some((result, 85));
     }
-    if let Some(result) = tn::electronic::parse(span) {
+    if let Some(result) = tts::electronic::parse(span) {
         return Some((result, 82));
     }
-    if let Some(result) = tn::telephone::parse(span) {
+    if let Some(result) = tts::telephone::parse(span) {
         return Some((result, 78));
     }
-    if let Some(result) = tn::ordinal::parse(span) {
+    if let Some(result) = tts::ordinal::parse(span) {
         return Some((result, 75));
     }
-    if let Some(result) = tn::decimal::parse(span) {
+    if let Some(result) = tts::decimal::parse(span) {
         return Some((result, 73));
     }
-    if let Some(result) = tn::cardinal::parse(span) {
+    if let Some(result) = tts::cardinal::parse(span) {
         return Some((result, 70));
     }
 

@@ -274,8 +274,13 @@ pub fn verbalize_year(year: u32) -> Option<String> {
     // Standard: split into two halves
     // 2025 → "twenty" + "twenty five"
     // 1990 → "nineteen" + "ninety"
+    // 1901 → "nineteen" + "oh one"
     let first_half = number_to_words(century as i64);
-    let second_half = number_to_words(remainder as i64);
+    let second_half = if remainder < 10 {
+        format!("oh {}", number_to_words(remainder as i64))
+    } else {
+        number_to_words(remainder as i64)
+    };
 
     Some(format!("{} {}", first_half, second_half))
 }

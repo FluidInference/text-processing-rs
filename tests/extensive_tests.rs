@@ -1473,3 +1473,118 @@ fn test_custom_rules_lifecycle() {
     // Clean up
     text_processing_rs::custom_rules::clear_rules();
 }
+
+// ════════════════════════════════════════════════════════════════════════
+// 25. BUG FIX: YEAR VERBALIZATION FOR X01-X09 (non-2000s)
+// ════════════════════════════════════════════════════════════════════════
+
+#[test]
+fn test_tn_date_year_oh_pattern() {
+    // Years X01-X09 outside 2000s should use "oh" form
+    // e.g. 1901 → "nineteen oh one", not "nineteen one"
+    assert_eq!(
+        tn_normalize("January 1, 1901"),
+        "january first nineteen oh one"
+    );
+    assert_eq!(
+        tn_normalize("July 4, 1805"),
+        "july fourth eighteen oh five"
+    );
+    assert_eq!(
+        tn_normalize("March 15, 1709"),
+        "march fifteenth seventeen oh nine"
+    );
+    // 2001-2009 should still use "two thousand X" form (special case)
+    assert_eq!(
+        tn_normalize("June 1, 2001"),
+        "june first two thousand one"
+    );
+    assert_eq!(
+        tn_normalize("June 1, 2009"),
+        "june first two thousand nine"
+    );
+    // Years with remainder >= 10 should NOT have "oh"
+    assert_eq!(
+        tn_normalize("January 1, 1910"),
+        "january first nineteen ten"
+    );
+    assert_eq!(
+        tn_normalize("January 1, 1776"),
+        "january first seventeen seventy six"
+    );
+}
+
+#[test]
+fn test_tn_date_numeric_year_oh_pattern() {
+    // Numeric date format should also get "oh" for X01-X09
+    assert_eq!(
+        tn_normalize("6/15/1903"),
+        "june fifteenth nineteen oh three"
+    );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// 26. BUG FIX: URL PARSER CASE-INSENSITIVE PREFIX STRIPPING
+// ════════════════════════════════════════════════════════════════════════
+
+#[test]
+fn test_tn_electronic_url_case_insensitive() {
+    // Uppercase protocol should parse correctly
+    assert_eq!(
+        tn_normalize("HTTP://example.com"),
+        "h t t p colon slash slash e x a m p l e dot c o m"
+    );
+    assert_eq!(
+        tn_normalize("HTTPS://example.com"),
+        "h t t p s colon slash slash e x a m p l e dot c o m"
+    );
+    // Mixed case
+    assert_eq!(
+        tn_normalize("Http://Example.com"),
+        "h t t p colon slash slash e x a m p l e dot c o m"
+    );
+    assert_eq!(
+        tn_normalize("Https://Google.com"),
+        "h t t p s colon slash slash g o o g l e dot c o m"
+    );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// 27. BUG FIX: i64::MIN OVERFLOW IN number_to_words
+// ════════════════════════════════════════════════════════════════════════
+
+#[test]
+fn test_number_to_words_i64_min() {
+    // Test number_to_words directly since tn_normalize routes large negatives
+    // through the telephone tagger (the "-" is treated as a separator).
+    // i64::MIN = -9223372036854775808: negating overflows i64 but our fix
+    // uses wrapping_neg + u64 to handle it safely.
+    use text_processing_rs::tts::number_to_words;
+
+    let result = number_to_words(i64::MIN);
+    assert!(
+        result.starts_with("minus "),
+        "i64::MIN should produce 'minus ...' but got: {}",
+        result
+    );
+
+    let result = number_to_words(i64::MIN + 1);
+    assert_eq!(
+        result,
+        "minus nine quintillion two hundred twenty three quadrillion three hundred seventy two trillion thirty six billion eight hundred fifty four million seven hundred seventy five thousand eight hundred seven"
+    );
+}
+
+#[test]
+fn test_tn_cardinal_large_negative_telephone_interference() {
+    // KNOWN_ISSUE: Large negative numbers like "-9223372036854775807" are grabbed
+    // by the telephone tagger before the cardinal tagger, because the "-" is
+    // treated as a separator and there are 19+ digits.
+    // The telephone tagger spells each digit individually.
+    let result = tn_normalize("-9223372036854775807");
+    assert!(
+        result.contains("nine") && result.contains("two"),
+        "Telephone tagger spells digits: {}",
+        result
+    );
+}

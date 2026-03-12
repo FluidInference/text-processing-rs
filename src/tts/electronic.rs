@@ -45,13 +45,14 @@ fn parse_email(input: &str) -> Option<String> {
 /// Parse a URL to spoken form.
 fn parse_url(input: &str) -> Option<String> {
     let mut result = String::new();
+    let lower = input.to_lowercase();
 
-    let rest = if let Some(r) = input.strip_prefix("https://") {
+    let rest = if lower.starts_with("https://") {
         result.push_str("h t t p s colon slash slash");
-        r
-    } else if let Some(r) = input.strip_prefix("http://") {
+        &input["https://".len()..]
+    } else if lower.starts_with("http://") {
         result.push_str("h t t p colon slash slash");
-        r
+        &input["http://".len()..]
     } else {
         input
     };
