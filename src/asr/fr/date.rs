@@ -50,7 +50,7 @@ fn parse_day_month_year(input: &str) -> Option<String> {
 
             // Parse day
             let day_str = if day_part == &"premier" || day_part == &"première" {
-                "1er".to_string()
+                "1ᵉʳ".to_string()
             } else if let Some(day_num) = words_to_number(day_part) {
                 (day_num as i64).to_string()
             } else {
@@ -81,7 +81,7 @@ fn parse_day_month(input: &str) -> Option<String> {
 
                 // Parse day
                 let day_str = if day_part == "premier" || day_part == "première" {
-                    "1er".to_string()
+                    "1ᵉʳ".to_string()
                 } else if let Some(day_num) = words_to_number(day_part) {
                     (day_num as i64).to_string()
                 } else {
@@ -123,10 +123,10 @@ mod tests {
 
     #[test]
     fn test_premier() {
-        assert_eq!(parse("premier janvier"), Some("1er janvier".to_string()));
+        assert_eq!(parse("premier janvier"), Some("1ᵉʳ janvier".to_string()));
         assert_eq!(
             parse("premier mai deux mille vingt"),
-            Some("1er mai 2020".to_string())
+            Some("1ᵉʳ mai 2020".to_string())
         );
     }
 
