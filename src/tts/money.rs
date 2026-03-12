@@ -148,7 +148,9 @@ fn parse_dollars_cents(amount: &str, currency: &Currency) -> Option<String> {
     let cents_str = parts[1];
 
     // Pad or truncate cents to 2 digits
-    let cents: i64 = if cents_str.len() == 1 {
+    let cents: i64 = if cents_str.is_empty() {
+        0
+    } else if cents_str.len() == 1 {
         cents_str.parse::<i64>().ok()? * 10
     } else if cents_str.len() == 2 {
         cents_str.parse().ok()?
@@ -256,6 +258,14 @@ mod tests {
         assert_eq!(parse("€100"), Some("one hundred euros".to_string()));
         assert_eq!(parse("£1"), Some("one pound".to_string()));
         assert_eq!(parse("¥500"), Some("five hundred yen".to_string()));
+    }
+
+    #[test]
+    fn test_trailing_dot() {
+        // "$5." should not panic — empty cents treated as zero
+        assert_eq!(parse("$5."), Some("five dollars".to_string()));
+        assert_eq!(parse("$1."), Some("one dollar".to_string()));
+        assert_eq!(parse("$0."), Some("zero dollars".to_string()));
     }
 
     #[test]
