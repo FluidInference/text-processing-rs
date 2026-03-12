@@ -1,32 +1,33 @@
 //! Whitelist tagger for French.
 //!
-//! Pass-through specific French words/phrases without modification.
+//! Converts specific French titles and words to their abbreviated forms with Unicode superscripts.
 
 use lazy_static::lazy_static;
-use std::collections::HashSet;
+use std::collections::HashMap;
 
 lazy_static! {
-    /// Words that should pass through without modification
-    static ref WHITELIST: HashSet<&'static str> = {
-        let mut s = HashSet::new();
-        // Common French words that might be confused with numbers
-        // Note: "premier" and "première" are handled by ordinal parser
-        s.insert("un");
-        s.insert("une");
-        s
+    /// Mapping of French words to their abbreviated forms
+    static ref WHITELIST: HashMap<&'static str, &'static str> = {
+        let mut m = HashMap::new();
+        // Titles with Unicode superscripts
+        m.insert("docteur", "Dʳ");
+        m.insert("docteures", "Dʳᵉˢ");
+        m.insert("monsieur", "M.");
+        m.insert("messieurs", "MM.");
+        m.insert("madame", "Mᵐᵉ");
+        m.insert("mesdames", "Mᵐᵉˢ");
+        m.insert("mademoiselle", "Mˡˡᵉ");
+        m.insert("mademoiselles", "Mˡˡᵉˢ");
+        m
     };
 }
 
-/// Pass through whitelisted words without modification.
+/// Convert whitelisted French words to their abbreviated forms.
 pub fn parse(input: &str) -> Option<String> {
     let input_lower = input.to_lowercase();
     let input_trimmed = input_lower.trim();
 
-    if WHITELIST.contains(input_trimmed) {
-        Some(input.trim().to_string())
-    } else {
-        None
-    }
+    WHITELIST.get(input_trimmed).map(|&s| s.to_string())
 }
 
 #[cfg(test)]
@@ -35,12 +36,14 @@ mod tests {
 
     #[test]
     fn test_whitelist() {
-        assert_eq!(parse("un"), Some("un".to_string()));
-        assert_eq!(parse("une"), Some("une".to_string()));
+        assert_eq!(parse("docteur"), Some("Dʳ".to_string()));
+        assert_eq!(parse("madame"), Some("Mᵐᵉ".to_string()));
+        assert_eq!(parse("monsieur"), Some("M.".to_string()));
     }
 
     #[test]
     fn test_not_whitelisted() {
         assert_eq!(parse("bonjour"), None);
+        assert_eq!(parse("un"), None);
     }
 }
