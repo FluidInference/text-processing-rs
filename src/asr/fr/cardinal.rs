@@ -1,0 +1,215 @@
+//! Cardinal number tagger for French.
+//!
+//! Converts spoken French number words to digits:
+//! - "un" → "1"
+//! - "vingt et un" → "21"
+//! - "cent vingt-trois" → "123"
+//! - "mille deux cent trente-quatre" → "1234"
+//! - "moins soixante" → "-60"
+
+use lazy_static::lazy_static;
+use std::collections::HashMap;
+
+lazy_static! {
+    /// Single digit and teen numbers
+    static ref ONES: HashMap<&'static str, i64> = {
+        let mut m = HashMap::new();
+        m.insert("zero", 0);
+        m.insert("un", 1);
+        m.insert("une", 1);
+        m.insert("deux", 2);
+        m.insert("trois", 3);
+        m.insert("quatre", 4);
+        m.insert("cinq", 5);
+        m.insert("six", 6);
+        m.insert("sept", 7);
+        m.insert("huit", 8);
+        m.insert("neuf", 9);
+        m.insert("dix", 10);
+        m.insert("onze", 11);
+        m.insert("douze", 12);
+        m.insert("treize", 13);
+        m.insert("quatorze", 14);
+        m.insert("quinze", 15);
+        m.insert("seize", 16);
+        m
+    };
+
+    /// Tens (30, 40, 50, 60) - Note: vingt (20) is handled specially for quatre-vingts
+    static ref TENS: HashMap<&'static str, i64> = {
+        let mut m = HashMap::new();
+        m.insert("trente", 30);
+        m.insert("quarante", 40);
+        m.insert("cinquante", 50);
+        m.insert("soixante", 60);
+        m
+    };
+
+    /// Scale words
+    static ref SCALES: HashMap<&'static str, i128> = {
+        let mut m = HashMap::new();
+        m.insert("cent", 100);
+        m.insert("cents", 100);
+        m.insert("mille", 1_000);
+        m.insert("million", 1_000_000);
+        m.insert("millions", 1_000_000);
+        m.insert("milliard", 1_000_000_000);
+        m.insert("milliards", 1_000_000_000);
+        m.insert("billion", 1_000_000_000_000);
+        m.insert("billions", 1_000_000_000_000);
+        m.insert("billiard", 1_000_000_000_000_000);
+        m.insert("billiards", 1_000_000_000_000_000);
+        m.insert("trillion", 1_000_000_000_000_000_000);
+        m.insert("trillions", 1_000_000_000_000_000_000);
+        m
+    };
+}
+
+/// Parse spoken French cardinal number to string representation.
+pub fn parse(input: &str) -> Option<String> {
+    let input = input.to_lowercase();
+    let input = input.trim();
+
+    if input == "zero" {
+        return Some("zero".to_string());
+    }
+
+    // Check for negative
+    let (is_negative, rest) = if input.starts_with("moins ") {
+        (true, input.strip_prefix("moins ")?)
+    } else {
+        (false, input)
+    };
+
+    let num = words_to_number(rest)?;
+
+    if is_negative {
+        Some(format!("-{}", num))
+    } else {
+        Some(num.to_string())
+    }
+}
+
+fn words_to_number(input: &str) -> Option<i128> {
+    // Normalize: remove hyphens, "et" connectors
+    let normalized = input
+        .replace("-", " ")
+        .replace(" et ", " ")
+        .replace("  ", " ");
+
+    let tokens: Vec<&str> = normalized.split_whitespace().collect();
+    if tokens.is_empty() {
+        return None;
+    }
+
+    let mut result: i128 = 0;
+    let mut current: i128 = 0;
+
+    for token in tokens {
+        // Check if it's a scale word
+        if let Some(&scale) = SCALES.get(token) {
+            if scale == 100 {
+                // "cent" multiplies current or assumes 1
+                if current == 0 {
+                    current = 100;
+                } else {
+                    current *= 100;
+                }
+            } else {
+                // "mille", "million", etc.
+                if current == 0 {
+                    current = 1; // "mille" = 1000, not 0
+                }
+                result += current * scale;
+                current = 0;
+            }
+        } else if let Some(&val) = ONES.get(token) {
+            current += val as i128;
+        } else if let Some(&val) = TENS.get(token) {
+            current += val as i128;
+        } else if token == "dix" {
+            // Special handling for "soixante-dix" (70), "quatre-vingt-dix" (90)
+            current += 10;
+        } else if token == "vingts" || token == "vingt" {
+            // "quatre-vingts" = 4 * 20, but "vingt" alone or after 100s = +20
+            if current >= 2 && current <= 4 {
+                // Special case: quatre-vingts (80), used for 80, 90 constructions
+                current *= 20;
+            } else {
+                current += 20;
+            }
+        } else {
+            return None; // Unknown word
+        }
+    }
+
+    result += current;
+
+    if result == 0 {
+        None
+    } else {
+        Some(result)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_basic() {
+        assert_eq!(parse("zero"), Some("zero".to_string()));
+        assert_eq!(parse("un"), Some("1".to_string()));
+        assert_eq!(parse("deux"), Some("2".to_string()));
+        assert_eq!(parse("dix"), Some("10".to_string()));
+        assert_eq!(parse("seize"), Some("16".to_string()));
+    }
+
+    #[test]
+    fn test_tens() {
+        assert_eq!(parse("vingt"), Some("20".to_string()));
+        assert_eq!(parse("vingt et un"), Some("21".to_string()));
+        assert_eq!(parse("vingt-deux"), Some("22".to_string()));
+        assert_eq!(parse("trente"), Some("30".to_string()));
+    }
+
+    #[test]
+    fn test_special() {
+        assert_eq!(parse("soixante-dix"), Some("70".to_string()));
+        assert_eq!(parse("quatre-vingts"), Some("80".to_string()));
+        assert_eq!(parse("quatre-vingt-dix"), Some("90".to_string()));
+        assert_eq!(parse("quatre-vingt-dix-neuf"), Some("99".to_string()));
+    }
+
+    #[test]
+    fn test_hundreds() {
+        assert_eq!(parse("cent"), Some("100".to_string()));
+        assert_eq!(parse("deux cents"), Some("200".to_string()));
+        assert_eq!(parse("deux cent vingt"), Some("220".to_string()));
+    }
+
+    #[test]
+    fn test_thousands() {
+        assert_eq!(parse("mille"), Some("1000".to_string()));
+        assert_eq!(parse("deux mille"), Some("2000".to_string()));
+        assert_eq!(parse("deux mille vingt-cinq"), Some("2025".to_string()));
+    }
+
+    #[test]
+    fn test_large() {
+        assert_eq!(parse("un million"), Some("1000000".to_string()));
+        assert_eq!(parse("deux millions trois"), Some("2000003".to_string()));
+    }
+
+    #[test]
+    fn test_negative() {
+        assert_eq!(parse("moins quarante-deux"), Some("-42".to_string()));
+        assert_eq!(parse("moins mille"), Some("-1000".to_string()));
+    }
+
+    #[test]
+    fn test_invalid() {
+        assert_eq!(parse("hello"), None);
+        assert_eq!(parse(""), None);
+    }
+}

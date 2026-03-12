@@ -23,7 +23,7 @@ pub mod tts;
 #[cfg(feature = "ffi")]
 pub mod ffi;
 
-use asr::{
+use asr::en::{
     cardinal, date, decimal, electronic, measure, money, ordinal, punctuation, telephone, time,
     whitelist, word,
 };
