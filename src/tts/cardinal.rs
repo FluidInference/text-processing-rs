@@ -24,10 +24,7 @@ pub fn parse(input: &str) -> Option<String> {
     };
 
     // Must be digits (with optional commas)
-    if !digits_part
-        .chars()
-        .all(|c| c.is_ascii_digit() || c == ',')
-    {
+    if !digits_part.chars().all(|c| c.is_ascii_digit() || c == ',') {
         return None;
     }
 
@@ -57,19 +54,13 @@ mod tests {
         assert_eq!(parse("1"), Some("one".to_string()));
         assert_eq!(parse("21"), Some("twenty one".to_string()));
         assert_eq!(parse("100"), Some("one hundred".to_string()));
-        assert_eq!(
-            parse("123"),
-            Some("one hundred twenty three".to_string())
-        );
+        assert_eq!(parse("123"), Some("one hundred twenty three".to_string()));
     }
 
     #[test]
     fn test_commas() {
         assert_eq!(parse("1,000"), Some("one thousand".to_string()));
-        assert_eq!(
-            parse("1,000,000"),
-            Some("one million".to_string())
-        );
+        assert_eq!(parse("1,000,000"), Some("one million".to_string()));
     }
 
     #[test]

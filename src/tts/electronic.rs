@@ -18,10 +18,7 @@ pub fn parse(input: &str) -> Option<String> {
 
     // URL detection: starts with http://, https://, or www.
     let lower = trimmed.to_lowercase();
-    if lower.starts_with("http://")
-        || lower.starts_with("https://")
-        || lower.starts_with("www.")
-    {
+    if lower.starts_with("http://") || lower.starts_with("https://") || lower.starts_with("www.") {
         return parse_url(trimmed);
     }
 

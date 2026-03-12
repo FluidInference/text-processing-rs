@@ -35,10 +35,7 @@ fn test_itn_cardinal_large_numbers() {
 fn test_itn_cardinal_with_and() {
     assert_eq!(normalize("one hundred and one"), "101");
     assert_eq!(normalize("one thousand and one"), "1001");
-    assert_eq!(
-        normalize("two hundred and fifty six"),
-        "256"
-    );
+    assert_eq!(normalize("two hundred and fifty six"), "256");
 }
 
 #[test]
@@ -104,18 +101,9 @@ fn test_itn_date_month_day_year() {
 
 #[test]
 fn test_itn_date_day_of_month_pattern() {
-    assert_eq!(
-        normalize("the fifteenth of january"),
-        "15 january"
-    );
-    assert_eq!(
-        normalize("the first of march"),
-        "1 march"
-    );
-    assert_eq!(
-        normalize("the thirty first of december"),
-        "31 december"
-    );
+    assert_eq!(normalize("the fifteenth of january"), "15 january");
+    assert_eq!(normalize("the first of march"), "1 march");
+    assert_eq!(normalize("the thirty first of december"), "31 december");
 }
 
 #[test]
@@ -135,14 +123,8 @@ fn test_itn_date_bc_ad() {
 
 #[test]
 fn test_itn_date_quarters() {
-    assert_eq!(
-        normalize("first quarter of twenty twenty two"),
-        "Q1 2022"
-    );
-    assert_eq!(
-        normalize("fourth quarter of twenty twenty five"),
-        "Q4 2025"
-    );
+    assert_eq!(normalize("first quarter of twenty twenty two"), "Q1 2022");
+    assert_eq!(normalize("fourth quarter of twenty twenty five"), "Q4 2025");
 }
 
 #[test]
@@ -156,10 +138,7 @@ fn test_itn_date_standalone_years() {
 #[test]
 fn test_itn_date_month_year() {
     // "july two thousand twelve" should parse as month + year
-    assert_eq!(
-        normalize("july two thousand twelve"),
-        "july 2012"
-    );
+    assert_eq!(normalize("july two thousand twelve"), "july 2012");
 }
 
 // ════════════════════════════════════════════════════════════════════════
@@ -248,10 +227,7 @@ fn test_itn_measure_basic_units() {
 
 #[test]
 fn test_itn_measure_compound_units() {
-    assert_eq!(
-        normalize("two hundred kilometers per hour"),
-        "200 km/h"
-    );
+    assert_eq!(normalize("two hundred kilometers per hour"), "200 km/h");
 }
 
 #[test]
@@ -339,7 +315,10 @@ fn test_tn_cardinal_negative() {
 fn test_tn_cardinal_with_commas() {
     assert_eq!(tn_normalize("1,000"), "one thousand");
     assert_eq!(tn_normalize("1,000,000"), "one million");
-    assert_eq!(tn_normalize("1,234"), "one thousand two hundred thirty four");
+    assert_eq!(
+        tn_normalize("1,234"),
+        "one thousand two hundred thirty four"
+    );
 }
 
 // ════════════════════════════════════════════════════════════════════════
@@ -348,22 +327,10 @@ fn test_tn_cardinal_with_commas() {
 
 #[test]
 fn test_tn_date_month_day() {
-    assert_eq!(
-        tn_normalize("January 5"),
-        "january fifth"
-    );
-    assert_eq!(
-        tn_normalize("December 25"),
-        "december twenty fifth"
-    );
-    assert_eq!(
-        tn_normalize("February 1"),
-        "february first"
-    );
-    assert_eq!(
-        tn_normalize("March 31"),
-        "march thirty first"
-    );
+    assert_eq!(tn_normalize("January 5"), "january fifth");
+    assert_eq!(tn_normalize("December 25"), "december twenty fifth");
+    assert_eq!(tn_normalize("February 1"), "february first");
+    assert_eq!(tn_normalize("March 31"), "march thirty first");
 }
 
 #[test]
@@ -393,10 +360,7 @@ fn test_tn_date_month_day_year_2001_to_2009() {
         tn_normalize("March 15, 2001"),
         "march fifteenth two thousand one"
     );
-    assert_eq!(
-        tn_normalize("June 1, 2005"),
-        "june first two thousand five"
-    );
+    assert_eq!(tn_normalize("June 1, 2005"), "june first two thousand five");
     assert_eq!(
         tn_normalize("August 20, 2009"),
         "august twentieth two thousand nine"
@@ -421,12 +385,7 @@ fn test_tn_date_all_months() {
         ("December 12", "december twelfth"),
     ];
     for (input, expected) in months {
-        assert_eq!(
-            tn_normalize(input),
-            expected,
-            "Failed for input: {}",
-            input
-        );
+        assert_eq!(tn_normalize(input), expected, "Failed for input: {}", input);
     }
 }
 
@@ -470,12 +429,7 @@ fn test_tn_date_all_days_1_to_31() {
         let day = i + 1;
         let input = format!("January {}", day);
         let expected = format!("january {}", ordinal);
-        assert_eq!(
-            tn_normalize(&input),
-            expected,
-            "Failed for day {}",
-            day
-        );
+        assert_eq!(tn_normalize(&input), expected, "Failed for day {}", day);
     }
 }
 
@@ -507,26 +461,17 @@ fn test_tn_date_decades() {
 
 #[test]
 fn test_tn_date_numeric_slash() {
-    assert_eq!(
-        tn_normalize("1/5/2025"),
-        "january fifth twenty twenty five"
-    );
+    assert_eq!(tn_normalize("1/5/2025"), "january fifth twenty twenty five");
     assert_eq!(
         tn_normalize("12/25/2000"),
         "december twenty fifth two thousand"
     );
-    assert_eq!(
-        tn_normalize("3/15/1990"),
-        "march fifteenth nineteen ninety"
-    );
+    assert_eq!(tn_normalize("3/15/1990"), "march fifteenth nineteen ninety");
 }
 
 #[test]
 fn test_tn_date_numeric_dash() {
-    assert_eq!(
-        tn_normalize("1-5-2025"),
-        "january fifth twenty twenty five"
-    );
+    assert_eq!(tn_normalize("1-5-2025"), "january fifth twenty twenty five");
     assert_eq!(
         tn_normalize("12-25-2000"),
         "december twenty fifth two thousand"
@@ -548,32 +493,35 @@ fn test_tn_date_numeric_invalid_day() {
 
 #[test]
 fn test_tn_date_year_verbalization() {
-    assert_eq!(tn_normalize("January 1, 2025"), "january first twenty twenty five");
-    assert_eq!(tn_normalize("January 1, 2000"), "january first two thousand");
-    assert_eq!(tn_normalize("January 1, 2001"), "january first two thousand one");
-    assert_eq!(tn_normalize("January 1, 1900"), "january first nineteen hundred");
-    assert_eq!(tn_normalize("January 1, 1776"), "january first seventeen seventy six");
+    assert_eq!(
+        tn_normalize("January 1, 2025"),
+        "january first twenty twenty five"
+    );
+    assert_eq!(
+        tn_normalize("January 1, 2000"),
+        "january first two thousand"
+    );
+    assert_eq!(
+        tn_normalize("January 1, 2001"),
+        "january first two thousand one"
+    );
+    assert_eq!(
+        tn_normalize("January 1, 1900"),
+        "january first nineteen hundred"
+    );
+    assert_eq!(
+        tn_normalize("January 1, 1776"),
+        "january first seventeen seventy six"
+    );
 }
 
 #[test]
 fn test_tn_date_with_ordinal_suffix_in_day() {
     // "January 5th" should also parse (strip ordinal suffix)
-    assert_eq!(
-        tn_normalize("January 5th"),
-        "january fifth"
-    );
-    assert_eq!(
-        tn_normalize("March 1st"),
-        "march first"
-    );
-    assert_eq!(
-        tn_normalize("April 2nd"),
-        "april second"
-    );
-    assert_eq!(
-        tn_normalize("May 3rd"),
-        "may third"
-    );
+    assert_eq!(tn_normalize("January 5th"), "january fifth");
+    assert_eq!(tn_normalize("March 1st"), "march first");
+    assert_eq!(tn_normalize("April 2nd"), "april second");
+    assert_eq!(tn_normalize("May 3rd"), "may third");
 }
 
 #[test]
@@ -596,14 +544,8 @@ fn test_tn_date_space_separated_year() {
 
 #[test]
 fn test_tn_date_case_insensitive() {
-    assert_eq!(
-        tn_normalize("january 5"),
-        "january fifth"
-    );
-    assert_eq!(
-        tn_normalize("JANUARY 5"),
-        "january fifth"
-    );
+    assert_eq!(tn_normalize("january 5"), "january fifth");
+    assert_eq!(tn_normalize("JANUARY 5"), "january fifth");
 }
 
 #[test]
@@ -649,14 +591,8 @@ fn test_tn_money_various_currencies() {
 
 #[test]
 fn test_tn_money_pounds_pence() {
-    assert_eq!(
-        tn_normalize("£1.50"),
-        "one pound and fifty pence"
-    );
-    assert_eq!(
-        tn_normalize("£0.01"),
-        "one penny"
-    );
+    assert_eq!(tn_normalize("£1.50"), "one pound and fifty pence");
+    assert_eq!(tn_normalize("£0.01"), "one penny");
 }
 
 #[test]
@@ -665,14 +601,8 @@ fn test_tn_money_scale() {
         tn_normalize("$2.5 billion"),
         "two point five billion dollars"
     );
-    assert_eq!(
-        tn_normalize("$50 million"),
-        "fifty million dollars"
-    );
-    assert_eq!(
-        tn_normalize("$1 trillion"),
-        "one trillion dollars"
-    );
+    assert_eq!(tn_normalize("$50 million"), "fifty million dollars");
+    assert_eq!(tn_normalize("$1 trillion"), "one trillion dollars");
 }
 
 #[test]
@@ -683,10 +613,7 @@ fn test_tn_money_just_symbol_no_parse() {
 #[test]
 fn test_tn_money_large_cents() {
     // "$5.5" = $5.50 (single decimal digit)
-    assert_eq!(
-        tn_normalize("$5.5"),
-        "five dollars and fifty cents"
-    );
+    assert_eq!(tn_normalize("$5.5"), "five dollars and fifty cents");
 }
 
 // ════════════════════════════════════════════════════════════════════════
@@ -802,18 +729,9 @@ fn test_tn_measure_singular_plural() {
 
 #[test]
 fn test_tn_measure_temperature() {
-    assert_eq!(
-        tn_normalize("72°F"),
-        "seventy two degrees fahrenheit"
-    );
-    assert_eq!(
-        tn_normalize("100°C"),
-        "one hundred degrees celsius"
-    );
-    assert_eq!(
-        tn_normalize("0°C"),
-        "zero degrees celsius"
-    );
+    assert_eq!(tn_normalize("72°F"), "seventy two degrees fahrenheit");
+    assert_eq!(tn_normalize("100°C"), "one hundred degrees celsius");
+    assert_eq!(tn_normalize("0°C"), "zero degrees celsius");
 }
 
 #[test]
@@ -826,14 +744,8 @@ fn test_tn_measure_percentage() {
 
 #[test]
 fn test_tn_measure_speed() {
-    assert_eq!(
-        tn_normalize("200 km/h"),
-        "two hundred kilometers per hour"
-    );
-    assert_eq!(
-        tn_normalize("60 mph"),
-        "sixty miles per hour"
-    );
+    assert_eq!(tn_normalize("200 km/h"), "two hundred kilometers per hour");
+    assert_eq!(tn_normalize("60 mph"), "sixty miles per hour");
 }
 
 #[test]
@@ -845,22 +757,13 @@ fn test_tn_measure_data() {
 
 #[test]
 fn test_tn_measure_negative() {
-    assert_eq!(
-        tn_normalize("-10°C"),
-        "minus ten degrees celsius"
-    );
-    assert_eq!(
-        tn_normalize("-66 kg"),
-        "minus sixty six kilograms"
-    );
+    assert_eq!(tn_normalize("-10°C"), "minus ten degrees celsius");
+    assert_eq!(tn_normalize("-66 kg"), "minus sixty six kilograms");
 }
 
 #[test]
 fn test_tn_measure_decimal() {
-    assert_eq!(
-        tn_normalize("3.5 kg"),
-        "three point five kilograms"
-    );
+    assert_eq!(tn_normalize("3.5 kg"), "three point five kilograms");
 }
 
 // ════════════════════════════════════════════════════════════════════════
@@ -1486,23 +1389,14 @@ fn test_tn_date_year_oh_pattern() {
         tn_normalize("January 1, 1901"),
         "january first nineteen oh one"
     );
-    assert_eq!(
-        tn_normalize("July 4, 1805"),
-        "july fourth eighteen oh five"
-    );
+    assert_eq!(tn_normalize("July 4, 1805"), "july fourth eighteen oh five");
     assert_eq!(
         tn_normalize("March 15, 1709"),
         "march fifteenth seventeen oh nine"
     );
     // 2001-2009 should still use "two thousand X" form (special case)
-    assert_eq!(
-        tn_normalize("June 1, 2001"),
-        "june first two thousand one"
-    );
-    assert_eq!(
-        tn_normalize("June 1, 2009"),
-        "june first two thousand nine"
-    );
+    assert_eq!(tn_normalize("June 1, 2001"), "june first two thousand one");
+    assert_eq!(tn_normalize("June 1, 2009"), "june first two thousand nine");
     // Years with remainder >= 10 should NOT have "oh"
     assert_eq!(
         tn_normalize("January 1, 1910"),

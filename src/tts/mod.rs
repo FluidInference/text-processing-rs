@@ -18,8 +18,25 @@ pub mod whitelist;
 
 /// Ones words indexed by value (0..20).
 const ONES: [&str; 20] = [
-    "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
-    "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen",
+    "zero",
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine",
+    "ten",
+    "eleven",
+    "twelve",
+    "thirteen",
+    "fourteen",
+    "fifteen",
+    "sixteen",
+    "seventeen",
+    "eighteen",
     "nineteen",
 ];
 
@@ -166,7 +183,10 @@ mod tests {
     fn test_number_to_words_thousands() {
         assert_eq!(number_to_words(1000), "one thousand");
         assert_eq!(number_to_words(1001), "one thousand one");
-        assert_eq!(number_to_words(1234), "one thousand two hundred thirty four");
+        assert_eq!(
+            number_to_words(1234),
+            "one thousand two hundred thirty four"
+        );
         assert_eq!(number_to_words(10000), "ten thousand");
         assert_eq!(number_to_words(100000), "one hundred thousand");
     }

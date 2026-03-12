@@ -4,8 +4,8 @@
 
 mod common;
 
-use text_processing_rs::{tn_normalize, tn_normalize_sentence};
 use std::path::Path;
+use text_processing_rs::{tn_normalize, tn_normalize_sentence};
 
 fn print_failures(results: &common::TestResults) {
     for f in &results.failures {
@@ -18,8 +18,7 @@ fn print_failures(results: &common::TestResults) {
 
 #[test]
 fn test_tn_cardinal() {
-    let results =
-        common::run_test_file(Path::new("tests/data/en/tn_cardinal.txt"), tn_normalize);
+    let results = common::run_test_file(Path::new("tests/data/en/tn_cardinal.txt"), tn_normalize);
     println!(
         "tn_cardinal: {}/{} passed ({} failures)",
         results.passed,
@@ -36,8 +35,7 @@ fn test_tn_cardinal() {
 
 #[test]
 fn test_tn_ordinal() {
-    let results =
-        common::run_test_file(Path::new("tests/data/en/tn_ordinal.txt"), tn_normalize);
+    let results = common::run_test_file(Path::new("tests/data/en/tn_ordinal.txt"), tn_normalize);
     println!(
         "tn_ordinal: {}/{} passed ({} failures)",
         results.passed,
@@ -54,8 +52,7 @@ fn test_tn_ordinal() {
 
 #[test]
 fn test_tn_decimal() {
-    let results =
-        common::run_test_file(Path::new("tests/data/en/tn_decimal.txt"), tn_normalize);
+    let results = common::run_test_file(Path::new("tests/data/en/tn_decimal.txt"), tn_normalize);
     println!(
         "tn_decimal: {}/{} passed ({} failures)",
         results.passed,
@@ -72,8 +69,7 @@ fn test_tn_decimal() {
 
 #[test]
 fn test_tn_money() {
-    let results =
-        common::run_test_file(Path::new("tests/data/en/tn_money.txt"), tn_normalize);
+    let results = common::run_test_file(Path::new("tests/data/en/tn_money.txt"), tn_normalize);
     println!(
         "tn_money: {}/{} passed ({} failures)",
         results.passed,
@@ -124,8 +120,7 @@ fn test_tn_date() {
 
 #[test]
 fn test_tn_measure() {
-    let results =
-        common::run_test_file(Path::new("tests/data/en/tn_measure.txt"), tn_normalize);
+    let results = common::run_test_file(Path::new("tests/data/en/tn_measure.txt"), tn_normalize);
     println!(
         "tn_measure: {}/{} passed ({} failures)",
         results.passed,
@@ -142,8 +137,7 @@ fn test_tn_measure() {
 
 #[test]
 fn test_tn_electronic() {
-    let results =
-        common::run_test_file(Path::new("tests/data/en/tn_electronic.txt"), tn_normalize);
+    let results = common::run_test_file(Path::new("tests/data/en/tn_electronic.txt"), tn_normalize);
     println!(
         "tn_electronic: {}/{} passed ({} failures)",
         results.passed,
@@ -160,8 +154,7 @@ fn test_tn_electronic() {
 
 #[test]
 fn test_tn_telephone() {
-    let results =
-        common::run_test_file(Path::new("tests/data/en/tn_telephone.txt"), tn_normalize);
+    let results = common::run_test_file(Path::new("tests/data/en/tn_telephone.txt"), tn_normalize);
     println!(
         "tn_telephone: {}/{} passed ({} failures)",
         results.passed,
@@ -178,8 +171,7 @@ fn test_tn_telephone() {
 
 #[test]
 fn test_tn_whitelist() {
-    let results =
-        common::run_test_file(Path::new("tests/data/en/tn_whitelist.txt"), tn_normalize);
+    let results = common::run_test_file(Path::new("tests/data/en/tn_whitelist.txt"), tn_normalize);
     println!(
         "tn_whitelist: {}/{} passed ({} failures)",
         results.passed,

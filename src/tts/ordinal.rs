@@ -126,10 +126,7 @@ mod tests {
     fn test_large() {
         assert_eq!(parse("100th"), Some("one hundredth".to_string()));
         assert_eq!(parse("1000th"), Some("one thousandth".to_string()));
-        assert_eq!(
-            parse("101st"),
-            Some("one hundred first".to_string())
-        );
+        assert_eq!(parse("101st"), Some("one hundred first".to_string()));
     }
 
     #[test]

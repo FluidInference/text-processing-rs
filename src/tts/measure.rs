@@ -110,17 +110,16 @@ pub fn parse(input: &str) -> Option<String> {
         .iter()
         .filter(|(unit, _)| {
             trimmed.ends_with(*unit)
-                && (trimmed.len() == unit.len()
-                    || {
-                        let before = &trimmed[..trimmed.len() - unit.len()];
-                        // Require a space between number and unit for single-letter units
-                        // to avoid false matches like "1980s" → "1980 seconds"
-                        if unit.len() == 1 && unit.chars().all(|c| c.is_ascii_alphabetic()) {
-                            before.ends_with(' ')
-                        } else {
-                            before.ends_with(' ') || before.ends_with(|c: char| c.is_ascii_digit())
-                        }
-                    })
+                && (trimmed.len() == unit.len() || {
+                    let before = &trimmed[..trimmed.len() - unit.len()];
+                    // Require a space between number and unit for single-letter units
+                    // to avoid false matches like "1980s" → "1980 seconds"
+                    if unit.len() == 1 && unit.chars().all(|c| c.is_ascii_alphabetic()) {
+                        before.ends_with(' ')
+                    } else {
+                        before.ends_with(' ') || before.ends_with(|c: char| c.is_ascii_digit())
+                    }
+                })
         })
         .map(|(k, v)| (*k, v))
         .collect();

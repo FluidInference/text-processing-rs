@@ -9,7 +9,12 @@ use super::{number_to_words, spell_digits};
 
 /// Scale suffixes we recognize after a decimal number.
 const QUANTITY_SUFFIXES: &[&str] = &[
-    "billion", "million", "trillion", "quadrillion", "quintillion", "thousand",
+    "billion",
+    "million",
+    "trillion",
+    "quadrillion",
+    "quintillion",
+    "thousand",
 ];
 
 /// Parse a written decimal number to spoken form.

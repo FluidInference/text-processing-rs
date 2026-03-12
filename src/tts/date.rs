@@ -142,8 +142,8 @@ fn parse_month_day_year(input: &str) -> Option<String> {
         // Could be "January 5 2025" or "January 5 2025." (space-separated, optional trailing punct)
         let parts: Vec<&str> = rest.splitn(2, ' ').collect();
         if parts.len() == 2 && parts[0].chars().all(|c| c.is_ascii_digit()) {
-            let year_clean = parts[1]
-                .trim_end_matches(|c: char| c == '.' || c == ',' || c == '!' || c == '?');
+            let year_clean =
+                parts[1].trim_end_matches(|c: char| c == '.' || c == ',' || c == '!' || c == '?');
             if year_clean.chars().all(|c| c.is_ascii_digit()) && year_clean.len() == 4 {
                 (parts[0], Some(year_clean))
             } else {
@@ -206,7 +206,10 @@ fn parse_numeric_date(input: &str) -> Option<String> {
     }
 
     // All parts must be digits
-    if !parts.iter().all(|p| !p.is_empty() && p.chars().all(|c| c.is_ascii_digit())) {
+    if !parts
+        .iter()
+        .all(|p| !p.is_empty() && p.chars().all(|c| c.is_ascii_digit()))
+    {
         return None;
     }
 
@@ -218,10 +221,7 @@ fn parse_numeric_date(input: &str) -> Option<String> {
         return None;
     }
 
-    let month_name = MONTH_NUMBERS
-        .iter()
-        .find(|(_, n)| *n == month_num)?
-        .0;
+    let month_name = MONTH_NUMBERS.iter().find(|(_, n)| *n == month_num)?.0;
 
     let day_ordinal = ordinal_word(day);
     let year_words = verbalize_year(year)?;
@@ -333,10 +333,7 @@ mod tests {
 
     #[test]
     fn test_month_day() {
-        assert_eq!(
-            parse("January 5"),
-            Some("january fifth".to_string())
-        );
+        assert_eq!(parse("January 5"), Some("january fifth".to_string()));
         assert_eq!(
             parse("December 25"),
             Some("december twenty fifth".to_string())
@@ -357,18 +354,9 @@ mod tests {
 
     #[test]
     fn test_decade() {
-        assert_eq!(
-            parse("1980s"),
-            Some("nineteen eighties".to_string())
-        );
-        assert_eq!(
-            parse("2000s"),
-            Some("two thousands".to_string())
-        );
-        assert_eq!(
-            parse("1990s"),
-            Some("nineteen nineties".to_string())
-        );
+        assert_eq!(parse("1980s"), Some("nineteen eighties".to_string()));
+        assert_eq!(parse("2000s"), Some("two thousands".to_string()));
+        assert_eq!(parse("1990s"), Some("nineteen nineties".to_string()));
     }
 
     #[test]
