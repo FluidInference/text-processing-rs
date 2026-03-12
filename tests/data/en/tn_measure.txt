@@ -1,0 +1,13 @@
+# Measure TN: written~spoken
+200 km/h~two hundred kilometers per hour
+1 kg~one kilogram
+2 kg~two kilograms
+-66 kg~minus sixty six kilograms
+72°F~seventy two degrees fahrenheit
+100°C~one hundred degrees celsius
+50%~fifty percent
+1%~one percent
+500 MB~five hundred megabytes
+1 GB~one gigabyte
+3 mi~three miles
+1 mi~one mile

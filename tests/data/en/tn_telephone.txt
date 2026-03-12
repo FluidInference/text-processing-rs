@@ -1,0 +1,5 @@
+# Telephone TN: written~spoken
+123-456-7890~one two three, four five six, seven eight nine zero
++1-234-567-8901~plus one, two three four, five six seven, eight nine zero one
+(555) 123-4567~five five five, one two three, four five six seven
+555.123.4567~five five five, one two three, four five six seven

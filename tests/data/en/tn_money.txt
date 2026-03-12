@@ -1,0 +1,17 @@
+# Money TN: written~spoken
+$1~one dollar
+$5~five dollars
+$100~one hundred dollars
+$5.50~five dollars and fifty cents
+$1.01~one dollar and one cent
+$0.01~one cent
+$0.99~ninety nine cents
+$0.50~fifty cents
+$1,000~one thousand dollars
+€100~one hundred euros
+€1~one euro
+£1~one pound
+£5.50~five pounds and fifty pence
+¥500~five hundred yen
+$2.5 billion~two point five billion dollars
+$50 million~fifty million dollars

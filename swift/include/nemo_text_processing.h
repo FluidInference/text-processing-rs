@@ -70,6 +70,37 @@ void nemo_clear_rules(void);
 uint32_t nemo_rule_count(void);
 
 /**
+ * Text Normalization: convert written-form text to spoken form (TTS preprocessing).
+ *
+ * @param input Null-terminated UTF-8 string of written text
+ * @return Newly allocated string with spoken form, or NULL on error.
+ *         Must be freed with nemo_free_string().
+ *
+ * Example:
+ *   char* result = nemo_tn_normalize("$5.50");
+ *   // result is "five dollars and fifty cents"
+ *   nemo_free_string(result);
+ */
+char* nemo_tn_normalize(const char* input);
+
+/**
+ * Text Normalization: normalize a full sentence, replacing written-form spans with spoken form.
+ *
+ * @param input Null-terminated UTF-8 string
+ * @return Newly allocated string, must be freed with nemo_free_string().
+ */
+char* nemo_tn_normalize_sentence(const char* input);
+
+/**
+ * Text Normalization: normalize a full sentence with configurable max span size.
+ *
+ * @param input Null-terminated UTF-8 string
+ * @param max_span_tokens Maximum number of consecutive tokens per span (default 16)
+ * @return Newly allocated string, must be freed with nemo_free_string().
+ */
+char* nemo_tn_normalize_sentence_with_max_span(const char* input, uint32_t max_span_tokens);
+
+/**
  * Free a string allocated by nemo_normalize or nemo_normalize_sentence.
  *
  * @param s Pointer returned by nemo_normalize, or NULL (no-op)

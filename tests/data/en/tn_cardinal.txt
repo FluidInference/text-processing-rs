@@ -1,0 +1,26 @@
+# Cardinal TN: written~spoken
+0~zero
+1~one
+5~five
+10~ten
+11~eleven
+19~nineteen
+20~twenty
+21~twenty one
+42~forty two
+99~ninety nine
+100~one hundred
+101~one hundred one
+123~one hundred twenty three
+999~nine hundred ninety nine
+1000~one thousand
+1001~one thousand one
+1234~one thousand two hundred thirty four
+10000~ten thousand
+100000~one hundred thousand
+1000000~one million
+2000003~two million three
+-42~minus forty two
+-1000~minus one thousand
+1,000~one thousand
+1,000,000~one million
