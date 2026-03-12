@@ -3,7 +3,10 @@
 //! Converts written decimal numbers to spoken German:
 //! - "3,14" → "drei komma eins vier"
 //! - "0,5" → "null komma fuenf"
-//! - "3.14" → "drei komma eins vier"
+//! - "-3,14" → "minus drei komma eins vier"
+//!
+//! German uses comma (,) as the decimal separator.
+//! Period (.) is used as thousands separator in cardinal numbers.
 
 use super::{number_to_words, spell_digits};
 
