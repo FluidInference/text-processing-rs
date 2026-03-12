@@ -173,12 +173,10 @@ fn parse_amount(amount_str: &str, currency: &Currency) -> Option<String> {
         return None;
     }
 
-    // Determine decimal separator: French uses comma
-    let sep = if amount_str.contains(',') { ',' } else { '.' };
-
-    if amount_str.contains(sep) && sep != '.' || amount_str.contains('.') {
-        let actual_sep = if amount_str.contains(',') { ',' } else { '.' };
-        let parts: Vec<&str> = amount_str.splitn(2, actual_sep).collect();
+    // Check for decimal separator (comma or period)
+    if amount_str.contains(',') || amount_str.contains('.') {
+        let sep = if amount_str.contains(',') { ',' } else { '.' };
+        let parts: Vec<&str> = amount_str.splitn(2, sep).collect();
         if parts.len() == 2 {
             let int_clean: String = parts[0].chars().filter(|c| c.is_ascii_digit()).collect();
             let dollars: i64 = if int_clean.is_empty() {

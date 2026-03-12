@@ -30,14 +30,11 @@ pub fn parse(input: &str) -> Option<String> {
     // Check for quantity suffix: "1,5 milliarden"
     let (number_part, suffix) = extract_suffix(trimmed);
 
-    // German uses comma as decimal separator, but also accept period
-    let sep = if number_part.contains(',') && !number_part.contains('.') {
-        ','
-    } else if number_part.contains('.') {
-        '.'
-    } else {
+    // German uses comma as decimal separator (period is thousands separator)
+    if !number_part.contains(',') {
         return None;
-    };
+    }
+    let sep = ',';
 
     let parts: Vec<&str> = number_part.splitn(2, sep).collect();
     if parts.len() != 2 {
@@ -104,11 +101,6 @@ mod tests {
     fn test_comma_decimal() {
         assert_eq!(parse("3,14"), Some("drei komma eins vier".to_string()));
         assert_eq!(parse("0,5"), Some("null komma fuenf".to_string()));
-    }
-
-    #[test]
-    fn test_period_decimal() {
-        assert_eq!(parse("3.14"), Some("drei komma eins vier".to_string()));
     }
 
     #[test]
