@@ -152,7 +152,14 @@ pub fn parse(input: &str) -> Option<String> {
         if clean.contains('.') {
             let parts: Vec<&str> = clean.splitn(2, '.').collect();
             if parts.len() == 2 {
-                let int_val: i64 = parts[0].parse().ok()?;
+                let int_val: i64 = if parts[0].is_empty() {
+                    0
+                } else {
+                    let Ok(v) = parts[0].parse::<i64>() else {
+                        continue;
+                    };
+                    v
+                };
                 let int_words = number_to_words(int_val);
                 let frac_words = super::spell_digits(parts[1]);
                 let unit_word = unit_info.plural; // decimals are usually plural
@@ -166,7 +173,9 @@ pub fn parse(input: &str) -> Option<String> {
             continue;
         }
 
-        let n: i64 = clean.parse().ok()?;
+        let Ok(n) = clean.parse::<i64>() else {
+            continue;
+        };
         let num_words = if is_negative {
             format!("minus {}", number_to_words(n))
         } else {
@@ -230,6 +239,15 @@ mod tests {
     fn test_data() {
         assert_eq!(parse("500 MB"), Some("five hundred megabytes".to_string()));
         assert_eq!(parse("1 GB"), Some("one gigabyte".to_string()));
+    }
+
+    #[test]
+    fn test_decimal_with_empty_integer() {
+        // ".5 kg" should not cause premature return — continue to next unit
+        assert_eq!(
+            parse(".5 kg"),
+            Some("zero point five kilograms".to_string())
+        );
     }
 
     #[test]
