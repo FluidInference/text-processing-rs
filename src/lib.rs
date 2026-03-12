@@ -109,10 +109,66 @@ pub fn normalize(input: &str) -> String {
     input.to_string()
 }
 
-/// Normalize with language selection (future use).
-pub fn normalize_with_lang(input: &str, _lang: &str) -> String {
-    // TODO: Language-specific ITN taggers
-    normalize(input)
+/// Normalize with language selection.
+///
+/// Supports language-specific ITN taggers.
+pub fn normalize_with_lang(input: &str, lang: &str) -> String {
+    let input = input.trim();
+
+    match lang {
+        "en" => normalize(input),
+        "fr" => normalize_lang_fr(input),
+        _ => normalize(input), // Default to English
+    }
+}
+
+/// ITN for French
+fn normalize_lang_fr(input: &str) -> String {
+    // Apply custom user rules first
+    if let Some(result) = custom_rules::parse(input) {
+        return result;
+    }
+
+    // Try French ITN taggers in order of specificity
+    if let Some(result) = asr::fr::whitelist::parse(input) {
+        return result;
+    }
+    if let Some(result) = asr::fr::punctuation::parse(input) {
+        return result;
+    }
+    if let Some(result) = asr::fr::word::parse(input) {
+        return result;
+    }
+    if let Some(result) = asr::fr::time::parse(input) {
+        return result;
+    }
+    if let Some(result) = asr::fr::date::parse(input) {
+        return result;
+    }
+    if let Some(result) = asr::fr::money::parse(input) {
+        return result;
+    }
+    if let Some(result) = asr::fr::measure::parse(input) {
+        return result;
+    }
+    if let Some(result) = asr::fr::decimal::parse(input) {
+        return result;
+    }
+    if let Some(result) = asr::fr::telephone::parse(input) {
+        return result;
+    }
+    if let Some(result) = asr::fr::electronic::parse(input) {
+        return result;
+    }
+    if let Some(result) = asr::fr::ordinal::parse(input) {
+        return result;
+    }
+    if let Some(num) = asr::fr::cardinal::parse(input) {
+        return num;
+    }
+
+    // No match - return original
+    input.to_string()
 }
 
 // ── Multi-language TN helpers ──────────────────────────────────────────

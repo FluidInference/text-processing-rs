@@ -90,7 +90,7 @@ pub fn parse(input: &str) -> Option<String> {
     }
 }
 
-fn words_to_number(input: &str) -> Option<i128> {
+pub(super) fn words_to_number(input: &str) -> Option<i128> {
     // Normalize: remove hyphens, "et" connectors
     let normalized = input
         .replace("-", " ")
