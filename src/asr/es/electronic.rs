@@ -18,6 +18,17 @@ pub fn parse(input: &str) -> Option<String> {
         return None;
     }
 
+    // Require "arroba" or multiple delimiters (punto/barra) to avoid matching
+    // decimal expressions like "uno punto treinta y tres" as electronic
+    if !input_trim.contains("arroba") {
+        let delim_count = input_trim.matches("punto").count()
+            + input_trim.matches("barra").count()
+            + input_trim.matches("dos puntos").count();
+        if delim_count < 2 {
+            return None;
+        }
+    }
+
     let tokens: Vec<&str> = input_trim.split_whitespace().collect();
     if tokens.len() < 3 {
         return None;

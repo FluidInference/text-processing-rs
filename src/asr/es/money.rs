@@ -27,7 +27,7 @@ const CURRENCIES: &[Currency] = &[
     Currency {
         names: &["dólar", "dólares"],
         symbol: "$",
-        cent_names: &["centavos", "centavo"],
+        cent_names: &["centavos", "centavo", "céntimos", "céntimo"],
     },
     Currency {
         names: &["euro", "euros"],

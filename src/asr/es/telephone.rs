@@ -63,15 +63,39 @@ fn extract_extension<'a>(tokens: &'a [&'a str]) -> (&'a [&'a str], Option<String
 }
 
 /// Extract international prefix: "más uno" → (Some("1"), rest)
+/// Also handles multi-digit codes: "más cincuenta y cuatro" → (Some("54"), rest)
 fn extract_prefix<'a>(tokens: &'a [&'a str]) -> (Option<String>, &'a [&'a str]) {
     if tokens.is_empty() {
         return (None, tokens);
     }
 
     if tokens[0] == "más" && tokens.len() > 1 {
-        // Country code is a single spoken digit word (e.g. "uno" → 1)
+        // Try single digit first: "más uno" → 1
         if let Some(d) = single_digit(tokens[1]) {
             return (Some(d.to_string()), &tokens[2..]);
+        }
+
+        // Try multi-word country code: "más cincuenta y cuatro" → 54
+        // Try longest match first (up to 3 tokens), require the rest to start
+        // with a parseable digit token to avoid consuming phone digits
+        let remaining = &tokens[1..];
+        let max_cc = 3.min(remaining.len());
+        for end in (1..=max_cc).rev() {
+            let candidate = remaining[..end].join(" ");
+            if let Some(num) = cardinal::words_to_number(&candidate) {
+                let num = num as i64;
+                if num >= 10 && num <= 999 {
+                    // Verify the next token after the country code is a digit
+                    let after = &remaining[end..];
+                    if !after.is_empty()
+                        && (single_digit(after[0]).is_some()
+                            || cardinal::words_to_number(after[0]).is_some()
+                            || after[0] == "triple")
+                    {
+                        return (Some(num.to_string()), after);
+                    }
+                }
+            }
         }
     }
 

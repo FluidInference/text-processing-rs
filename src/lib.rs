@@ -517,11 +517,11 @@ fn normalize_lang_zh(input: &str) -> String {
     // 3. Fractions (X分之Y) — before time which also uses 分
     result = asr::zh::fraction::process(&result);
 
-    // 4. Decimals (X点Y)
-    result = asr::zh::decimal::process(&result);
-
-    // 5. Time (X点Y分, X分钟, X秒钟)
+    // 4. Time (X点Y分, X分钟, X秒钟) — before decimal so 点 with 分/刻/半 isn't consumed as decimal
     result = asr::zh::time::process(&result);
+
+    // 5. Decimals (X点Y)
+    result = asr::zh::decimal::process(&result);
 
     // 6. Dates (年月日, 公元/纪元)
     result = asr::zh::date::process(&result);

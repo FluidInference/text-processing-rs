@@ -165,41 +165,63 @@ fn parse_integer_part(input: &str) -> Option<i128> {
 /// Parse decimal digits from Spanish words.
 /// Handles mixed individual digits and compound numbers:
 /// "catorce quince noventa y dos sesenta y cinco tres" → "141592653"
+///
+/// Each group is parsed as the largest compound number possible
+/// (hundreds+tens+units, tens+units, teens, or single digits)
+/// and its string representation is concatenated.
 fn parse_decimal_part(input: &str) -> Option<String> {
     let tokens: Vec<&str> = input.split_whitespace().collect();
     if tokens.is_empty() {
         return None;
     }
 
-    // Try to parse as groups: each group is either a single digit word,
-    // a compound number (like "catorce", "noventa y dos"), or "cero"/"ciento..."
     let mut result = String::new();
     let mut i = 0;
 
     while i < tokens.len() {
         let t = tokens[i];
 
-        // Skip "y" connector
-        if t == "y" {
-            // "y" connects to previous compound number
-            // Look ahead: if next token is a unit, combine with previous tens
-            if i + 1 < tokens.len() {
-                if let Some(val) = try_parse_unit(tokens[i + 1]) {
-                    // Combine with previous result: last digits were tens, add unit
-                    // Actually, we need to handle "noventa y dos" as a group
-                    // Let's try parsing "TENS y UNIT" as a compound
-                    result.push_str(&val.to_string());
-                    i += 2;
-                    continue;
+        // Try hundreds: "ciento cuarenta y uno" → 141, "novecientos veintiséis" → 926
+        if let Some(hundred_base) = try_parse_hundred(t) {
+            let mut val = hundred_base;
+            let mut j = i + 1;
+
+            if j < tokens.len() {
+                // "ciento cuarenta y uno" — tens word follows
+                if let Some(&tv) = lazy_static_tens(tokens[j]) {
+                    val += tv;
+                    j += 1;
+                    // Check for "y UNIT"
+                    if j + 1 < tokens.len() && tokens[j] == "y" {
+                        if let Some(uv) = try_parse_unit(tokens[j + 1]) {
+                            val += uv;
+                            j += 2;
+                        }
+                    }
+                }
+                // "novecientos veintiséis" — compound teen/veinti- follows
+                else if let Some(sv) = try_parse_single(tokens[j]) {
+                    if sv >= 1 && sv <= 29 {
+                        val += sv;
+                        j += 1;
+                    }
+                }
+                // "ciento y uno" — "y" directly follows hundreds
+                else if tokens[j] == "y" && j + 1 < tokens.len() {
+                    if let Some(uv) = try_parse_unit(tokens[j + 1]) {
+                        val += uv;
+                        j += 2;
+                    }
                 }
             }
-            i += 1;
+
+            result.push_str(&val.to_string());
+            i = j;
             continue;
         }
 
-        // Try compound "TENS y UNIT" or just TENS
+        // Try "TENS y UNIT": "treinta y tres" → 33, "noventa y dos" → 92
         if let Some(&tens_val) = lazy_static_tens(t) {
-            // Check for "y UNIT" after
             if i + 2 < tokens.len() && tokens[i + 1] == "y" {
                 if let Some(unit_val) = try_parse_unit(tokens[i + 2]) {
                     let compound = tens_val + unit_val;
@@ -208,41 +230,13 @@ fn parse_decimal_part(input: &str) -> Option<String> {
                     continue;
                 }
             }
+            // Tens alone: "treinta" → 30
             result.push_str(&tens_val.to_string());
             i += 1;
             continue;
         }
 
-        // Try hundreds
-        if let Some(val) = try_parse_hundred(t) {
-            // Check for rest of hundred (e.g., "ciento cuarenta y uno")
-            // Collect all tokens that form a hundreds-level number
-            let mut hundred_val = val;
-            let mut j = i + 1;
-            while j < tokens.len() {
-                let next = tokens[j];
-                if next == "y" {
-                    j += 1;
-                    continue;
-                }
-                if let Some(&tv) = lazy_static_tens(next) {
-                    hundred_val += tv;
-                    j += 1;
-                    continue;
-                }
-                if let Some(uv) = try_parse_unit(next) {
-                    hundred_val += uv;
-                    j += 1;
-                    continue;
-                }
-                break;
-            }
-            result.push_str(&hundred_val.to_string());
-            i = j;
-            continue;
-        }
-
-        // Single digit or teen
+        // Single digit, teen, or veinti- compound
         if let Some(val) = try_parse_single(t) {
             result.push_str(&val.to_string());
             i += 1;

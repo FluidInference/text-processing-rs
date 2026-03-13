@@ -122,25 +122,28 @@ fn parse_article_time(input: &str) -> Option<String> {
         ));
     }
 
-    // Try "X y MINUTES" → X:MM
-    if let Some(y_pos) = time_part.find(" y ") {
-        let hour_part = &time_part[..y_pos];
-        let min_part = &time_part[y_pos + 3..];
+    // Try "X y/con MINUTES" → X:MM
+    for connector in &[" y ", " con "] {
+        if let Some(c_pos) = time_part.find(connector) {
+            let hour_part = &time_part[..c_pos];
+            let min_part = &time_part[c_pos + connector.len()..];
 
-        let hour = parse_hour_word(hour_part)?;
-        let minutes = cardinal::words_to_number(min_part)? as i64;
-        if minutes > 59 {
-            return None;
+            if let Some(hour) = parse_hour_word(hour_part) {
+                if let Some(minutes) = cardinal::words_to_number(min_part) {
+                    let minutes = minutes as i64;
+                    if minutes <= 59 {
+                        let out_article = if hour == 1 { "la" } else { article };
+                        return Some(format_time(
+                            out_article,
+                            hour,
+                            minutes,
+                            ampm.as_deref(),
+                            tz.as_deref(),
+                        ));
+                    }
+                }
+            }
         }
-
-        let out_article = if hour == 1 { "la" } else { article };
-        return Some(format_time(
-            out_article,
-            hour,
-            minutes,
-            ampm.as_deref(),
-            tz.as_deref(),
-        ));
     }
 
     // Try "X MINUTES" (no connector) → X:MM
