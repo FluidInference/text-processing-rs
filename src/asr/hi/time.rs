@@ -33,12 +33,37 @@ fn is_hour_word(w: &str) -> bool {
 
 /// Check if a word is a measurement unit that means this is NOT a time context.
 fn is_measure_unit(w: &str) -> bool {
-    matches!(w,
-        "ग्राम" | "किग्रा" | "मीटर" | "किलोमीटर" | "मिलीमीटर" | "लीटर" | "पिंट" |
-        "गैलन" | "इंच" | "फुट" | "एकड़" | "हेक्टेयर" | "वर्ष" | "महीने" | "महीना" |
-        "दर्जन" | "सेल्सियस" | "कैल्विन" | "ऐंपीयर" | "माइक्रॉन" | "मिलिग्राम" |
-        "डेसिग्राम" | "मीट्रिक" | "वर्ग" | "वर्गसेंटीमीटर" | "क्यूबिकमिलीमीटर" |
-        "घन" | "दशमलव" | "घंटे"
+    matches!(
+        w,
+        "ग्राम"
+            | "किग्रा"
+            | "मीटर"
+            | "किलोमीटर"
+            | "मिलीमीटर"
+            | "लीटर"
+            | "पिंट"
+            | "गैलन"
+            | "इंच"
+            | "फुट"
+            | "एकड़"
+            | "हेक्टेयर"
+            | "वर्ष"
+            | "महीने"
+            | "महीना"
+            | "दर्जन"
+            | "सेल्सियस"
+            | "कैल्विन"
+            | "ऐंपीयर"
+            | "माइक्रॉन"
+            | "मिलिग्राम"
+            | "डेसिग्राम"
+            | "मीट्रिक"
+            | "वर्ग"
+            | "वर्गसेंटीमीटर"
+            | "क्यूबिकमिलीमीटर"
+            | "घन"
+            | "दशमलव"
+            | "घंटे"
     )
 }
 
@@ -116,12 +141,16 @@ fn try_parse_modifier_time(words: &[&str], start: usize) -> Option<(String, usiz
     match modifier {
         "डेढ़" => {
             // डेढ़ बजे → 1:30, डेढ़ घंटा → 1:30
-            if start + 1 < words.len() && (is_baje(words[start + 1]) || is_hour_word(words[start + 1])) {
+            if start + 1 < words.len()
+                && (is_baje(words[start + 1]) || is_hour_word(words[start + 1]))
+            {
                 return Some(("१:३०".to_string(), 2));
             }
         }
         "ढाई" => {
-            if start + 1 < words.len() && (is_baje(words[start + 1]) || is_hour_word(words[start + 1])) {
+            if start + 1 < words.len()
+                && (is_baje(words[start + 1]) || is_hour_word(words[start + 1]))
+            {
                 return Some(("२:३०".to_string(), 2));
             }
         }
@@ -141,12 +170,18 @@ fn try_parse_modifier_time(words: &[&str], start: usize) -> Option<(String, usiz
                     if hour >= 1 && hour <= 24 {
                         // साढ़े X बजे → X:30
                         if start + 2 < words.len() && is_baje(words[start + 2]) {
-                            return Some((format!("{}:{}", cardinal::to_devanagari(hour), "३०"), 3));
+                            return Some((
+                                format!("{}:{}", cardinal::to_devanagari(hour), "३०"),
+                                3,
+                            ));
                         }
                         // साढ़े X alone — ONLY if NOT followed by unit word or number
                         if start + 2 < words.len() {
                             let next = words[start + 2];
-                            if cardinal::is_hi_number_word(next) || cardinal::is_modifier(next) || is_measure_unit(next) {
+                            if cardinal::is_hi_number_word(next)
+                                || cardinal::is_modifier(next)
+                                || is_measure_unit(next)
+                            {
                                 return None;
                             }
                         }
@@ -162,20 +197,32 @@ fn try_parse_modifier_time(words: &[&str], start: usize) -> Option<(String, usiz
                         let actual_hour = hour - 1;
                         // पौने X बजे → (X-1):45
                         if start + 2 < words.len() && is_baje(words[start + 2]) {
-                            return Some((format!("{}:{}", cardinal::to_devanagari(actual_hour), "४५"), 3));
+                            return Some((
+                                format!("{}:{}", cardinal::to_devanagari(actual_hour), "४५"),
+                                3,
+                            ));
                         }
                         // पौने X घंटा → (X-1):45
                         if start + 2 < words.len() && is_hour_word(words[start + 2]) {
-                            return Some((format!("{}:{}", cardinal::to_devanagari(actual_hour), "४५"), 3));
+                            return Some((
+                                format!("{}:{}", cardinal::to_devanagari(actual_hour), "४५"),
+                                3,
+                            ));
                         }
                         // पौने X alone — ONLY if NOT followed by unit word or number
                         if start + 2 < words.len() {
                             let next = words[start + 2];
-                            if cardinal::is_hi_number_word(next) || cardinal::is_modifier(next) || is_measure_unit(next) {
+                            if cardinal::is_hi_number_word(next)
+                                || cardinal::is_modifier(next)
+                                || is_measure_unit(next)
+                            {
                                 return None;
                             }
                         }
-                        return Some((format!("{}:{}", cardinal::to_devanagari(actual_hour), "४५"), 2));
+                        return Some((
+                            format!("{}:{}", cardinal::to_devanagari(actual_hour), "४५"),
+                            2,
+                        ));
                     }
                 }
             }
@@ -293,7 +340,11 @@ fn try_parse_ghanta_time(words: &[&str], start: usize) -> Option<(String, usize)
 /// Try to parse two consecutive number words as hour:minute.
 /// Very restrictive: only matches when it's clearly a standalone time expression.
 /// Must not be part of a longer digit word sequence (address/telephone).
-fn try_parse_two_number_time(words: &[&str], start: usize, result: &[String]) -> Option<(String, usize)> {
+fn try_parse_two_number_time(
+    words: &[&str],
+    start: usize,
+    result: &[String],
+) -> Option<(String, usize)> {
     if start + 1 >= words.len() {
         return None;
     }

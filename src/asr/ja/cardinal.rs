@@ -56,7 +56,11 @@ pub fn kanji_to_number(input: &str) -> Option<i64> {
 
     // Process 兆 group
     if let Some(pos) = chars.iter().position(|&c| c == '兆') {
-        let group = if pos == 0 { 1 } else { parse_sub_man(&chars[..pos])? };
+        let group = if pos == 0 {
+            1
+        } else {
+            parse_sub_man(&chars[..pos])?
+        };
         result += group * 1_000_000_000_000;
         i = pos + 1;
     }
@@ -64,7 +68,11 @@ pub fn kanji_to_number(input: &str) -> Option<i64> {
     // Process 億 group
     let remaining = &chars[i..];
     if let Some(pos) = remaining.iter().position(|&c| c == '億') {
-        let group = if pos == 0 { 1 } else { parse_sub_man(&remaining[..pos])? };
+        let group = if pos == 0 {
+            1
+        } else {
+            parse_sub_man(&remaining[..pos])?
+        };
         result += group * 100_000_000;
         i += pos + 1;
     }
@@ -72,7 +80,11 @@ pub fn kanji_to_number(input: &str) -> Option<i64> {
     // Process 万 group
     let remaining = &chars[i..];
     if let Some(pos) = remaining.iter().position(|&c| c == '万') {
-        let group = if pos == 0 { 1 } else { parse_sub_man(&remaining[..pos])? };
+        let group = if pos == 0 {
+            1
+        } else {
+            parse_sub_man(&remaining[..pos])?
+        };
         result += group * 10_000;
         i += pos + 1;
     }
@@ -167,7 +179,11 @@ pub fn format_with_commas(n: i64) -> String {
     }
 
     let negative = n < 0;
-    let mut num = if negative { (n as i128).abs() as u64 } else { n as u64 };
+    let mut num = if negative {
+        (n as i128).abs() as u64
+    } else {
+        n as u64
+    };
     let mut groups: Vec<String> = Vec::new();
 
     while num > 0 {
@@ -255,6 +271,9 @@ mod tests {
 
     #[test]
     fn test_replace() {
-        assert_eq!(replace_kanji_numbers("そこに鳥一羽がいます"), "そこに鳥1羽がいます");
+        assert_eq!(
+            replace_kanji_numbers("そこに鳥一羽がいます"),
+            "そこに鳥1羽がいます"
+        );
     }
 }

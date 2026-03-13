@@ -94,8 +94,14 @@ pub fn parse(input: &str) -> Option<String> {
 
 /// Parse scale money: "zwei millionen euro" → "€2 millionen"
 fn parse_scale_money(input: &str) -> Option<String> {
-    let scale_words = ["millionen", "million", "milliarden", "milliarde",
-                       "billionen", "billion"];
+    let scale_words = [
+        "millionen",
+        "million",
+        "milliarden",
+        "milliarde",
+        "billionen",
+        "billion",
+    ];
 
     for cur in CURRENCIES {
         for &cur_name in cur.names {
@@ -114,8 +120,12 @@ fn parse_scale_money(input: &str) -> Option<String> {
                                 let dec_part = parts[1].trim();
                                 let int_val = cardinal::words_to_number(int_part)?;
                                 let dec_digits = parse_decimal_digits(dec_part)?;
-                                return Some(format!("{}{}",
-                                    format_with_symbol(cur, &format!("{},{} {}", int_val, dec_digits, sw)),
+                                return Some(format!(
+                                    "{}{}",
+                                    format_with_symbol(
+                                        cur,
+                                        &format!("{},{} {}", int_val, dec_digits, sw)
+                                    ),
                                     ""
                                 ));
                             }
@@ -152,7 +162,10 @@ fn parse_decimal_money(input: &str) -> Option<String> {
                 let int_val = cardinal::words_to_number(int_part)?;
                 let dec_digits = parse_decimal_digits(dec_part)?;
 
-                return Some(format_with_symbol(cur, &format!("{},{}", int_val, dec_digits)));
+                return Some(format_with_symbol(
+                    cur,
+                    &format!("{},{}", int_val, dec_digits),
+                ));
             }
         }
     }
@@ -182,7 +195,10 @@ fn parse_with_subcurrency(input: &str) -> Option<String> {
                             if main_part.ends_with(cur_name) {
                                 let num_part = main_part[..main_part.len() - cur_name.len()].trim();
                                 let main_val = cardinal::words_to_number(num_part)?;
-                                return Some(format_with_symbol(cur, &format!("{} und {} {}", main_val, cent_val, cent_name)));
+                                return Some(format_with_symbol(
+                                    cur,
+                                    &format!("{} und {} {}", main_val, cent_val, cent_name),
+                                ));
                             }
                         }
                         continue;
@@ -193,7 +209,10 @@ fn parse_with_subcurrency(input: &str) -> Option<String> {
                         if main_part.ends_with(cur_name) {
                             let num_part = main_part[..main_part.len() - cur_name.len()].trim();
                             let main_val = cardinal::words_to_number(num_part)?;
-                            return Some(format_with_symbol(cur, &format!("{},{:02}", main_val, cent_val)));
+                            return Some(format_with_symbol(
+                                cur,
+                                &format!("{},{:02}", main_val, cent_val),
+                            ));
                         }
                     }
                 }
@@ -208,7 +227,10 @@ fn parse_with_subcurrency(input: &str) -> Option<String> {
                         let main_val = cardinal::words_to_number(num_part)?;
                         let cent_val = cardinal::words_to_number(cent_str)?;
 
-                        return Some(format_with_symbol(cur, &format!("{},{:02}", main_val, cent_val)));
+                        return Some(format_with_symbol(
+                            cur,
+                            &format!("{},{:02}", main_val, cent_val),
+                        ));
                     }
                 }
             }
@@ -230,7 +252,10 @@ fn parse_implied_cents(input: &str) -> Option<String> {
                 let main_val = cardinal::words_to_number(num_part)?;
                 let cent_val = cardinal::words_to_number(cent_part)?;
 
-                return Some(format_with_symbol(cur, &format!("{},{:02}", main_val, cent_val)));
+                return Some(format_with_symbol(
+                    cur,
+                    &format!("{},{:02}", main_val, cent_val),
+                ));
             }
         }
     }
@@ -308,10 +333,17 @@ fn format_with_symbol(cur: &Currency, amount: &str) -> String {
 /// Parse decimal digit words: "null null" → "00", "null eins" → "01"
 fn parse_decimal_digits(input: &str) -> Option<String> {
     let digit_map = [
-        ("null", "0"), ("eins", "1"), ("ein", "1"),
-        ("zwei", "2"), ("drei", "3"), ("vier", "4"),
-        ("fünf", "5"), ("sechs", "6"), ("sieben", "7"),
-        ("acht", "8"), ("neun", "9"),
+        ("null", "0"),
+        ("eins", "1"),
+        ("ein", "1"),
+        ("zwei", "2"),
+        ("drei", "3"),
+        ("vier", "4"),
+        ("fünf", "5"),
+        ("sechs", "6"),
+        ("sieben", "7"),
+        ("acht", "8"),
+        ("neun", "9"),
     ];
 
     let tokens: Vec<&str> = input.split_whitespace().collect();
@@ -349,8 +381,14 @@ mod tests {
 
     #[test]
     fn test_with_cents() {
-        assert_eq!(parse("zwei euro und zwanzig cent"), Some("€2,20".to_string()));
-        assert_eq!(parse("zwei dollar und zwanzig cent"), Some("$2,20".to_string()));
+        assert_eq!(
+            parse("zwei euro und zwanzig cent"),
+            Some("€2,20".to_string())
+        );
+        assert_eq!(
+            parse("zwei dollar und zwanzig cent"),
+            Some("$2,20".to_string())
+        );
     }
 
     #[test]
@@ -362,6 +400,9 @@ mod tests {
     #[test]
     fn test_scale() {
         assert_eq!(parse("eine million dollar"), Some("$1 million".to_string()));
-        assert_eq!(parse("zwei millionen euro"), Some("€2 millionen".to_string()));
+        assert_eq!(
+            parse("zwei millionen euro"),
+            Some("€2 millionen".to_string())
+        );
     }
 }

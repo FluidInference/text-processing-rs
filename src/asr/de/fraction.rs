@@ -80,8 +80,13 @@ fn parse_simple_fraction(input: &str) -> Option<String> {
     // Try compound denominator FIRST (handles "ein hundertstel", "zwei und zwanzigstel")
     // This takes priority because "hundertstel" as a simple denom = 100, but
     // "ein hundertstel" as compound denom = 100 with the "ein" being part of the denom
-    if last.ends_with("stel") || last.ends_with("halb") || last.ends_with("halbe")
-        || last.ends_with("halbes") || last.ends_with("halber") || last.ends_with("halben") {
+    if last.ends_with("stel")
+        || last.ends_with("halb")
+        || last.ends_with("halbe")
+        || last.ends_with("halbes")
+        || last.ends_with("halber")
+        || last.ends_with("halben")
+    {
         // Try compound denominators with increasing scope
         for j in 1..=last_idx {
             let denom_str = tokens[j..].join(" ");
@@ -206,7 +211,10 @@ mod tests {
 
     #[test]
     fn test_negative() {
-        assert_eq!(parse("minus ein zwei und zwanzigstel"), Some("-1/22".to_string()));
+        assert_eq!(
+            parse("minus ein zwei und zwanzigstel"),
+            Some("-1/22".to_string())
+        );
     }
 
     #[test]

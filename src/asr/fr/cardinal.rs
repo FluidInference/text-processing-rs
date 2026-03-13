@@ -81,8 +81,7 @@ pub fn parse(input: &str) -> Option<String> {
 
     // Don't parse single digit words (0-9)
     let single_digits = [
-        "un", "une", "deux", "trois", "quatre",
-        "cinq", "six", "sept", "huit", "neuf",
+        "un", "une", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf",
     ];
     if single_digits.contains(&input_trim) {
         return None;
@@ -90,7 +89,8 @@ pub fn parse(input: &str) -> Option<String> {
 
     // Don't parse space-separated simple compounds without scale words or "et"
     // E.g. "quarante trois" should not parse, but "vingt et un" and "cent vingt" should
-    if input_trim.contains(' ') && !contains_scale_word(input_trim) && !input_trim.contains(" et ") {
+    if input_trim.contains(' ') && !contains_scale_word(input_trim) && !input_trim.contains(" et ")
+    {
         // Special case: "moins" + single word (like "moins soixante")
         if !input_trim.starts_with("moins ") || input_trim.matches(' ').count() > 1 {
             return None;
@@ -116,13 +116,20 @@ pub fn parse(input: &str) -> Option<String> {
 /// Check if input contains scale words (cent, mille, million, etc.)
 fn contains_scale_word(input: &str) -> bool {
     let scale_words = [
-        "cent", "cents",
-        "mille", "mil",
-        "million", "millions",
-        "milliard", "milliards",
-        "billion", "billions",
-        "billiard", "billiards",
-        "trillion", "trillions",
+        "cent",
+        "cents",
+        "mille",
+        "mil",
+        "million",
+        "millions",
+        "milliard",
+        "milliards",
+        "billion",
+        "billions",
+        "billiard",
+        "billiards",
+        "trillion",
+        "trillions",
     ];
     scale_words.iter().any(|&word| input.contains(word))
 }

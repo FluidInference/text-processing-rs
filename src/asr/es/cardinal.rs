@@ -152,7 +152,8 @@ pub fn parse(input: &str) -> Option<String> {
         }
         // Long inputs (4+ tokens excluding "y") without heavy structure are likely phone numbers.
         // E.g., "uno veintitrés cincuenta y seis setenta y ocho" is a phone number, not 182.
-        let non_y_tokens: Vec<&str> = input_trim.split_whitespace()
+        let non_y_tokens: Vec<&str> = input_trim
+            .split_whitespace()
             .filter(|t| *t != "y")
             .collect();
         if non_y_tokens.len() >= 4 && !contains_heavy_structure(input_trim) {
@@ -193,22 +194,68 @@ fn parse_entre(input: &str) -> Option<String> {
 /// (not just a list of digit words)
 fn contains_structure_word(input: &str) -> bool {
     let structure_words = [
-        "cien", "ciento", "doscientos", "doscientas", "trescientos", "trescientas",
-        "cuatrocientos", "cuatrocientas", "quinientos", "quinientas",
-        "seiscientos", "seiscientas", "setecientos", "setecientas",
-        "ochocientos", "ochocientas", "novecientos", "novecientas",
-        "mil", "millón", "millones", "millardo", "millardos",
-        "billón", "billones", "trillón", "trillones",
-        "cuatrillón", "cuatrillones",
-        "y", "menos", "entre",
+        "cien",
+        "ciento",
+        "doscientos",
+        "doscientas",
+        "trescientos",
+        "trescientas",
+        "cuatrocientos",
+        "cuatrocientas",
+        "quinientos",
+        "quinientas",
+        "seiscientos",
+        "seiscientas",
+        "setecientos",
+        "setecientas",
+        "ochocientos",
+        "ochocientas",
+        "novecientos",
+        "novecientas",
+        "mil",
+        "millón",
+        "millones",
+        "millardo",
+        "millardos",
+        "billón",
+        "billones",
+        "trillón",
+        "trillones",
+        "cuatrillón",
+        "cuatrillones",
+        "y",
+        "menos",
+        "entre",
         // veinti- compounds and tens are considered structure too
-        "diez", "once", "doce", "trece", "catorce", "quince",
-        "dieciséis", "diecisiete", "dieciocho", "diecinueve",
-        "veinte", "veintiún", "veintiuno", "veintiuna", "veintidós",
-        "veintitrés", "veinticuatro", "veinticinco", "veintiséis",
-        "veintisiete", "veintiocho", "veintinueve",
-        "treinta", "cuarenta", "cincuenta", "sesenta",
-        "setenta", "ochenta", "noventa",
+        "diez",
+        "once",
+        "doce",
+        "trece",
+        "catorce",
+        "quince",
+        "dieciséis",
+        "diecisiete",
+        "dieciocho",
+        "diecinueve",
+        "veinte",
+        "veintiún",
+        "veintiuno",
+        "veintiuna",
+        "veintidós",
+        "veintitrés",
+        "veinticuatro",
+        "veinticinco",
+        "veintiséis",
+        "veintisiete",
+        "veintiocho",
+        "veintinueve",
+        "treinta",
+        "cuarenta",
+        "cincuenta",
+        "sesenta",
+        "setenta",
+        "ochenta",
+        "noventa",
     ];
     let tokens: Vec<&str> = input.split_whitespace().collect();
     tokens.iter().any(|t| structure_words.contains(t))
@@ -218,13 +265,35 @@ fn contains_structure_word(input: &str) -> bool {
 /// These are required for longer multi-word inputs to distinguish from phone numbers.
 fn contains_heavy_structure(input: &str) -> bool {
     let heavy_words = [
-        "cien", "ciento", "doscientos", "doscientas", "trescientos", "trescientas",
-        "cuatrocientos", "cuatrocientas", "quinientos", "quinientas",
-        "seiscientos", "seiscientas", "setecientos", "setecientas",
-        "ochocientos", "ochocientas", "novecientos", "novecientas",
-        "mil", "millón", "millones", "millardo", "millardos",
-        "billón", "billones", "trillón", "trillones",
-        "cuatrillón", "cuatrillones",
+        "cien",
+        "ciento",
+        "doscientos",
+        "doscientas",
+        "trescientos",
+        "trescientas",
+        "cuatrocientos",
+        "cuatrocientas",
+        "quinientos",
+        "quinientas",
+        "seiscientos",
+        "seiscientas",
+        "setecientos",
+        "setecientas",
+        "ochocientos",
+        "ochocientas",
+        "novecientos",
+        "novecientas",
+        "mil",
+        "millón",
+        "millones",
+        "millardo",
+        "millardos",
+        "billón",
+        "billones",
+        "trillón",
+        "trillones",
+        "cuatrillón",
+        "cuatrillones",
     ];
     let tokens: Vec<&str> = input.split_whitespace().collect();
     tokens.iter().any(|t| heavy_words.contains(t))
@@ -250,10 +319,7 @@ pub fn words_to_number(input: &str) -> Option<i128> {
     }
 
     // Filter out "y" connectors (but keep the structure)
-    let tokens: Vec<&str> = tokens.iter()
-        .filter(|&&t| t != "y")
-        .copied()
-        .collect();
+    let tokens: Vec<&str> = tokens.iter().filter(|&&t| t != "y").copied().collect();
 
     if tokens.is_empty() {
         return None;

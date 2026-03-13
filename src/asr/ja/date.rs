@@ -76,7 +76,8 @@ fn process_ranges(input: &str) -> String {
 
         // Check if followed by a date suffix (日, 月, 年代)
         let after_num: String = after_chars[num_end..].iter().collect();
-        let has_date_suffix = after_num.starts_with('日') || after_num.starts_with('月')
+        let has_date_suffix = after_num.starts_with('日')
+            || after_num.starts_with('月')
             || after_num.starts_with("年代");
 
         if num_start < before_chars.len() && num_end > 0 && has_date_suffix {

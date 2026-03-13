@@ -99,7 +99,13 @@ fn parse_article_time(input: &str) -> Option<String> {
         let hour_part = &time_part[..time_part.len() - 9];
         let hour = parse_hour_word(hour_part)?;
         let out_article = if hour == 1 { "la" } else { article };
-        return Some(format_time(out_article, hour, 15, ampm.as_deref(), tz.as_deref()));
+        return Some(format_time(
+            out_article,
+            hour,
+            15,
+            ampm.as_deref(),
+            tz.as_deref(),
+        ));
     }
 
     // Try "X y media" → X:30
@@ -107,7 +113,13 @@ fn parse_article_time(input: &str) -> Option<String> {
         let hour_part = &time_part[..time_part.len() - 8];
         let hour = parse_hour_word(hour_part)?;
         let out_article = if hour == 1 { "la" } else { article };
-        return Some(format_time(out_article, hour, 30, ampm.as_deref(), tz.as_deref()));
+        return Some(format_time(
+            out_article,
+            hour,
+            30,
+            ampm.as_deref(),
+            tz.as_deref(),
+        ));
     }
 
     // Try "X y MINUTES" → X:MM
@@ -117,10 +129,18 @@ fn parse_article_time(input: &str) -> Option<String> {
 
         let hour = parse_hour_word(hour_part)?;
         let minutes = cardinal::words_to_number(min_part)? as i64;
-        if minutes > 59 { return None; }
+        if minutes > 59 {
+            return None;
+        }
 
         let out_article = if hour == 1 { "la" } else { article };
-        return Some(format_time(out_article, hour, minutes, ampm.as_deref(), tz.as_deref()));
+        return Some(format_time(
+            out_article,
+            hour,
+            minutes,
+            ampm.as_deref(),
+            tz.as_deref(),
+        ));
     }
 
     // Try "X MINUTES" (no connector) → X:MM
@@ -134,7 +154,13 @@ fn parse_article_time(input: &str) -> Option<String> {
             let minutes = minutes as i64;
             if minutes <= 59 && minutes > 0 {
                 let out_article = if hour == 1 { "la" } else { article };
-                return Some(format_time(out_article, hour, minutes, ampm.as_deref(), tz.as_deref()));
+                return Some(format_time(
+                    out_article,
+                    hour,
+                    minutes,
+                    ampm.as_deref(),
+                    tz.as_deref(),
+                ));
             }
         }
     }
@@ -147,7 +173,13 @@ fn parse_article_time(input: &str) -> Option<String> {
             if ampm.is_some() {
                 let hour = parse_hour_word(tokens[0])?;
                 let out_article = if hour == 1 { "la" } else { article };
-                return Some(format_time(out_article, hour, 0, ampm.as_deref(), tz.as_deref()));
+                return Some(format_time(
+                    out_article,
+                    hour,
+                    0,
+                    ampm.as_deref(),
+                    tz.as_deref(),
+                ));
             }
             // Bare hours without AM/PM pass through
             return None;
@@ -247,7 +279,13 @@ fn extract_timezone(input: &str) -> (&str, Option<String>) {
 }
 
 /// Format time output
-fn format_time(article: &str, hour: i64, minutes: i64, ampm: Option<&str>, tz: Option<&str>) -> String {
+fn format_time(
+    article: &str,
+    hour: i64,
+    minutes: i64,
+    ampm: Option<&str>,
+    tz: Option<&str>,
+) -> String {
     let time = if minutes == 0 && ampm.is_some() {
         format!("{} {}:{:02}", article, hour, minutes)
     } else if minutes > 0 {
@@ -275,7 +313,10 @@ mod tests {
 
     #[test]
     fn test_digital() {
-        assert_eq!(parse("las dieciséis cincuenta"), Some("las 16:50".to_string()));
+        assert_eq!(
+            parse("las dieciséis cincuenta"),
+            Some("las 16:50".to_string())
+        );
     }
 
     #[test]

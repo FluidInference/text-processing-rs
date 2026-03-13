@@ -98,20 +98,16 @@ fn find_time_expr(input: &str) -> Option<(&str, String, &str)> {
             if num_start < before_chars.len() {
                 let hour_kanji: String = before_chars[num_start..].iter().collect();
                 if let Some(hour) = cardinal::zh_to_number(&hour_kanji) {
-                    let prefix_bytes: usize =
-                        chars[..num_start].iter().map(|c| c.len_utf8()).sum();
+                    let prefix_bytes: usize = chars[..num_start].iter().map(|c| c.len_utf8()).sum();
                     let after_dian = &chars[i + 1..];
 
                     // Check what follows 点
-                    if let Some(time_result) =
-                        parse_after_dian(hour, after_dian)
-                    {
+                    if let Some(time_result) = parse_after_dian(hour, after_dian) {
                         let before = &input[..prefix_bytes];
-                        let consumed_bytes: usize =
-                            chars[num_start..i + 1 + time_result.1]
-                                .iter()
-                                .map(|c| c.len_utf8())
-                                .sum();
+                        let consumed_bytes: usize = chars[num_start..i + 1 + time_result.1]
+                            .iter()
+                            .map(|c| c.len_utf8())
+                            .sum();
                         let after = &input[prefix_bytes + consumed_bytes..];
                         return Some((before, time_result.0, after));
                     }

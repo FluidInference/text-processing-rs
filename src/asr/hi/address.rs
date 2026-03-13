@@ -52,9 +52,13 @@ pub fn process(input: &str) -> String {
                     trailing_comma = true;
                     i += 1;
                     break;
-                } else if words[i] == "हाइफ़न" || words[i] == "हाइफन" || words[i] == "-" {
+                } else if words[i] == "हाइफ़न" || words[i] == "हाइफन" || words[i] == "-"
+                {
                     // Hyphen separator
-                    if i + 1 < words.len() && (is_devanagari_number(words[i + 1]) || strip_trailing_comma(words[i + 1]).is_some()) {
+                    if i + 1 < words.len()
+                        && (is_devanagari_number(words[i + 1])
+                            || strip_trailing_comma(words[i + 1]).is_some())
+                    {
                         digits.push('-');
                         i += 1;
                     } else {
@@ -62,7 +66,10 @@ pub fn process(input: &str) -> String {
                     }
                 } else if words[i] == "बटा" || words[i] == "/" {
                     // Slash separator (address fraction)
-                    if i + 1 < words.len() && (is_devanagari_number(words[i + 1]) || strip_trailing_comma(words[i + 1]).is_some()) {
+                    if i + 1 < words.len()
+                        && (is_devanagari_number(words[i + 1])
+                            || strip_trailing_comma(words[i + 1]).is_some())
+                    {
                         digits.push('/');
                         i += 1;
                     } else {
@@ -101,25 +108,16 @@ mod tests {
 
     #[test]
     fn test_hyphen() {
-        assert_eq!(
-            process("६ ६ हाइफ़न ४, पार्कहर्स्ट रोड"),
-            "६६-४, पार्कहर्स्ट रोड"
-        );
+        assert_eq!(process("६ ६ हाइफ़न ४, पार्कहर्स्ट रोड"), "६६-४, पार्कहर्स्ट रोड");
     }
 
     #[test]
     fn test_slash() {
-        assert_eq!(
-            process("१ ४ बटा ३, मथुरा रोड"),
-            "१४/३, मथुरा रोड"
-        );
+        assert_eq!(process("१ ४ बटा ३, मथुरा रोड"), "१४/३, मथुरा रोड");
     }
 
     #[test]
     fn test_comma_separated() {
-        assert_eq!(
-            process("बूथ ७०, सेक्टर ८, चंडीगढ़"),
-            "बूथ ७०, सेक्टर ८, चंडीगढ़"
-        );
+        assert_eq!(process("बूथ ७०, सेक्टर ८, चंडीगढ़"), "बूथ ७०, सेक्टर ८, चंडीगढ़");
     }
 }

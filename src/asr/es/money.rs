@@ -138,7 +138,10 @@ fn parse_two_amounts(input: &str) -> Option<String> {
                     let second_num = second_part[..second_part.len() - name.len()].trim();
                     let first_val = cardinal::words_to_number(first_part)?;
                     let second_val = cardinal::words_to_number(second_num)?;
-                    return Some(format!("{}{} y {}{}", cur.symbol, first_val, cur.symbol, second_val));
+                    return Some(format!(
+                        "{}{} y {}{}",
+                        cur.symbol, first_val, cur.symbol, second_val
+                    ));
                 }
             }
         }
@@ -165,7 +168,10 @@ fn parse_scale_money(input: &str) -> Option<String> {
                             let parts: Vec<&str> = num_part.splitn(2, " punto ").collect();
                             let int_val = cardinal::words_to_number(parts[0].trim())?;
                             let dec_digits = parse_decimal_digits(parts[1].trim())?;
-                            return Some(format!("{}{}.{} {}", cur.symbol, int_val, dec_digits, sw));
+                            return Some(format!(
+                                "{}{}.{} {}",
+                                cur.symbol, int_val, dec_digits, sw
+                            ));
                         }
                         let num = cardinal::words_to_number(num_part)?;
                         return Some(format!("{}{} {}", cur.symbol, num, sw));
@@ -363,10 +369,17 @@ fn parse_subunit_only(input: &str) -> Option<String> {
 /// Parse decimal digits
 fn parse_decimal_digits(input: &str) -> Option<String> {
     let digit_map = [
-        ("cero", "0"), ("uno", "1"), ("un", "1"),
-        ("dos", "2"), ("tres", "3"), ("cuatro", "4"),
-        ("cinco", "5"), ("seis", "6"), ("siete", "7"),
-        ("ocho", "8"), ("nueve", "9"),
+        ("cero", "0"),
+        ("uno", "1"),
+        ("un", "1"),
+        ("dos", "2"),
+        ("tres", "3"),
+        ("cuatro", "4"),
+        ("cinco", "5"),
+        ("seis", "6"),
+        ("siete", "7"),
+        ("ocho", "8"),
+        ("nueve", "9"),
     ];
 
     let tokens: Vec<&str> = input.split_whitespace().collect();
@@ -403,7 +416,10 @@ mod tests {
 
     #[test]
     fn test_with_cents() {
-        assert_eq!(parse("doce dólares y cinco centavos"), Some("$12,05".to_string()));
+        assert_eq!(
+            parse("doce dólares y cinco centavos"),
+            Some("$12,05".to_string())
+        );
     }
 
     #[test]

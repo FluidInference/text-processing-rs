@@ -10,8 +10,10 @@ pub fn parse(input: &str) -> Option<String> {
     let input_trim = input_lower.trim();
 
     // Must contain "at" (email) or "doppelpunkt" or "punkt" (URL)
-    if !input_trim.contains(" at ") && !input_trim.contains("doppelpunkt")
-        && !input_trim.contains(" punkt ") {
+    if !input_trim.contains(" at ")
+        && !input_trim.contains("doppelpunkt")
+        && !input_trim.contains(" punkt ")
+    {
         return None;
     }
 

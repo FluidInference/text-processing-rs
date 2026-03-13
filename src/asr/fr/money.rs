@@ -85,11 +85,16 @@ pub fn parse(input: &str) -> Option<String> {
 /// "quatre virgule quatre-vingt milliards d'euros" → "4,80 milliards d'euros"
 fn parse_scale_currency(input: &str) -> Option<String> {
     let scale_words = [
-        "trillions", "trillion",
-        "billiards", "billiard",
-        "billions", "billion",
-        "milliards", "milliard",
-        "millions", "million",
+        "trillions",
+        "trillion",
+        "billiards",
+        "billiard",
+        "billions",
+        "billion",
+        "milliards",
+        "milliard",
+        "millions",
+        "million",
     ];
 
     // Normalize hyphens around scale words to spaces for matching
@@ -142,7 +147,12 @@ fn try_currency(input: &str, currency: &Currency) -> Option<String> {
 
             // "cinq euro et soixante" → "5,60 €" (cent amount without cent word)
             if let Some(cent_num) = parse_money_number(cent_part) {
-                return Some(format!("{},{:0>2} {}", parse_money_number(num_part)?, cent_num, currency.symbol));
+                return Some(format!(
+                    "{},{:0>2} {}",
+                    parse_money_number(num_part)?,
+                    cent_num,
+                    currency.symbol
+                ));
             }
         }
 
@@ -226,11 +236,7 @@ fn format_with_spaces(n: i64) -> String {
     let s = abs_n.to_string();
 
     if s.len() <= 3 {
-        return if n < 0 {
-            format!("-{}", s)
-        } else {
-            s
-        };
+        return if n < 0 { format!("-{}", s) } else { s };
     }
 
     let mut result = String::new();
@@ -269,18 +275,9 @@ mod tests {
             parse("deux euros et vingt centimes"),
             Some("2,20 €".to_string())
         );
-        assert_eq!(
-            parse("cinq euro et soixante"),
-            Some("5,60 €".to_string())
-        );
-        assert_eq!(
-            parse("vingt euro cinq"),
-            Some("20,05 €".to_string())
-        );
-        assert_eq!(
-            parse("zéro euro quatre-vingt"),
-            Some("0,80 €".to_string())
-        );
+        assert_eq!(parse("cinq euro et soixante"), Some("5,60 €".to_string()));
+        assert_eq!(parse("vingt euro cinq"), Some("20,05 €".to_string()));
+        assert_eq!(parse("zéro euro quatre-vingt"), Some("0,80 €".to_string()));
     }
 
     #[test]

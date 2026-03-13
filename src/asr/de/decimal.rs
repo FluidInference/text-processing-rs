@@ -42,9 +42,19 @@ pub fn parse(input: &str) -> Option<String> {
     };
 
     // Check for scale suffix in decimal part
-    let scale_words = ["millionen", "million", "milliarden", "milliarde",
-                       "billionen", "billion", "billiarden", "billiarde",
-                       "trillionen", "trillion", "tausend"];
+    let scale_words = [
+        "millionen",
+        "million",
+        "milliarden",
+        "milliarde",
+        "billionen",
+        "billion",
+        "billiarden",
+        "billiarde",
+        "trillionen",
+        "trillion",
+        "tausend",
+    ];
 
     let mut scale_suffix = None;
     let mut decimal_digits_str = decimal_rest.to_string();
@@ -64,7 +74,10 @@ pub fn parse(input: &str) -> Option<String> {
     let sign = if is_negative { "-" } else { "" };
 
     if let Some(scale) = scale_suffix {
-        Some(format!("{}{},{} {}", sign, int_value, decimal_digits, scale))
+        Some(format!(
+            "{}{},{} {}",
+            sign, int_value, decimal_digits, scale
+        ))
     } else {
         Some(format!("{}{},{}", sign, int_value, decimal_digits))
     }
@@ -100,10 +113,17 @@ fn parse_scale_only(input: &str) -> Option<String> {
 /// "drei null drei" → "303"
 fn parse_decimal_digits(input: &str) -> Option<String> {
     let digit_map = [
-        ("null", "0"), ("eins", "1"), ("ein", "1"),
-        ("zwei", "2"), ("drei", "3"), ("vier", "4"),
-        ("fünf", "5"), ("sechs", "6"), ("sieben", "7"),
-        ("acht", "8"), ("neun", "9"),
+        ("null", "0"),
+        ("eins", "1"),
+        ("ein", "1"),
+        ("zwei", "2"),
+        ("drei", "3"),
+        ("vier", "4"),
+        ("fünf", "5"),
+        ("sechs", "6"),
+        ("sieben", "7"),
+        ("acht", "8"),
+        ("neun", "9"),
     ];
 
     let tokens: Vec<&str> = input.split_whitespace().collect();
@@ -163,9 +183,6 @@ mod tests {
 
     #[test]
     fn test_scale_only() {
-        assert_eq!(
-            parse("eine million"),
-            Some("1 million".to_string())
-        );
+        assert_eq!(parse("eine million"), Some("1 million".to_string()));
     }
 }

@@ -71,7 +71,9 @@ pub fn word_to_value(word: &str) -> Option<i64> {
         "बारह" => Some(12),
         "तेरह" => Some(13),
         "चौदह" => Some(14),
-        "पन्द्रह" | "पंद्रह" | "पंदरह" | "पंडरह" => Some(15),
+        "पन्द्रह" | "पंद्रह" | "पंदरह" | "पंडरह" => {
+            Some(15)
+        }
         "सोलह" => Some(16),
         "सत्रह" => Some(17),
         "अठारह" | "अठाहर" | "अठाहरवीं" => Some(18),
@@ -439,7 +441,10 @@ mod tests {
     fn test_words_to_number() {
         assert_eq!(words_to_number(&["एक"]), Some(1));
         assert_eq!(words_to_number(&["एक", "सौ"]), Some(100));
-        assert_eq!(words_to_number(&["दो", "हज़ार", "दो", "सौ", "बाईस"]), Some(2222));
+        assert_eq!(
+            words_to_number(&["दो", "हज़ार", "दो", "सौ", "बाईस"]),
+            Some(2222)
+        );
         assert_eq!(words_to_number(&["एक", "लाख", "एक"]), Some(100001));
     }
 

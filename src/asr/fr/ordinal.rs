@@ -22,7 +22,8 @@ pub fn parse(input: &str) -> Option<String> {
     // Try to extract ordinal suffix and detect plural
     if let Some((number_str, suffix)) = extract_ordinal_parts(input_trim) {
         // Parse the number part
-        let number = if number_str.is_empty() || number_str == "premier" || number_str == "première" {
+        let number = if number_str.is_empty() || number_str == "premier" || number_str == "première"
+        {
             1
         } else if number_str == "second" || number_str == "seconde" {
             2
@@ -98,24 +99,24 @@ fn reconstruct_cardinal(stem: &str) -> Option<String> {
         ("quatr", "quatre"),
         ("cinqu", "cinq"),
         ("neuv", "neuf"),
-        ("dix", "dix"),  // stays same
+        ("dix", "dix"), // stays same
         ("onz", "onze"),
         ("douz", "douze"),
         ("treiz", "treize"),
         ("quatorz", "quatorze"),
         ("quinz", "quinze"),
         ("seiz", "seize"),
-        ("vingt", "vingt"),  // stays same
+        ("vingt", "vingt"), // stays same
         ("trent", "trente"),
         ("quarant", "quarante"),
         ("cinquant", "cinquante"),
         ("soixant", "soixante"),
-        ("sept", "sept"),  // stays same
-        ("huit", "huit"),  // stays same
-        ("cent", "cent"),  // stays same
+        ("sept", "sept"), // stays same
+        ("huit", "huit"), // stays same
+        ("cent", "cent"), // stays same
         ("mill", "mille"),
-        ("million", "million"),  // stays same
-        ("milliard", "milliard"),  // stays same
+        ("million", "million"),   // stays same
+        ("milliard", "milliard"), // stays same
     ];
 
     // Handle compound numbers with hyphens or spaces
@@ -204,7 +205,10 @@ fn extract_ordinal_parts(input: &str) -> Option<(String, OrdinalSuffix)> {
         return Some((num_part.to_string(), OrdinalSuffix::PremierM));
     }
     if input.ends_with("premières") {
-        let num_part = input.strip_suffix("premières")?.trim_end_matches('-').trim();
+        let num_part = input
+            .strip_suffix("premières")?
+            .trim_end_matches('-')
+            .trim();
         return Some((num_part.to_string(), OrdinalSuffix::PremieresF));
     }
     if input.ends_with("première") {
@@ -245,16 +249,16 @@ fn extract_ordinal_parts(input: &str) -> Option<(String, OrdinalSuffix)> {
 
 #[derive(Debug)]
 enum OrdinalSuffix {
-    PremierM,      // premier → Nᵉʳ
-    PremiersM,     // premiers → Nᵉʳˢ
-    PremiereF,     // première → Nʳᵉ
-    PremieresF,    // premières → Nʳᵉˢ
-    SecondM,       // second → Nᵈ
-    SecondsM,      // seconds → Nᵈˢ
-    SecondeF,      // seconde → Nᵈᵉ
-    SecondesF,     // secondes → Nᵈᵉˢ
-    Ieme,          // deuxième → Nᵉ
-    IemesPlural,   // deuxièmes → Nᵉˢ
+    PremierM,    // premier → Nᵉʳ
+    PremiersM,   // premiers → Nᵉʳˢ
+    PremiereF,   // première → Nʳᵉ
+    PremieresF,  // premières → Nʳᵉˢ
+    SecondM,     // second → Nᵈ
+    SecondsM,    // seconds → Nᵈˢ
+    SecondeF,    // seconde → Nᵈᵉ
+    SecondesF,   // secondes → Nᵈᵉˢ
+    Ieme,        // deuxième → Nᵉ
+    IemesPlural, // deuxièmes → Nᵉˢ
 }
 
 /// Format number with appropriate Unicode superscript suffix

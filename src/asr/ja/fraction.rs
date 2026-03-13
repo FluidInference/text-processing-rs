@@ -74,9 +74,7 @@ pub fn process(input: &str) -> String {
         let prefix_before_denom: String = before_chars[..denom_start].iter().collect();
 
         // Check for mixed number: XとY分のZ or X荷Y分のZ
-        if let Some((real_prefix, whole, negative)) =
-            find_mixed_prefix(&prefix_before_denom)
-        {
+        if let Some((real_prefix, whole, negative)) = find_mixed_prefix(&prefix_before_denom) {
             result.push_str(real_prefix);
             if negative {
                 result.push_str(&format!("-{} {}/{}", whole, numer, denom));

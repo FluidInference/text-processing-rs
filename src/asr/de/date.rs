@@ -120,8 +120,16 @@ fn parse_year_pattern(input: &str) -> Option<String> {
     // Reject if contains "achtziger" etc. (decade reference, not year)
     if input.ends_with("iger") || input.ends_with("er") {
         // Check if it ends with a decade suffix
-        let decade_suffixes = ["achtziger", "siebziger", "sechziger", "fünfziger",
-                              "vierziger", "dreißiger", "zwanziger", "neunziger"];
+        let decade_suffixes = [
+            "achtziger",
+            "siebziger",
+            "sechziger",
+            "fünfziger",
+            "vierziger",
+            "dreißiger",
+            "zwanziger",
+            "neunziger",
+        ];
         for &suffix in &decade_suffixes {
             if input.ends_with(suffix) {
                 // This is "neunzehn achtziger" → "19 achtziger"
@@ -192,8 +200,9 @@ fn parse_year(input: &str) -> Option<i128> {
 /// "erster" → 1, "vierundzwanzigster" → 24, "dreißigster" → 30
 fn parse_ordinal_day(input: &str) -> Option<i128> {
     // Strip ordinal suffix
-    let ordinal_suffixes = ["ster", "sten", "stem", "stes", "ste",
-                            "ter", "ten", "tem", "tes", "te"];
+    let ordinal_suffixes = [
+        "ster", "sten", "stem", "stes", "ste", "ter", "ten", "tem", "tes", "te",
+    ];
 
     for &suffix in &ordinal_suffixes {
         if input.ends_with(suffix) {
@@ -246,14 +255,8 @@ mod tests {
 
     #[test]
     fn test_day_month() {
-        assert_eq!(
-            parse("vierzehnter januar"),
-            Some("14. Jan.".to_string())
-        );
-        assert_eq!(
-            parse("erster januar"),
-            Some("1. Jan.".to_string())
-        );
+        assert_eq!(parse("vierzehnter januar"), Some("14. Jan.".to_string()));
+        assert_eq!(parse("erster januar"), Some("1. Jan.".to_string()));
     }
 
     #[test]

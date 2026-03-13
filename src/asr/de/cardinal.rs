@@ -121,25 +121,35 @@ pub fn parse(input: &str) -> Option<String> {
 /// (not just a list of digit words)
 fn contains_structure_word(input: &str) -> bool {
     let structure_words = [
-        "hundert", "tausend", "million", "millionen",
-        "milliarde", "milliarden", "billion", "billionen",
-        "billiarde", "billiarden", "trillion", "trillionen",
-        "und", "minus",
+        "hundert",
+        "tausend",
+        "million",
+        "millionen",
+        "milliarde",
+        "milliarden",
+        "billion",
+        "billionen",
+        "billiarde",
+        "billiarden",
+        "trillion",
+        "trillionen",
+        "und",
+        "minus",
     ];
     let tokens: Vec<&str> = input.split_whitespace().collect();
-    tokens.iter().any(|t| {
-        structure_words.contains(t) || contains_compound_structure(t)
-    })
+    tokens
+        .iter()
+        .any(|t| structure_words.contains(t) || contains_compound_structure(t))
 }
 
 /// Check if a compound word contains scale words
 fn contains_compound_structure(word: &str) -> bool {
     let scale_fragments = [
-        "hundert", "tausend", "million", "milliard", "billion", "billiard", "trillion",
-        "und",
+        "hundert", "tausend", "million", "milliard", "billion", "billiard", "trillion", "und",
     ];
     // Only check if the word is longer than any known simple word
-    if word.len() <= 9 { // "neunzehn" is 8 chars, "sechzehn" is 8
+    if word.len() <= 9 {
+        // "neunzehn" is 8 chars, "sechzehn" is 8
         return false;
     }
     scale_fragments.iter().any(|&f| word.contains(f))
@@ -154,9 +164,7 @@ fn contains_compound_structure(word: &str) -> bool {
 /// - `sub`: current ones/tens/hundreds accumulator
 pub fn words_to_number(input: &str) -> Option<i128> {
     let normalized = decompose_compound(input);
-    let normalized = normalized
-        .replace(" und ", " ")
-        .replace("  ", " ");
+    let normalized = normalized.replace(" und ", " ").replace("  ", " ");
 
     let tokens: Vec<&str> = normalized.split_whitespace().collect();
     if tokens.is_empty() {
@@ -177,9 +185,9 @@ pub fn words_to_number(input: &str) -> Option<i128> {
         return None;
     }
 
-    let mut result: i128 = 0;     // million+ level
-    let mut thousands: i128 = 0;  // thousands level
-    let mut sub: i128 = 0;        // ones/tens/hundreds accumulator
+    let mut result: i128 = 0; // million+ level
+    let mut thousands: i128 = 0; // thousands level
+    let mut sub: i128 = 0; // ones/tens/hundreds accumulator
 
     for token in &tokens {
         if let Some(&scale) = SCALES.get(token) {
@@ -261,8 +269,11 @@ fn decompose_compound(input: &str) -> String {
 
 /// Check if a token is a known number word
 fn is_known_word(token: &str) -> bool {
-    ONES.contains_key(token) || TENS.contains_key(token) || SCALES.contains_key(token)
-        || token == "und" || token == "minus"
+    ONES.contains_key(token)
+        || TENS.contains_key(token)
+        || SCALES.contains_key(token)
+        || token == "und"
+        || token == "minus"
 }
 
 /// Decompose a single compound German number word.
@@ -275,11 +286,16 @@ fn decompose_single_compound(word: &str) -> Option<String> {
 
         // Try scale words first (longest match)
         let scale_words = [
-            "trillionen", "trillion",
-            "billiarden", "billiarde",
-            "billionen", "billion",
-            "milliarden", "milliarde",
-            "millionen", "million",
+            "trillionen",
+            "trillion",
+            "billiarden",
+            "billiarde",
+            "billionen",
+            "billion",
+            "milliarden",
+            "milliarde",
+            "millionen",
+            "million",
             "tausend",
             "hundert",
         ];
@@ -292,7 +308,9 @@ fn decompose_single_compound(word: &str) -> Option<String> {
                 break;
             }
         }
-        if found { continue; }
+        if found {
+            continue;
+        }
 
         // Try "und" connector
         if remaining.starts_with("und") {
@@ -303,8 +321,15 @@ fn decompose_single_compound(word: &str) -> Option<String> {
 
         // Try teens and special words (longest first)
         let teen_words = [
-            "neunzehn", "achtzehn", "siebzehn", "sechzehn",
-            "fünfzehn", "vierzehn", "dreizehn", "zwölf", "elf",
+            "neunzehn",
+            "achtzehn",
+            "siebzehn",
+            "sechzehn",
+            "fünfzehn",
+            "vierzehn",
+            "dreizehn",
+            "zwölf",
+            "elf",
         ];
         for &tw in &teen_words {
             if remaining.starts_with(tw) {
@@ -314,12 +339,14 @@ fn decompose_single_compound(word: &str) -> Option<String> {
                 break;
             }
         }
-        if found { continue; }
+        if found {
+            continue;
+        }
 
         // Try tens (longest first)
         let tens_words = [
-            "neunzig", "achtzig", "siebzig", "sechzig",
-            "fünfzig", "vierzig", "dreißig", "dreissig", "zwanzig",
+            "neunzig", "achtzig", "siebzig", "sechzig", "fünfzig", "vierzig", "dreißig",
+            "dreissig", "zwanzig",
         ];
         for &tw in &tens_words {
             if remaining.starts_with(tw) {
@@ -329,13 +356,14 @@ fn decompose_single_compound(word: &str) -> Option<String> {
                 break;
             }
         }
-        if found { continue; }
+        if found {
+            continue;
+        }
 
         // Try ones (check longer words first to avoid partial matches)
         let ones_words = [
-            "sieben", "einer", "eine", "eins", "ein",
-            "neun", "acht", "fünf", "vier", "drei", "zwei",
-            "sechs", "zehn", "null",
+            "sieben", "einer", "eine", "eins", "ein", "neun", "acht", "fünf", "vier", "drei",
+            "zwei", "sechs", "zehn", "null",
         ];
         for &ow in &ones_words {
             if remaining.starts_with(ow) {
@@ -345,7 +373,9 @@ fn decompose_single_compound(word: &str) -> Option<String> {
                 break;
             }
         }
-        if found { continue; }
+        if found {
+            continue;
+        }
 
         // Unknown character sequence - not a valid compound number
         return None;

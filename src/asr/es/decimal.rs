@@ -9,9 +9,16 @@ use super::cardinal;
 
 /// Scale words that should be preserved as suffixes
 const SCALE_WORDS: &[&str] = &[
-    "millón", "millones", "millardo", "millardos",
-    "billón", "billones", "trillón", "trillones",
-    "cuatrillón", "cuatrillones",
+    "millón",
+    "millones",
+    "millardo",
+    "millardos",
+    "billón",
+    "billones",
+    "trillón",
+    "trillones",
+    "cuatrillón",
+    "cuatrillones",
 ];
 
 /// Parse spoken Spanish decimal number to written form.

@@ -185,6 +185,9 @@ mod tests {
     #[test]
     fn test_compound() {
         assert_eq!(parse("vigésimo primero"), Some("21.º".to_string()));
-        assert_eq!(parse("centésimo trigésimo cuarto"), Some("134.º".to_string()));
+        assert_eq!(
+            parse("centésimo trigésimo cuarto"),
+            Some("134.º".to_string())
+        );
     }
 }

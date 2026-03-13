@@ -84,7 +84,10 @@ fn try_parse_money(words: &[&str], start: usize) -> Option<(String, usize)> {
                 }
 
                 // Check if words match the currency name
-                let matches = name_words.iter().enumerate().all(|(j, &nw)| words[end + j] == nw);
+                let matches = name_words
+                    .iter()
+                    .enumerate()
+                    .all(|(j, &nw)| words[end + j] == nw);
                 if !matches {
                     continue;
                 }
@@ -103,13 +106,17 @@ fn try_parse_money(words: &[&str], start: usize) -> Option<(String, usize)> {
                     if symbol == "₹" {
                         let after_currency = end + name_len;
                         // Direct: "X रुपये Y पैसे"
-                        if let Some((paise_str, paise_consumed)) = try_parse_paise(words, after_currency) {
+                        if let Some((paise_str, paise_consumed)) =
+                            try_parse_paise(words, after_currency)
+                        {
                             let money = format!("₹{}.{}", amount_str, paise_str);
                             return Some((money, end + name_len + paise_consumed - start));
                         }
                         // With और: "X रुपेया और Y पैसा"
                         if after_currency < words.len() && words[after_currency] == "और" {
-                            if let Some((paise_str, paise_consumed)) = try_parse_paise(words, after_currency + 1) {
+                            if let Some((paise_str, paise_consumed)) =
+                                try_parse_paise(words, after_currency + 1)
+                            {
                                 let money = format!("₹{}.{}", amount_str, paise_str);
                                 return Some((money, end + name_len + 1 + paise_consumed - start));
                             }
@@ -138,7 +145,11 @@ fn try_parse_money(words: &[&str], start: usize) -> Option<(String, usize)> {
 
 /// Parse the money amount (number + optional दशमलव digits) before a currency name.
 /// Returns (actual_start, formatted_amount, has_decimal).
-fn parse_money_amount(words: &[&str], start: usize, currency_pos: usize) -> (usize, Option<String>, bool) {
+fn parse_money_amount(
+    words: &[&str],
+    start: usize,
+    currency_pos: usize,
+) -> (usize, Option<String>, bool) {
     if currency_pos <= start {
         return (start, None, false);
     }
@@ -159,7 +170,10 @@ fn parse_money_amount(words: &[&str], start: usize, currency_pos: usize) -> (usi
         }
 
         // Check all int_words are number words or modifiers
-        if !int_words.iter().all(|w| cardinal::is_hi_number_word(w) || cardinal::is_modifier(w)) {
+        if !int_words
+            .iter()
+            .all(|w| cardinal::is_hi_number_word(w) || cardinal::is_modifier(w))
+        {
             return (start, None, false);
         }
 
@@ -189,7 +203,10 @@ fn parse_money_amount(words: &[&str], start: usize, currency_pos: usize) -> (usi
 
     // No decimal — just a number
     let num_words: Vec<&str> = span.to_vec();
-    if !num_words.iter().all(|w| cardinal::is_hi_number_word(w) || cardinal::is_modifier(w)) {
+    if !num_words
+        .iter()
+        .all(|w| cardinal::is_hi_number_word(w) || cardinal::is_modifier(w))
+    {
         return (start, None, false);
     }
 
@@ -209,7 +226,11 @@ fn try_parse_paise(words: &[&str], start: usize) -> Option<(String, usize)> {
     }
 
     let mut end = start;
-    while end < words.len() && (cardinal::is_hi_number_word(words[end]) || cardinal::is_modifier(words[end]) || words[end] == "दशमलव") {
+    while end < words.len()
+        && (cardinal::is_hi_number_word(words[end])
+            || cardinal::is_modifier(words[end])
+            || words[end] == "दशमलव")
+    {
         end += 1;
     }
 

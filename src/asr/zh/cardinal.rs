@@ -270,7 +270,11 @@ pub fn format_with_commas(n: i64) -> String {
     }
 
     let negative = n < 0;
-    let mut num = if negative { (n as i128).abs() as u64 } else { n as u64 };
+    let mut num = if negative {
+        (n as i128).abs() as u64
+    } else {
+        n as u64
+    };
     let mut groups: Vec<String> = Vec::new();
 
     while num > 0 {
@@ -327,7 +331,10 @@ pub fn format_zh_cardinal(input: &str) -> Option<String> {
     // Find 億 and 万 positions
     let yi_pos = chars.iter().position(|&c| is_yi(c));
     let wan_pos_after_yi = if let Some(yp) = yi_pos {
-        chars[yp + 1..].iter().position(|&c| is_wan(c)).map(|p| p + yp + 1)
+        chars[yp + 1..]
+            .iter()
+            .position(|&c| is_wan(c))
+            .map(|p| p + yp + 1)
     } else {
         chars.iter().position(|&c| is_wan(c))
     };
@@ -460,7 +467,10 @@ pub fn format_zh_ordinal(input: &str) -> Option<String> {
     // Find 億 and 万 positions
     let yi_pos = chars.iter().position(|&c| is_yi(c));
     let wan_pos_after_yi = if let Some(yp) = yi_pos {
-        chars[yp + 1..].iter().position(|&c| is_wan(c)).map(|p| p + yp + 1)
+        chars[yp + 1..]
+            .iter()
+            .position(|&c| is_wan(c))
+            .map(|p| p + yp + 1)
     } else {
         chars.iter().position(|&c| is_wan(c))
     };
@@ -572,10 +582,7 @@ mod tests {
 
     #[test]
     fn test_wan_expanded() {
-        assert_eq!(
-            format_zh_cardinal("一万一千"),
-            Some("11,000".to_string())
-        );
+        assert_eq!(format_zh_cardinal("一万一千"), Some("11,000".to_string()));
         assert_eq!(
             format_zh_cardinal("九千九百九十九"),
             Some("9,999".to_string())

@@ -12,8 +12,19 @@ use super::cardinal;
 
 /// Hindi month names.
 const MONTHS: &[&str] = &[
-    "जनवरी", "फ़रवरी", "फरवरी", "मार्च", "अप्रैल", "मई", "जून",
-    "जुलाई", "अगस्त", "सितंबर", "अक्टूबर", "नवंबर", "दिसंबर",
+    "जनवरी",
+    "फ़रवरी",
+    "फरवरी",
+    "मार्च",
+    "अप्रैल",
+    "मई",
+    "जून",
+    "जुलाई",
+    "अगस्त",
+    "सितंबर",
+    "अक्टूबर",
+    "नवंबर",
+    "दिसंबर",
 ];
 
 fn is_month(word: &str) -> bool {
@@ -154,11 +165,12 @@ pub fn process(input: &str) -> String {
                         // Check for era suffix after range
                         let (era_end, era_str) = find_era_suffix(&words, end2);
                         // Check for "तक" after range
-                        let (tack_end, has_tack) = if era_end < words.len() && words[era_end] == "तक" {
-                            (era_end + 1, true)
-                        } else {
-                            (era_end, false)
-                        };
+                        let (tack_end, has_tack) =
+                            if era_end < words.len() && words[era_end] == "तक" {
+                                (era_end + 1, true)
+                            } else {
+                                (era_end, false)
+                            };
 
                         if let Some(era) = era_str {
                             if has_tack {
@@ -251,7 +263,8 @@ fn find_era_suffix(words: &[&str], start: usize) -> (usize, Option<&'static str>
     }
 
     // "ईसा पूर्व" → "ई.पू."
-    if start + 1 < words.len() && words[start] == "ईसा" && words[start + 1] == "पूर्व" {
+    if start + 1 < words.len() && words[start] == "ईसा" && words[start + 1] == "पूर्व"
+    {
         return (start + 2, Some("ई.पू."));
     }
 

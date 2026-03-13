@@ -126,22 +126,13 @@ mod tests {
 
     #[test]
     fn test_gongyuan() {
-        assert_eq!(
-            process("公元一七九八年五月三十日"),
-            "公元1798年5月30日"
-        );
+        assert_eq!(process("公元一七九八年五月三十日"), "公元1798年5月30日");
         assert_eq!(process("公元前一七九八年"), "公元前1798年");
     }
 
     #[test]
     fn test_jiyuan() {
-        assert_eq!(
-            process("纪元前一九三四年一月二日"),
-            "公元前1934年1月2日"
-        );
-        assert_eq!(
-            process("纪元二零五六年二月三日"),
-            "公元2056年2月3日"
-        );
+        assert_eq!(process("纪元前一九三四年一月二日"), "公元前1934年1月2日");
+        assert_eq!(process("纪元二零五六年二月三日"), "公元2056年2月3日");
     }
 }

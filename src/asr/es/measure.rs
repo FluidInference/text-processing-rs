@@ -15,26 +15,86 @@ struct UnitMapping {
 }
 
 const UNITS: &[UnitMapping] = &[
-    UnitMapping { spoken: &["kilómetros por hora", "kilómetro por hora"], written: "kph" },
-    UnitMapping { spoken: &["millas por hora", "milla por hora"], written: "mph" },
-    UnitMapping { spoken: &["metros por hora", "metro por hora"], written: "m/h" },
-    UnitMapping { spoken: &["metros cúbicos", "metro cúbico"], written: "m³" },
-    UnitMapping { spoken: &["kilómetros", "kilómetro"], written: "km" },
-    UnitMapping { spoken: &["centímetros", "centímetro"], written: "cm" },
-    UnitMapping { spoken: &["milímetros", "milímetro"], written: "mm" },
-    UnitMapping { spoken: &["metros", "metro"], written: "m" },
-    UnitMapping { spoken: &["kilogramos", "kilogramo", "kilos", "kilo"], written: "kg" },
-    UnitMapping { spoken: &["gramos", "gramo"], written: "g" },
-    UnitMapping { spoken: &["litros", "litro"], written: "l" },
-    UnitMapping { spoken: &["mililitros", "mililitro"], written: "ml" },
-    UnitMapping { spoken: &["horas", "hora"], written: "h" },
-    UnitMapping { spoken: &["segundos", "segundo"], written: "s" },
-    UnitMapping { spoken: &["minutos", "minuto"], written: "min" },
-    UnitMapping { spoken: &["grados farenheit", "grado farenheit"], written: "° F" },
-    UnitMapping { spoken: &["grados celsius", "grado celsius"], written: "° C" },
-    UnitMapping { spoken: &["grados", "grado"], written: "°" },
-    UnitMapping { spoken: &["por ciento", "porciento"], written: "%" },
-    UnitMapping { spoken: &["millas", "milla"], written: "mi" },
+    UnitMapping {
+        spoken: &["kilómetros por hora", "kilómetro por hora"],
+        written: "kph",
+    },
+    UnitMapping {
+        spoken: &["millas por hora", "milla por hora"],
+        written: "mph",
+    },
+    UnitMapping {
+        spoken: &["metros por hora", "metro por hora"],
+        written: "m/h",
+    },
+    UnitMapping {
+        spoken: &["metros cúbicos", "metro cúbico"],
+        written: "m³",
+    },
+    UnitMapping {
+        spoken: &["kilómetros", "kilómetro"],
+        written: "km",
+    },
+    UnitMapping {
+        spoken: &["centímetros", "centímetro"],
+        written: "cm",
+    },
+    UnitMapping {
+        spoken: &["milímetros", "milímetro"],
+        written: "mm",
+    },
+    UnitMapping {
+        spoken: &["metros", "metro"],
+        written: "m",
+    },
+    UnitMapping {
+        spoken: &["kilogramos", "kilogramo", "kilos", "kilo"],
+        written: "kg",
+    },
+    UnitMapping {
+        spoken: &["gramos", "gramo"],
+        written: "g",
+    },
+    UnitMapping {
+        spoken: &["litros", "litro"],
+        written: "l",
+    },
+    UnitMapping {
+        spoken: &["mililitros", "mililitro"],
+        written: "ml",
+    },
+    UnitMapping {
+        spoken: &["horas", "hora"],
+        written: "h",
+    },
+    UnitMapping {
+        spoken: &["segundos", "segundo"],
+        written: "s",
+    },
+    UnitMapping {
+        spoken: &["minutos", "minuto"],
+        written: "min",
+    },
+    UnitMapping {
+        spoken: &["grados farenheit", "grado farenheit"],
+        written: "° F",
+    },
+    UnitMapping {
+        spoken: &["grados celsius", "grado celsius"],
+        written: "° C",
+    },
+    UnitMapping {
+        spoken: &["grados", "grado"],
+        written: "°",
+    },
+    UnitMapping {
+        spoken: &["por ciento", "porciento"],
+        written: "%",
+    },
+    UnitMapping {
+        spoken: &["millas", "milla"],
+        written: "mi",
+    },
 ];
 
 /// Parse spoken Spanish measurement to written form.
@@ -225,6 +285,9 @@ mod tests {
 
     #[test]
     fn test_math() {
-        assert_eq!(parse("dos más dos es igual a cuatro"), Some("2 + 2 = 4".to_string()));
+        assert_eq!(
+            parse("dos más dos es igual a cuatro"),
+            Some("2 + 2 = 4".to_string())
+        );
     }
 }

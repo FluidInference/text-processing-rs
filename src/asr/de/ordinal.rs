@@ -9,16 +9,11 @@ use super::cardinal;
 
 /// Small ordinals that pass through as words (1-9)
 const SMALL_ORDINALS: &[&str] = &[
-    "nullte", "nullter", "nulltem", "nulltes",
-    "erste", "erster", "erstem", "erstes",
-    "zweite", "zweiter", "zweitem", "zweites",
-    "dritte", "dritter", "drittem", "drittes",
-    "vierte", "vierter", "viertem", "viertes",
-    "fünfte", "fünfter", "fünftem", "fünftes",
-    "sechste", "sechster", "sechstem", "sechstes",
-    "siebte", "siebter", "siebtem", "siebtes",
-    "achte", "achter", "achtem", "achtes",
-    "neunte", "neunter", "neuntem", "neuntes",
+    "nullte", "nullter", "nulltem", "nulltes", "erste", "erster", "erstem", "erstes", "zweite",
+    "zweiter", "zweitem", "zweites", "dritte", "dritter", "drittem", "drittes", "vierte",
+    "vierter", "viertem", "viertes", "fünfte", "fünfter", "fünftem", "fünftes", "sechste",
+    "sechster", "sechstem", "sechstes", "siebte", "siebter", "siebtem", "siebtes", "achte",
+    "achter", "achtem", "achtes", "neunte", "neunter", "neuntem", "neuntes",
 ];
 
 /// Parse spoken German ordinal to written form.
@@ -47,8 +42,9 @@ pub fn parse(input: &str) -> Option<String> {
 
 /// Extract prefix words (like "dem") from ordinal expression
 fn extract_prefix(input: &str) -> (Option<&str>, &str) {
-    let prefixes = ["dem ", "der ", "des ", "die ", "das ", "den ",
-                    "am ", "im ", "vom ", "zum ", "beim "];
+    let prefixes = [
+        "dem ", "der ", "des ", "die ", "das ", "den ", "am ", "im ", "vom ", "zum ", "beim ",
+    ];
 
     for prefix in &prefixes {
         if input.starts_with(prefix) {
@@ -65,8 +61,7 @@ fn extract_prefix(input: &str) -> (Option<&str>, &str) {
 /// Returns the cardinal number if >= 10, None for small numbers.
 fn parse_ordinal_number(input: &str) -> Option<i128> {
     // Strip ordinal suffix
-    let ordinal_suffixes = ["stem", "stes", "ster", "ste",
-                            "tem", "tes", "ter", "te"];
+    let ordinal_suffixes = ["stem", "stes", "ster", "ste", "tem", "tes", "ter", "te"];
 
     for &suffix in &ordinal_suffixes {
         if input.ends_with(suffix) {

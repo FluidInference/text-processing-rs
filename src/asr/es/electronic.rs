@@ -11,8 +11,10 @@ pub fn parse(input: &str) -> Option<String> {
     let input_lower = input.to_lowercase();
     let input_trim = input_lower.trim();
 
-    if !input_trim.contains("arroba") && !input_trim.contains("punto")
-        && !input_trim.contains("barra") {
+    if !input_trim.contains("arroba")
+        && !input_trim.contains("punto")
+        && !input_trim.contains("barra")
+    {
         return None;
     }
 
@@ -38,7 +40,11 @@ pub fn parse(input: &str) -> Option<String> {
             i += 2;
             continue;
         }
-        if t == "signo" && i + 2 < tokens.len() && tokens[i + 1] == "de" && tokens[i + 2] == "interrogación" {
+        if t == "signo"
+            && i + 2 < tokens.len()
+            && tokens[i + 1] == "de"
+            && tokens[i + 2] == "interrogación"
+        {
             result.push('?');
             i += 3;
             continue;

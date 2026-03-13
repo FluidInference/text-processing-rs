@@ -156,11 +156,7 @@ fn format_with_spaces(n: i64) -> String {
     let s = abs_n.to_string();
 
     if s.len() <= 3 {
-        return if n < 0 {
-            format!("-{}", s)
-        } else {
-            s
-        };
+        return if n < 0 { format!("-{}", s) } else { s };
     }
 
     let mut result = String::new();

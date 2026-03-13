@@ -347,7 +347,8 @@ fn extract_timezone(input: &str) -> (&str, Option<String>) {
             let time_part = tokens[..tz_start].join(" ");
             // Return references won't work since we're creating new strings
             // We need to handle this differently
-            let time_end = input.len() - tokens[tz_start..].iter().map(|t| t.len()).sum::<usize>()
+            let time_end = input.len()
+                - tokens[tz_start..].iter().map(|t| t.len()).sum::<usize>()
                 - (tokens.len() - tz_start); // spaces
             let time_part_ref = input[..time_end].trim();
             return (time_part_ref, Some(tz));
@@ -391,7 +392,10 @@ mod tests {
 
     #[test]
     fn test_mittags() {
-        assert_eq!(parse("zwölf uhr mittags"), Some("12 Uhr mittags".to_string()));
+        assert_eq!(
+            parse("zwölf uhr mittags"),
+            Some("12 Uhr mittags".to_string())
+        );
     }
 
     #[test]

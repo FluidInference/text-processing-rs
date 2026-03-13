@@ -91,7 +91,10 @@ fn try_parse_measure(words: &[&str], start: usize) -> Option<(String, usize)> {
                     continue;
                 }
 
-                let matches = name_words.iter().enumerate().all(|(j, &nw)| words[end + j] == nw);
+                let matches = name_words
+                    .iter()
+                    .enumerate()
+                    .all(|(j, &nw)| words[end + j] == nw);
                 if !matches {
                     continue;
                 }
@@ -110,7 +113,11 @@ fn try_parse_measure(words: &[&str], start: usize) -> Option<(String, usize)> {
                     let int_words = &span[..dp];
                     let frac_words = &span[dp + 1..];
 
-                    if int_words.is_empty() || !int_words.iter().all(|w| cardinal::is_hi_number_word(w) || cardinal::is_modifier(w)) {
+                    if int_words.is_empty()
+                        || !int_words
+                            .iter()
+                            .all(|w| cardinal::is_hi_number_word(w) || cardinal::is_modifier(w))
+                    {
                         continue;
                     }
 
@@ -136,7 +143,10 @@ fn try_parse_measure(words: &[&str], start: usize) -> Option<(String, usize)> {
                 }
 
                 // No decimal — check for modifiers that produce decimals
-                if !span.iter().all(|w| cardinal::is_hi_number_word(w) || cardinal::is_modifier(w)) {
+                if !span
+                    .iter()
+                    .all(|w| cardinal::is_hi_number_word(w) || cardinal::is_modifier(w))
+                {
                     continue;
                 }
 
@@ -231,11 +241,19 @@ fn try_modifier_measure(span: &[&str], symbol: &str) -> Option<String> {
 /// Format a measure result as decimal or integer.
 fn format_measure_decimal(result: f64, symbol: &str) -> Option<String> {
     if result == result.floor() {
-        Some(format!("{} {}", cardinal::to_devanagari(result as i64), symbol))
+        Some(format!(
+            "{} {}",
+            cardinal::to_devanagari(result as i64),
+            symbol
+        ))
     } else {
         let formatted = format!("{:.2}", result);
         let trimmed = formatted.trim_end_matches('0').trim_end_matches('.');
-        Some(format!("{} {}", cardinal::to_devanagari_str(trimmed), symbol))
+        Some(format!(
+            "{} {}",
+            cardinal::to_devanagari_str(trimmed),
+            symbol
+        ))
     }
 }
 
@@ -277,7 +295,10 @@ fn try_parse_dimension(words: &[&str], start: usize) -> Option<(String, usize)> 
                         let name_words: Vec<&str> = name.split_whitespace().collect();
                         let name_len = name_words.len();
                         if y_end + name_len <= words.len() {
-                            let matches = name_words.iter().enumerate().all(|(k, &nw)| words[y_end + k] == nw);
+                            let matches = name_words
+                                .iter()
+                                .enumerate()
+                                .all(|(k, &nw)| words[y_end + k] == nw);
                             if matches {
                                 unit_str = format!(" {}", symbol);
                                 final_end = y_end + name_len;
@@ -291,7 +312,12 @@ fn try_parse_dimension(words: &[&str], start: usize) -> Option<(String, usize)> 
                 }
             }
 
-            let dim = format!("{}x{}{}", cardinal::to_devanagari(x), cardinal::to_devanagari(y), unit_str);
+            let dim = format!(
+                "{}x{}{}",
+                cardinal::to_devanagari(x),
+                cardinal::to_devanagari(y),
+                unit_str
+            );
             return Some((dim, final_end - start));
         }
     }

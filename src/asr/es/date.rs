@@ -8,12 +8,28 @@
 use super::cardinal;
 
 const MONTHS: [&str; 12] = [
-    "enero", "febrero", "marzo", "abril", "mayo", "junio",
-    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+    "enero",
+    "febrero",
+    "marzo",
+    "abril",
+    "mayo",
+    "junio",
+    "julio",
+    "agosto",
+    "septiembre",
+    "octubre",
+    "noviembre",
+    "diciembre",
 ];
 
 const DAYS_OF_WEEK: [&str; 7] = [
-    "lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo",
+    "lunes",
+    "martes",
+    "miércoles",
+    "jueves",
+    "viernes",
+    "sábado",
+    "domingo",
 ];
 
 /// Parse spoken Spanish date expression to written form.
@@ -142,7 +158,9 @@ fn to_roman(num: i64) -> Option<String> {
         return None;
     }
     let values = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1];
-    let symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"];
+    let symbols = [
+        "M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I",
+    ];
 
     let mut result = String::new();
     let mut remaining = num;
@@ -167,7 +185,10 @@ mod tests {
 
     #[test]
     fn test_with_article() {
-        assert_eq!(parse("el uno de diciembre"), Some("el 1 de diciembre".to_string()));
+        assert_eq!(
+            parse("el uno de diciembre"),
+            Some("el 1 de diciembre".to_string())
+        );
     }
 
     #[test]
@@ -177,6 +198,9 @@ mod tests {
 
     #[test]
     fn test_antes_de_cristo() {
-        assert_eq!(parse("doscientos tres antes de cristo"), Some("203 a. c.".to_string()));
+        assert_eq!(
+            parse("doscientos tres antes de cristo"),
+            Some("203 a. c.".to_string())
+        );
     }
 }

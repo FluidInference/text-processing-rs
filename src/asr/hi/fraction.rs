@@ -28,7 +28,8 @@ fn has_scale_word(words: &[&str], start: usize) -> bool {
 /// Check if word is a unit/currency/time marker that means this modifier is NOT a fraction context.
 fn is_non_fraction_context(word: &str) -> bool {
     // Time markers
-    if matches!(word, "बजे" | "बजकर" | "बजके" | "घंटा" | "घंटे") {
+    if matches!(word, "बजे" | "बजकर" | "बजके" | "घंटा" | "घंटे")
+    {
         return true;
     }
     // Measure/money context will be handled by those modules
@@ -136,7 +137,10 @@ fn try_parse_bata_fraction(words: &[&str], start: usize) -> Option<(String, usiz
     let num_words: Vec<&str> = words[start..bata_pos].to_vec();
 
     // Check if numerator words are valid (number words or modifiers)
-    if !num_words.iter().all(|w| cardinal::is_hi_number_word(w) || cardinal::is_modifier(w)) {
+    if !num_words
+        .iter()
+        .all(|w| cardinal::is_hi_number_word(w) || cardinal::is_modifier(w))
+    {
         return None;
     }
 
@@ -145,7 +149,10 @@ fn try_parse_bata_fraction(words: &[&str], start: usize) -> Option<(String, usiz
     // Parse denominator (after बटा)
     let denom_start = bata_pos + 1;
     let mut denom_end = denom_start;
-    while denom_end < words.len() && (cardinal::is_hi_number_word(words[denom_end]) || cardinal::is_modifier(words[denom_end])) {
+    while denom_end < words.len()
+        && (cardinal::is_hi_number_word(words[denom_end])
+            || cardinal::is_modifier(words[denom_end]))
+    {
         denom_end += 1;
     }
 
@@ -156,7 +163,11 @@ fn try_parse_bata_fraction(words: &[&str], start: usize) -> Option<(String, usiz
     let denom_words: Vec<&str> = words[denom_start..denom_end].to_vec();
     let denominator = cardinal::words_to_number(&denom_words)?;
 
-    let frac_str = format!("{}/{}", cardinal::to_devanagari(numerator), cardinal::to_devanagari(denominator));
+    let frac_str = format!(
+        "{}/{}",
+        cardinal::to_devanagari(numerator),
+        cardinal::to_devanagari(denominator)
+    );
     Some((frac_str, denom_end - start))
 }
 
@@ -184,7 +195,10 @@ fn try_parse_sahi_fraction(words: &[&str], start: usize) -> Option<(String, usiz
 
     // Parse whole number (before सही)
     let whole_words: Vec<&str> = words[start..sahi_pos].to_vec();
-    if !whole_words.iter().all(|w| cardinal::is_hi_number_word(w) || cardinal::is_modifier(w)) {
+    if !whole_words
+        .iter()
+        .all(|w| cardinal::is_hi_number_word(w) || cardinal::is_modifier(w))
+    {
         return None;
     }
     let whole = cardinal::words_to_number(&whole_words)?;
@@ -215,7 +229,8 @@ fn try_parse_modifier_fraction(words: &[&str], start: usize) -> Option<(String, 
             if start + 1 < words.len() {
                 let next = words[start + 1];
                 // If followed by a number word or scale word, let cardinal/money/measure handle it
-                if cardinal::is_hi_number_word(next) || cardinal::is_modifier(next)
+                if cardinal::is_hi_number_word(next)
+                    || cardinal::is_modifier(next)
                     || is_non_fraction_context(next)
                 {
                     return None;
@@ -226,7 +241,8 @@ fn try_parse_modifier_fraction(words: &[&str], start: usize) -> Option<(String, 
         "ढाई" => {
             if start + 1 < words.len() {
                 let next = words[start + 1];
-                if cardinal::is_hi_number_word(next) || cardinal::is_modifier(next)
+                if cardinal::is_hi_number_word(next)
+                    || cardinal::is_modifier(next)
                     || is_non_fraction_context(next)
                 {
                     return None;
@@ -253,7 +269,10 @@ fn try_parse_modifier_fraction(words: &[&str], start: usize) -> Option<(String, 
                 if end > start + 1 {
                     let num_words: Vec<&str> = words[start + 1..end].to_vec();
                     if let Some(val) = cardinal::words_to_number(&num_words) {
-                        return Some((format!("{} १/४", cardinal::to_devanagari(val)), end - start));
+                        return Some((
+                            format!("{} १/४", cardinal::to_devanagari(val)),
+                            end - start,
+                        ));
                     }
                 }
             }
@@ -277,7 +296,10 @@ fn try_parse_modifier_fraction(words: &[&str], start: usize) -> Option<(String, 
                 if end > start + 1 {
                     let num_words: Vec<&str> = words[start + 1..end].to_vec();
                     if let Some(val) = cardinal::words_to_number(&num_words) {
-                        return Some((format!("{} १/२", cardinal::to_devanagari(val)), end - start));
+                        return Some((
+                            format!("{} १/२", cardinal::to_devanagari(val)),
+                            end - start,
+                        ));
                     }
                 }
             }
@@ -302,7 +324,10 @@ fn try_parse_modifier_fraction(words: &[&str], start: usize) -> Option<(String, 
                     let num_words: Vec<&str> = words[start + 1..end].to_vec();
                     if let Some(val) = cardinal::words_to_number(&num_words) {
                         let whole = val - 1;
-                        return Some((format!("{} ३/४", cardinal::to_devanagari(whole)), end - start));
+                        return Some((
+                            format!("{} ३/४", cardinal::to_devanagari(whole)),
+                            end - start,
+                        ));
                     }
                 }
             }

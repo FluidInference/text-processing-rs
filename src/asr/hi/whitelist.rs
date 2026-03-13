@@ -37,7 +37,10 @@ pub fn process(input: &str) -> String {
             let term_len = term_words.len();
 
             if i + term_len <= words.len() {
-                let matches = term_words.iter().enumerate().all(|(j, &tw)| words[i + j] == tw);
+                let matches = term_words
+                    .iter()
+                    .enumerate()
+                    .all(|(j, &tw)| words[i + j] == tw);
                 if matches {
                     result.push(replacement.to_string());
                     i += term_len;

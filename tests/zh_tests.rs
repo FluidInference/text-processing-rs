@@ -26,7 +26,9 @@ fn test_cardinal() {
     let results = common::run_test_file(Path::new("tests/data/zh/cardinal.txt"), normalize_zh);
     println!(
         "cardinal: {}/{} passed ({} failures)",
-        results.passed, results.total, results.failures.len()
+        results.passed,
+        results.total,
+        results.failures.len()
     );
     print_failures(&results);
 }
@@ -36,7 +38,9 @@ fn test_ordinal() {
     let results = common::run_test_file(Path::new("tests/data/zh/ordinal.txt"), normalize_zh);
     println!(
         "ordinal: {}/{} passed ({} failures)",
-        results.passed, results.total, results.failures.len()
+        results.passed,
+        results.total,
+        results.failures.len()
     );
     print_failures(&results);
 }
@@ -46,7 +50,9 @@ fn test_decimal() {
     let results = common::run_test_file(Path::new("tests/data/zh/decimal.txt"), normalize_zh);
     println!(
         "decimal: {}/{} passed ({} failures)",
-        results.passed, results.total, results.failures.len()
+        results.passed,
+        results.total,
+        results.failures.len()
     );
     print_failures(&results);
 }
@@ -56,7 +62,9 @@ fn test_date() {
     let results = common::run_test_file(Path::new("tests/data/zh/date.txt"), normalize_zh);
     println!(
         "date: {}/{} passed ({} failures)",
-        results.passed, results.total, results.failures.len()
+        results.passed,
+        results.total,
+        results.failures.len()
     );
     print_failures(&results);
 }
@@ -66,7 +74,9 @@ fn test_time() {
     let results = common::run_test_file(Path::new("tests/data/zh/time.txt"), normalize_zh);
     println!(
         "time: {}/{} passed ({} failures)",
-        results.passed, results.total, results.failures.len()
+        results.passed,
+        results.total,
+        results.failures.len()
     );
     print_failures(&results);
 }
@@ -76,7 +86,9 @@ fn test_fraction() {
     let results = common::run_test_file(Path::new("tests/data/zh/fraction.txt"), normalize_zh);
     println!(
         "fraction: {}/{} passed ({} failures)",
-        results.passed, results.total, results.failures.len()
+        results.passed,
+        results.total,
+        results.failures.len()
     );
     print_failures(&results);
 }
@@ -86,7 +98,9 @@ fn test_money() {
     let results = common::run_test_file(Path::new("tests/data/zh/money.txt"), normalize_zh);
     println!(
         "money: {}/{} passed ({} failures)",
-        results.passed, results.total, results.failures.len()
+        results.passed,
+        results.total,
+        results.failures.len()
     );
     print_failures(&results);
 }
@@ -96,7 +110,9 @@ fn test_whitelist() {
     let results = common::run_test_file(Path::new("tests/data/zh/whitelist.txt"), normalize_zh);
     println!(
         "whitelist: {}/{} passed ({} failures)",
-        results.passed, results.total, results.failures.len()
+        results.passed,
+        results.total,
+        results.failures.len()
     );
     print_failures(&results);
 }
@@ -106,7 +122,9 @@ fn test_word() {
     let results = common::run_test_file(Path::new("tests/data/zh/word.txt"), normalize_zh);
     println!(
         "word: {}/{} passed ({} failures)",
-        results.passed, results.total, results.failures.len()
+        results.passed,
+        results.total,
+        results.failures.len()
     );
     print_failures(&results);
 }

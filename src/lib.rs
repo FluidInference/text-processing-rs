@@ -377,14 +377,38 @@ fn decompose_devanagari_nukta(input: &str) -> String {
     let mut out = String::with_capacity(input.len() + 16);
     for c in input.chars() {
         match c {
-            '\u{0958}' => { out.push('\u{0915}'); out.push('\u{093C}'); } // क़
-            '\u{0959}' => { out.push('\u{0916}'); out.push('\u{093C}'); } // ख़
-            '\u{095A}' => { out.push('\u{0917}'); out.push('\u{093C}'); } // ग़
-            '\u{095B}' => { out.push('\u{091C}'); out.push('\u{093C}'); } // ज़
-            '\u{095C}' => { out.push('\u{0921}'); out.push('\u{093C}'); } // ड़
-            '\u{095D}' => { out.push('\u{0922}'); out.push('\u{093C}'); } // ढ़
-            '\u{095E}' => { out.push('\u{092B}'); out.push('\u{093C}'); } // फ़
-            '\u{095F}' => { out.push('\u{092F}'); out.push('\u{093C}'); } // य़
+            '\u{0958}' => {
+                out.push('\u{0915}');
+                out.push('\u{093C}');
+            } // क़
+            '\u{0959}' => {
+                out.push('\u{0916}');
+                out.push('\u{093C}');
+            } // ख़
+            '\u{095A}' => {
+                out.push('\u{0917}');
+                out.push('\u{093C}');
+            } // ग़
+            '\u{095B}' => {
+                out.push('\u{091C}');
+                out.push('\u{093C}');
+            } // ज़
+            '\u{095C}' => {
+                out.push('\u{0921}');
+                out.push('\u{093C}');
+            } // ड़
+            '\u{095D}' => {
+                out.push('\u{0922}');
+                out.push('\u{093C}');
+            } // ढ़
+            '\u{095E}' => {
+                out.push('\u{092B}');
+                out.push('\u{093C}');
+            } // फ़
+            '\u{095F}' => {
+                out.push('\u{092F}');
+                out.push('\u{093C}');
+            } // य़
             _ => out.push(c),
         }
     }

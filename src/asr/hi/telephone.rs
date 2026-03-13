@@ -98,7 +98,11 @@ pub fn process(input: &str) -> String {
 }
 
 /// Try to concatenate a sequence of English digit words into Devanagari digits.
-fn try_concat_english_digits(words: &[&str], start: usize, min_digits: usize) -> Option<(String, usize)> {
+fn try_concat_english_digits(
+    words: &[&str],
+    start: usize,
+    min_digits: usize,
+) -> Option<(String, usize)> {
     let mut digits = String::new();
     let mut i = start;
 
@@ -122,7 +126,11 @@ fn try_concat_english_digits(words: &[&str], start: usize, min_digits: usize) ->
 /// Try to concatenate a sequence of Devanagari digit tokens.
 /// Each token should be a single Devanagari digit or small Devanagari number.
 /// Requires at least `min_digits` total digits to form a phone number.
-fn try_concat_devanagari_digits(words: &[&str], start: usize, min_digits: usize) -> Option<(String, usize)> {
+fn try_concat_devanagari_digits(
+    words: &[&str],
+    start: usize,
+    min_digits: usize,
+) -> Option<(String, usize)> {
     let mut digits = String::new();
     let mut i = start;
 
@@ -156,9 +164,6 @@ mod tests {
 
     #[test]
     fn test_international() {
-        assert_eq!(
-            process("प्लस ९ १ ९ ८ ७ ६ ५ ४ ३ २ १ ०"),
-            "+९१ ९८७६५४३२१०"
-        );
+        assert_eq!(process("प्लस ९ १ ९ ८ ७ ६ ५ ४ ३ २ १ ०"), "+९१ ९८७६५४३२१०");
     }
 }
