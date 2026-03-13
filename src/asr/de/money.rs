@@ -301,11 +301,8 @@ fn parse_cents_only(input: &str) -> Option<String> {
 
 /// Format amount with currency symbol
 fn format_with_symbol(cur: &Currency, amount: &str) -> String {
-    if cur.prefix {
-        format!("{}{}", cur.symbol, amount)
-    } else {
-        format!("{}{}", cur.symbol, amount)
-    }
+    // German ITN convention: symbol always prefixes the amount
+    format!("{}{}", cur.symbol, amount)
 }
 
 /// Parse decimal digit words: "null null" → "00", "null eins" → "01"

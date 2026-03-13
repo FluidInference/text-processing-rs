@@ -113,7 +113,7 @@ fn parse_halb(input: &str) -> Option<String> {
     }
     let rest = input.strip_prefix("halb ")?;
     let hour = cardinal::words_to_number(rest)? as i64;
-    let actual_hour = if hour > 1 { hour - 1 } else { 23 };
+    let actual_hour = (hour - 1 + 24) % 24;
     Some(format!("{:02}:{:02} Uhr", actual_hour, 30))
 }
 
@@ -123,7 +123,7 @@ fn parse_viertel(input: &str) -> Option<String> {
         let rest = input.strip_prefix("viertel vor ")?;
         let (hour_part, modifier) = extract_time_modifier(rest);
         let hour = cardinal::words_to_number(hour_part.trim())? as i64;
-        let actual_hour = if hour > 1 { hour - 1 } else { 23 };
+        let actual_hour = (hour - 1 + 24) % 24;
         let result = format!("{:02}:{:02} Uhr", actual_hour, 45);
         return Some(append_modifier(&result, modifier));
     }
@@ -170,7 +170,7 @@ fn parse_vor_nach(input: &str) -> Option<String> {
         let hour_str = &input[pos + 5..];
         let minutes = cardinal::words_to_number(min_str)? as i64;
         let hour = cardinal::words_to_number(hour_str)? as i64;
-        let actual_hour = if hour > 1 { hour - 1 } else { 23 };
+        let actual_hour = (hour - 1 + 24) % 24;
         let actual_min = 60 - minutes;
         return Some(format!("{:02}:{:02} Uhr", actual_hour, actual_min));
     }

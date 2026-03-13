@@ -169,7 +169,7 @@ fn parse_menos(input: &str, ampm: Option<&str>, tz: Option<&str>) -> Option<Stri
 
     let (actual_hour, actual_min) = subtract_time(hour, minutes);
 
-    let article = if actual_hour == 1 { "la" } else { "la" };
+    let article = if actual_hour == 1 { "la" } else { "las" };
     Some(format_time(article, actual_hour, actual_min, ampm, tz))
 }
 
