@@ -23,7 +23,7 @@ pub mod tts;
 #[cfg(feature = "ffi")]
 pub mod ffi;
 
-use asr::{
+use asr::en::{
     cardinal, date, decimal, electronic, measure, money, ordinal, punctuation, telephone, time,
     whitelist, word,
 };
@@ -114,12 +114,66 @@ pub fn normalize(input: &str) -> String {
 /// Supports language-specific ITN taggers for converting spoken-form
 /// ASR output to written form in different languages.
 ///
-/// Supported languages: "en" (default), "hi" (Hindi).
+/// Supported languages: "en" (default), "fr" (French), "hi" (Hindi).
 pub fn normalize_with_lang(input: &str, lang: &str) -> String {
+    let input = input.trim();
+
     match lang {
+        "en" => normalize(input),
+        "fr" => normalize_lang_fr(input),
         "hi" => normalize_lang_hi(input),
         _ => normalize(input), // Default to English
     }
+}
+
+/// ITN for French
+fn normalize_lang_fr(input: &str) -> String {
+    // Apply custom user rules first
+    if let Some(result) = custom_rules::parse(input) {
+        return result;
+    }
+
+    // Try French ITN taggers in order of specificity
+    if let Some(result) = asr::fr::whitelist::parse(input) {
+        return result;
+    }
+    if let Some(result) = asr::fr::punctuation::parse(input) {
+        return result;
+    }
+    if let Some(result) = asr::fr::word::parse(input) {
+        return result;
+    }
+    if let Some(result) = asr::fr::time::parse(input) {
+        return result;
+    }
+    if let Some(result) = asr::fr::date::parse(input) {
+        return result;
+    }
+    if let Some(result) = asr::fr::money::parse(input) {
+        return result;
+    }
+    if let Some(result) = asr::fr::measure::parse(input) {
+        return result;
+    }
+    if let Some(result) = asr::fr::electronic::parse(input) {
+        return result;
+    }
+    if let Some(result) = asr::fr::ordinal::parse(input) {
+        return result;
+    }
+    if let Some(result) = asr::fr::decimal::parse(input) {
+        return result;
+    }
+    if let Some(num) = asr::fr::cardinal::parse(input) {
+        return num;
+    }
+    // Telephone last since it can match numbers
+    if let Some(result) = asr::fr::telephone::parse(input) {
+        return result;
+    }
+
+    // No match - return original
+    input.to_string()
 }
 
 /// Decompose precomposed Devanagari nukta characters to base + nukta.
