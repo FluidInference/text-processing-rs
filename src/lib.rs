@@ -16,8 +16,8 @@
 //! assert_eq!(result, "200");
 //! ```
 
-pub mod itn;
 pub mod custom_rules;
+pub mod itn;
 pub mod tn;
 
 #[cfg(feature = "ffi")]
