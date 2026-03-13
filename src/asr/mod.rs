@@ -15,6 +15,10 @@
 //! - whitelist: pass-through words
 
 // Languages
+pub mod de;
 pub mod en;
+pub mod es;
 pub mod fr;
 pub mod hi;
+pub mod ja;
+pub mod zh;

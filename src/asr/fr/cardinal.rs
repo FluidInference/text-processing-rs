@@ -127,7 +127,7 @@ fn contains_scale_word(input: &str) -> bool {
     scale_words.iter().any(|&word| input.contains(word))
 }
 
-pub(super) fn words_to_number(input: &str) -> Option<i128> {
+pub fn words_to_number(input: &str) -> Option<i128> {
     // Normalize: remove hyphens, "et" connectors
     let normalized = input
         .replace("-", " ")
