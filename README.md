@@ -1,6 +1,6 @@
 # text-processing-rs
 
-A Rust port of [NVIDIA NeMo Text Processing](https://github.com/NVIDIA/NeMo-text-processing) supporting both **Inverse Text Normalization (ITN)** and **Text Normalization (TN)**.
+A Rust port of [NVIDIA NeMo Text Processing](https://github.com/NVIDIA/NeMo-text-processing) supporting both **Inverse Text Normalization (ITN)** and **Text Normalization (TN)** across 7 languages.
 
 ## What it does
 
@@ -66,6 +66,21 @@ let result = tn_normalize_sentence("I paid $5 for 23 items");
 assert_eq!(result, "I paid five dollars for twenty three items");
 ```
 
+Multilingual ITN via `normalize_with_lang`:
+
+```rust
+use nemo_text_processing::normalize_with_lang;
+
+let result = normalize_with_lang("vingt et un", "fr");
+assert_eq!(result, "21");
+
+let result = normalize_with_lang("zweihundert", "de");
+assert_eq!(result, "200");
+
+let result = normalize_with_lang("veintiuno", "es");
+assert_eq!(result, "21");
+```
+
 ### Swift
 
 ```swift
@@ -107,20 +122,19 @@ echo "2:30 PM" | nemo-tn               # → two thirty p m
 
 ### ITN (Spoken → Written)
 
-**98.6% compatible** with NeMo text processing test suite (1200/1217 tests passing).
+**100% compatible** with NeMo text processing test suite across all supported languages (3,011 tests passing).
 
-| Category | Status |
-|----------|--------|
-| Cardinal numbers | 100% |
-| Ordinal numbers | 100% |
-| Decimal numbers | 100% |
-| Money | 100% |
-| Measurements | 100% |
-| Dates | 100% |
-| Time | 97% |
-| Electronic (email/URL) | 96% |
-| Telephone/IP | 96% |
-| Whitelist terms | 100% |
+| Language | Tests | Status |
+|----------|-------|--------|
+| English | 1,217 | 100% |
+| German | 288 | 100% |
+| Spanish | 278 | 100% |
+| French | 277 | 100% |
+| Hindi | 327 | 100% |
+| Japanese | 230 | 100% |
+| Chinese | 394 | 100% |
+
+All ITN categories pass at 100% for English: cardinal, ordinal, decimal, money, measurements, dates, time, electronic (email/URL), telephone/IP, and whitelist terms — including cased variants.
 
 ### TN (Written → Spoken)
 
@@ -141,6 +155,7 @@ echo "2:30 PM" | nemo-tn               # → two thirty p m
 
 - **ITN** (Inverse Text Normalization): spoken → written form for ASR post-processing
 - **TN** (Text Normalization): written → spoken form for TTS preprocessing
+- **7 languages**: English, German, Spanish, French, Hindi, Japanese, Chinese
 - Cardinal and ordinal number conversion (both directions)
 - Decimal numbers with scale words (million, billion)
 - Currency formatting (USD, GBP, EUR, JPY, and more)
