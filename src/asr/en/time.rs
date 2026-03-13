@@ -25,7 +25,7 @@ pub fn parse(input: &str) -> Option<String> {
         return Some(result);
     }
 
-    if let Some(result) = parse_to_pattern(&time_part, &period, &timezone) {
+    if let Some(result) = parse_to_pattern(original, &time_part, &period, &timezone) {
         return Some(result);
     }
 
@@ -187,7 +187,7 @@ fn parse_oclock(input: &str, period: &str, timezone: &str) -> Option<String> {
 }
 
 /// Parse "X to Y" pattern (e.g., "quarter to one" = 12:45)
-fn parse_to_pattern(input: &str, period: &str, timezone: &str) -> Option<String> {
+fn parse_to_pattern(original: &str, input: &str, period: &str, timezone: &str) -> Option<String> {
     if input.starts_with("quarter to ") {
         let hour_part = input.trim_start_matches("quarter to ");
         let hour = words_to_number(hour_part)? as i64;
@@ -204,11 +204,55 @@ fn parse_to_pattern(input: &str, period: &str, timezone: &str) -> Option<String>
                 .trim_end_matches(" mins")
                 .trim_end_matches(" minute")
                 .trim_end_matches(" minutes");
-            let minutes_before = words_to_number(min_part)? as i64;
-            let hour = words_to_number(parts[1])? as i64;
-            let prev_hour = if hour == 1 { 12 } else { hour - 1 };
-            let minute = 60 - minutes_before;
-            return Some(format_time(prev_hour, minute, period, timezone));
+            let hour = words_to_number(parts[1]);
+
+            if let Some(hour_val) = hour {
+                let hour_val = hour_val as i64;
+
+                // Try parsing full min_part as a number
+                if let Some(minutes_before) = words_to_number(min_part) {
+                    let minutes_before = minutes_before as i64;
+                    let prev_hour = if hour_val == 1 { 12 } else { hour_val - 1 };
+                    let minute = 60 - minutes_before;
+                    return Some(format_time(prev_hour, minute, period, timezone));
+                }
+
+                // If full min_part doesn't parse, try extracting the last word(s)
+                // as the minute value with a prefix to preserve.
+                // Only activate with am/pm/timezone to avoid false positives.
+                // e.g., "set alarm at ten to eleven pm" → "set alarm at 10:50 p.m."
+                if !period.is_empty() || !timezone.is_empty() {
+                    let min_words: Vec<&str> = min_part.split_whitespace().collect();
+                    if min_words.len() > 1 {
+                        // Try last word as minutes
+                        let last_word = min_words[min_words.len() - 1];
+                        if let Some(minutes_before) = words_to_number(last_word) {
+                            let minutes_before = minutes_before as i64;
+                            if minutes_before >= 1
+                                && minutes_before <= 59
+                                && hour_val >= 1
+                                && hour_val <= 24
+                            {
+                                let prev_hour = if hour_val == 1 { 12 } else { hour_val - 1 };
+                                let minute = 60 - minutes_before;
+                                // Get prefix from original text to preserve casing
+                                let prefix_word_count = min_words.len() - 1;
+                                let orig_words: Vec<&str> = original.split_whitespace().collect();
+                                let orig_prefix = if orig_words.len() > prefix_word_count {
+                                    orig_words[..prefix_word_count].join(" ")
+                                } else {
+                                    min_words[..prefix_word_count].join(" ")
+                                };
+                                return Some(format!(
+                                    "{} {}",
+                                    orig_prefix,
+                                    format_time(prev_hour, minute, period, timezone)
+                                ));
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
