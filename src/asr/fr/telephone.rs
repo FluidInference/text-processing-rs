@@ -2,7 +2,12 @@
 //!
 //! Converts spoken French phone numbers to written form:
 //! - "zéro six douze trente-quatre" → "06 12 34"
+//! - "double neuf douze trente-deux" → "99 12 32"
 //! - Handles digit-by-digit or grouped number words
+//!
+//! French phone numbers are formatted as 2-digit groups: "02 12 32 30 30"
+//! Standard French numbers are 10 digits; if 9 digits are provided,
+//! a leading zero is prepended (implied area code).
 
 use super::cardinal::words_to_number;
 
@@ -10,107 +15,105 @@ use super::cardinal::words_to_number;
 pub fn parse(input: &str) -> Option<String> {
     let input_lower = input.trim().to_lowercase();
 
-    // Try parsing as a sequence of number words
-    if let Some(result) = parse_number_sequence(&input_lower) {
-        return Some(result);
-    }
-
-    None
+    parse_number_sequence(&input_lower)
 }
 
-/// Parse sequence of number words into phone number format
+/// Parse sequence of number words into phone number format.
 fn parse_number_sequence(input: &str) -> Option<String> {
     let input = input.trim();
 
-    // Split by whitespace and parse each token
     let tokens: Vec<&str> = input.split_whitespace().collect();
-
-    // For phone numbers, expect at least a few tokens
     if tokens.is_empty() {
         return None;
     }
 
     let mut digits = Vec::new();
-
-    // Try to parse each token/group as a number
     let mut i = 0;
+
     while i < tokens.len() {
-        // Try to parse single token as a digit word (0-9)
-        if let Some(num) = parse_single_token(tokens[i]) {
-            digits.push(num);
+        // Handle "double X" → XX
+        if tokens[i] == "double" && i + 1 < tokens.len() {
+            if let Some(d) = parse_single_digit(tokens[i + 1]) {
+                digits.push(d);
+                digits.push(d);
+                i += 2;
+                continue;
+            }
+        }
+
+        // Handle "triple X" → XXX
+        if tokens[i] == "triple" && i + 1 < tokens.len() {
+            if let Some(d) = parse_single_digit(tokens[i + 1]) {
+                digits.push(d);
+                digits.push(d);
+                digits.push(d);
+                i += 2;
+                continue;
+            }
+        }
+
+        // Try to parse single digit word (zéro-neuf)
+        if let Some(d) = parse_single_digit(tokens[i]) {
+            digits.push(d);
+            i += 1;
+            continue;
+        }
+
+        // Try single-token compound number: "douze" → 12, "trente-deux" → 32
+        // Only parse single tokens to avoid greedily combining separate groups
+        if let Some(num) = words_to_number(tokens[i]) {
+            let num = num as u32;
+            if num >= 10 && num <= 99 {
+                digits.push((num / 10) as u8);
+                digits.push((num % 10) as u8);
+            } else if num < 10 {
+                digits.push(num as u8);
+            } else {
+                return None;
+            }
             i += 1;
         } else {
-            // Try to parse as number words (e.g., "douze", "vingt et un")
-            // For phone numbers, prefer shorter phrases (single words first)
-            let mut found = false;
-            for len in 1..=std::cmp::min(3, tokens.len() - i) {
-                let phrase = tokens[i..i + len].join(" ");
-                if let Some(num) = words_to_number(&phrase) {
-                    // Convert number to digits string
-                    let num_str = (num as i64).to_string();
-                    for ch in num_str.chars() {
-                        if ch.is_ascii_digit() {
-                            digits.push(ch.to_string());
-                        }
-                    }
-                    i += len;
-                    found = true;
-                    break;
-                }
-            }
-            if !found {
-                i += 1;
-            }
+            return None;
         }
     }
 
-    // Only return if we got a reasonable number of digits (at least 6 for partial phone numbers)
-    if digits.len() >= 6 {
-        // Group digits in pairs: "06 12 34 56 78"
-        Some(group_phone_digits(&digits))
-    } else {
-        None
-    }
-}
-
-/// Parse single token that might be a digit word
-fn parse_single_token(token: &str) -> Option<String> {
-    let digit_words = [
-        ("zéro", "0"),
-        ("un", "1"),
-        ("deux", "2"),
-        ("trois", "3"),
-        ("quatre", "4"),
-        ("cinq", "5"),
-        ("six", "6"),
-        ("sept", "7"),
-        ("huit", "8"),
-        ("neuf", "9"),
-    ];
-
-    for (word, digit) in &digit_words {
-        if token == *word {
-            return Some(digit.to_string());
-        }
+    // Need at least 6 digits for a phone number
+    if digits.len() < 6 {
+        return None;
     }
 
-    None
-}
+    // French phone numbers are 10 digits; if 9 provided, prepend 0
+    if digits.len() == 9 {
+        digits.insert(0, 0);
+    }
 
-/// Group digits into phone number format: "06 12 34 56 78"
-fn group_phone_digits(digits: &[String]) -> String {
-    let digit_str: String = digits.iter().map(|s| s.as_str()).collect();
-
-    // Group in pairs
+    // Format as 2-digit groups: "02 12 32 30 30"
     let mut result = String::new();
-    for (i, ch) in digit_str.chars().enumerate() {
-        if i > 0 && i % 2 == 0 {
+    for (idx, &d) in digits.iter().enumerate() {
+        if idx > 0 && idx % 2 == 0 {
             result.push(' ');
         }
-        result.push(ch);
+        result.push(char::from(b'0' + d));
     }
 
-    result
+    Some(result)
+}
+
+/// Parse single digit word (0-9), including "une"
+fn parse_single_digit(token: &str) -> Option<u8> {
+    match token {
+        "zéro" | "zero" => Some(0),
+        "un" | "une" => Some(1),
+        "deux" => Some(2),
+        "trois" => Some(3),
+        "quatre" => Some(4),
+        "cinq" => Some(5),
+        "six" => Some(6),
+        "sept" => Some(7),
+        "huit" => Some(8),
+        "neuf" => Some(9),
+        _ => None,
+    }
 }
 
 #[cfg(test)]
@@ -138,6 +141,30 @@ mod tests {
         assert_eq!(
             parse("zéro six douze trente-quatre cinquante-six soixante-dix-huit"),
             Some("06 12 34 56 78".to_string())
+        );
+    }
+
+    #[test]
+    fn test_without_leading_zero() {
+        assert_eq!(
+            parse("deux douze trente-deux trente trente"),
+            Some("02 12 32 30 30".to_string())
+        );
+    }
+
+    #[test]
+    fn test_digit_by_digit_with_une() {
+        assert_eq!(
+            parse("deux une deux trois deux trois zéro trois zéro"),
+            Some("02 12 32 30 30".to_string())
+        );
+    }
+
+    #[test]
+    fn test_double() {
+        assert_eq!(
+            parse("double neuf douze trente-deux trente trente"),
+            Some("99 12 32 30 30".to_string())
         );
     }
 
