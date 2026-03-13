@@ -16,6 +16,8 @@
 
 pub mod cardinal;
 pub mod date;
+
+pub mod hi;
 pub mod decimal;
 pub mod electronic;
 pub mod measure;

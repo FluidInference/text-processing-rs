@@ -28,12 +28,21 @@ pub fn run_test_file<F>(path: &Path, normalize_fn: F) -> TestResults
 where
     F: Fn(&str) -> String,
 {
+    run_test_file_with_compare(path, normalize_fn, |a, b| a == b)
+}
+
+/// Run all test cases with a custom comparison function.
+pub fn run_test_file_with_compare<F, C>(path: &Path, normalize_fn: F, compare_fn: C) -> TestResults
+where
+    F: Fn(&str) -> String,
+    C: Fn(&str, &str) -> bool,
+{
     let cases = parse_test_file(path);
     let mut results = TestResults::new(cases.len());
 
     for (input, expected) in &cases {
         let result = normalize_fn(input);
-        if result == *expected {
+        if compare_fn(&result, expected) {
             results.passed += 1;
         } else {
             results.failures.push(TestFailure {
