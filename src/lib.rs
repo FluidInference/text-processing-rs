@@ -23,7 +23,7 @@ pub mod tts;
 #[cfg(feature = "ffi")]
 pub mod ffi;
 
-use asr::{
+use asr::en::{
     cardinal, date, decimal, electronic, measure, money, ordinal, punctuation, telephone, time,
     whitelist, word,
 };
@@ -109,10 +109,430 @@ pub fn normalize(input: &str) -> String {
     input.to_string()
 }
 
-/// Normalize with language selection (future use).
-pub fn normalize_with_lang(input: &str, _lang: &str) -> String {
-    // TODO: Language-specific ITN taggers
-    normalize(input)
+/// Normalize with language selection.
+///
+/// Supports language-specific ITN taggers for converting spoken-form
+/// ASR output to written form in different languages.
+///
+/// Supported languages: "en" (default), "fr" (French), "de" (German),
+/// "es" (Spanish), "hi" (Hindi), "ja" (Japanese), "zh" (Chinese).
+pub fn normalize_with_lang(input: &str, lang: &str) -> String {
+    let input = input.trim();
+
+    match lang {
+        "en" => normalize(input),
+        "fr" => normalize_lang_fr(input),
+        "de" => normalize_lang_de(input),
+        "es" => normalize_lang_es(input),
+        "hi" => normalize_lang_hi(input),
+        "ja" => normalize_lang_ja(input),
+        "zh" => normalize_lang_zh(input),
+        _ => normalize(input), // Default to English
+    }
+}
+
+/// Strip trailing punctuation from input: "vingt!" → ("vingt", "!")
+fn strip_trailing_punctuation(input: &str) -> Option<(&str, &str)> {
+    let punct_chars = ['!', '?', '.', ',', ';', ':', '…'];
+    let trimmed = input.trim();
+    for &p in &punct_chars {
+        if trimmed.ends_with(p) {
+            let text = trimmed[..trimmed.len() - p.len_utf8()].trim();
+            let punct = &trimmed[trimmed.len() - p.len_utf8()..];
+            if !text.is_empty() {
+                return Some((text, punct));
+            }
+        }
+    }
+    None
+}
+
+// ── French ITN ──────────────────────────────────────────────────────────
+
+/// ITN for French
+fn normalize_lang_fr(input: &str) -> String {
+    // Try full input first
+    if let Some(result) = try_fr_taggers(input) {
+        return result;
+    }
+
+    // Try stripping trailing punctuation: "vingt!" → try "vingt" then append " !"
+    if let Some((text, punct)) = strip_trailing_punctuation(input) {
+        if let Some(result) = try_fr_taggers(text) {
+            return format!("{} {}", result, punct);
+        }
+    }
+
+    // Try partial number normalization: "quarante trois" → "40 trois"
+    // Only when input has exactly 2 space-separated tokens
+    if let Some(result) = try_fr_partial_cardinal(input) {
+        return result;
+    }
+
+    // No match - return original
+    input.to_string()
+}
+
+/// Try all French ITN taggers on the input
+fn try_fr_taggers(input: &str) -> Option<String> {
+    if let Some(result) = custom_rules::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::fr::whitelist::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::fr::punctuation::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::fr::word::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::fr::time::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::fr::date::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::fr::money::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::fr::measure::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::fr::electronic::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::fr::ordinal::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::fr::decimal::parse(input) {
+        return Some(result);
+    }
+    if let Some(num) = asr::fr::cardinal::parse(input) {
+        return Some(num);
+    }
+    // Telephone last since it can match numbers
+    if let Some(result) = asr::fr::telephone::parse(input) {
+        return Some(result);
+    }
+    None
+}
+
+/// Try partial cardinal normalization for French.
+/// "quarante trois" → "40 trois" (normalize first word if it's a tens/hundreds number)
+fn try_fr_partial_cardinal(input: &str) -> Option<String> {
+    let tokens: Vec<&str> = input.split_whitespace().collect();
+    if tokens.len() != 2 {
+        return None;
+    }
+
+    // Only convert the first token if it's a standalone number ≥ 10
+    let first = tokens[0];
+    let first_lower = first.to_lowercase();
+    if let Some(num) = asr::fr::cardinal::words_to_number(&first_lower) {
+        if num >= 10 {
+            return Some(format!("{} {}", num, tokens[1]));
+        }
+    }
+
+    None
+}
+
+// ── German ITN ──────────────────────────────────────────────────────────
+
+/// ITN for German
+fn normalize_lang_de(input: &str) -> String {
+    // Try full input first
+    if let Some(result) = try_de_taggers(input) {
+        return result;
+    }
+
+    // Try stripping trailing punctuation: "zwanzig!" → try "zwanzig" then append " !"
+    if let Some((text, punct)) = strip_trailing_punctuation(input) {
+        if let Some(result) = try_de_taggers(text) {
+            return format!("{} {}", result, punct);
+        }
+    }
+
+    // No match - return original
+    input.to_string()
+}
+
+/// Try all German ITN taggers on the input
+fn try_de_taggers(input: &str) -> Option<String> {
+    if let Some(result) = custom_rules::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::de::whitelist::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::de::punctuation::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::de::time::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::de::date::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::de::money::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::de::measure::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::de::electronic::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::de::ordinal::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::de::fraction::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::de::decimal::parse(input) {
+        return Some(result);
+    }
+    if let Some(num) = asr::de::cardinal::parse(input) {
+        return Some(num);
+    }
+    // Telephone last since it can match digit sequences
+    if let Some(result) = asr::de::telephone::parse(input) {
+        return Some(result);
+    }
+    None
+}
+
+// ── Spanish ITN ─────────────────────────────────────────────────────────
+
+/// ITN for Spanish
+fn normalize_lang_es(input: &str) -> String {
+    // Try full input first
+    if let Some(result) = try_es_taggers(input) {
+        return result;
+    }
+
+    // Try stripping trailing punctuation: "veinte!" → try "veinte" then append " !"
+    if let Some((text, punct)) = strip_trailing_punctuation(input) {
+        if let Some(result) = try_es_taggers(text) {
+            return format!("{} {}", result, punct);
+        }
+    }
+
+    // No match - return original
+    input.to_string()
+}
+
+/// Try all Spanish ITN taggers on the input
+fn try_es_taggers(input: &str) -> Option<String> {
+    if let Some(result) = custom_rules::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::es::whitelist::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::es::punctuation::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::es::word::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::es::time::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::es::date::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::es::money::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::es::measure::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::es::electronic::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::es::ordinal::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::es::fraction::parse(input) {
+        return Some(result);
+    }
+    if let Some(result) = asr::es::decimal::parse(input) {
+        return Some(result);
+    }
+    if let Some(num) = asr::es::cardinal::parse(input) {
+        return Some(num);
+    }
+    // Telephone last since it can match digit sequences
+    if let Some(result) = asr::es::telephone::parse(input) {
+        return Some(result);
+    }
+    None
+}
+
+/// Decompose precomposed Devanagari nukta characters to base + nukta.
+/// This ensures consistent matching regardless of input encoding.
+fn decompose_devanagari_nukta(input: &str) -> String {
+    let mut out = String::with_capacity(input.len() + 16);
+    for c in input.chars() {
+        match c {
+            '\u{0958}' => {
+                out.push('\u{0915}');
+                out.push('\u{093C}');
+            } // क़
+            '\u{0959}' => {
+                out.push('\u{0916}');
+                out.push('\u{093C}');
+            } // ख़
+            '\u{095A}' => {
+                out.push('\u{0917}');
+                out.push('\u{093C}');
+            } // ग़
+            '\u{095B}' => {
+                out.push('\u{091C}');
+                out.push('\u{093C}');
+            } // ज़
+            '\u{095C}' => {
+                out.push('\u{0921}');
+                out.push('\u{093C}');
+            } // ड़
+            '\u{095D}' => {
+                out.push('\u{0922}');
+                out.push('\u{093C}');
+            } // ढ़
+            '\u{095E}' => {
+                out.push('\u{092B}');
+                out.push('\u{093C}');
+            } // फ़
+            '\u{095F}' => {
+                out.push('\u{092F}');
+                out.push('\u{093C}');
+            } // य़
+            _ => out.push(c),
+        }
+    }
+    out
+}
+
+/// ITN for Hindi.
+///
+/// Hindi ITN uses a sentence-scanning approach. Each processor scans the
+/// full input for its patterns and replaces Hindi number word spans in-place.
+/// Order matters — more specific patterns (money, measure, time, date)
+/// run before generic cardinal replacement.
+fn normalize_lang_hi(input: &str) -> String {
+    // Normalize precomposed nukta characters to decomposed form
+    let input = decompose_devanagari_nukta(input);
+    let mut result = input;
+
+    // 1. Whitelist (abbreviations: डॉक्टर→डॉ., etc.)
+    result = asr::hi::whitelist::process(&result);
+
+    // 2. Money (number + currency name → symbol + digits)
+    result = asr::hi::money::process(&result);
+
+    // 3. Date (day + month [+ year], ranges, eras)
+    result = asr::hi::date::process(&result);
+
+    // 4. Time (X बजे/घंटा + मिनट/सेकंड)
+    // Before measure so "X घंटा Y मिनट" isn't caught as measure
+    result = asr::hi::time::process(&result);
+
+    // 5. Measure (number + unit → digits + symbol)
+    result = asr::hi::measure::process(&result);
+
+    // 6. Fractions (X बटा Y, X सही Y बटा Z)
+    result = asr::hi::fraction::process(&result);
+
+    // 7. Ordinal (Xवां, Xवीं, Xवें)
+    result = asr::hi::ordinal::process(&result);
+
+    // 8. Decimal (X दशमलव Y)
+    result = asr::hi::decimal::process(&result);
+
+    // 9. Cardinal — convert compound number words (with scale words) and
+    //    single number words to Devanagari digits. Must run BEFORE
+    //    telephone/address so compound numbers like "एक सौ" are grouped.
+    result = asr::hi::cardinal::process(&result);
+
+    // 10. Telephone (digit-by-digit sequences ≥ 4 Devanagari digits)
+    result = asr::hi::telephone::process(&result);
+
+    // 11. Address (digit-by-digit with हाइफ़न/बटा, comma-separated digits)
+    result = asr::hi::address::process(&result);
+
+    result
+}
+
+// ── Japanese ITN ────────────────────────────────────────────────────────
+
+/// ITN for Japanese.
+///
+/// Japanese ITN uses a sentence-scanning approach: each processor scans the
+/// full input for its patterns and replaces kanji number spans in-place.
+/// Order matters — more specific patterns (fractions, decimals, dates, times)
+/// run before generic cardinal replacement.
+fn normalize_lang_ja(input: &str) -> String {
+    let mut result = input.to_string();
+
+    // 1. Fractions first (X分のY) — before time which also uses 分
+    result = asr::ja::fraction::process(&result);
+
+    // 2. Decimals (X点Y) — before cardinal swallows the kanji
+    result = asr::ja::decimal::process(&result);
+
+    // 3. Dates (年月日, 世紀, 年代, weekdays, ranges)
+    result = asr::ja::date::process(&result);
+
+    // 4. Time (時, 分) — after fractions to avoid 分の collision
+    result = asr::ja::time::process(&result);
+
+    // 5. Ordinals (番目, 第)
+    result = asr::ja::ordinal::process(&result);
+
+    // 6. Cardinal — catch remaining standalone kanji number spans
+    result = asr::ja::cardinal::replace_kanji_numbers(&result);
+
+    result
+}
+
+// ── Chinese ITN ─────────────────────────────────────────────────────────
+
+/// ITN for Chinese.
+///
+/// Chinese ITN uses a sentence-scanning approach similar to Japanese.
+/// Each processor scans the full input for its patterns and replaces
+/// Chinese number spans in-place.
+/// Order matters — whitelist, money, and specific patterns run before cardinal.
+fn normalize_lang_zh(input: &str) -> String {
+    let mut result = input.to_string();
+
+    // 1. Whitelist (abbreviation mappings)
+    result = asr::zh::whitelist::process(&result);
+
+    // 2. Money (before decimal to catch currency-specific decimal patterns like 一点五万美元)
+    result = asr::zh::money::process(&result);
+
+    // 3. Fractions (X分之Y) — before time which also uses 分
+    result = asr::zh::fraction::process(&result);
+
+    // 4. Time (X点Y分, X分钟, X秒钟) — before decimal so 点 with 分/刻/半 isn't consumed as decimal
+    result = asr::zh::time::process(&result);
+
+    // 5. Decimals (X点Y)
+    result = asr::zh::decimal::process(&result);
+
+    // 6. Dates (年月日, 公元/纪元)
+    result = asr::zh::date::process(&result);
+
+    // 7. Ordinals (第X)
+    result = asr::zh::ordinal::process(&result);
+
+    // 8. Cardinal — catch remaining standalone Chinese number spans
+    result = asr::zh::cardinal::replace_zh_numbers(&result);
+
+    result
 }
 
 // ── Multi-language TN helpers ──────────────────────────────────────────
