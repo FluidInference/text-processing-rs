@@ -73,12 +73,29 @@ lazy_static! {
 ///
 /// Returns None if the input cannot be parsed as a number.
 pub fn parse(input: &str) -> Option<String> {
-    let input = input.to_lowercase();
-    let input = input.trim();
+    let original = input.trim();
+    let input = original.to_lowercase();
+    let input = input.as_str();
 
     // Handle "zero" specially - NeMo returns "zero" not "0"
+    // Preserve original casing: "Zero" → "Zero", "zero" → "zero"
     if input == "zero" {
-        return Some("zero".to_string());
+        return Some(original.to_string());
+    }
+
+    // When a single word is capitalized (title-case), preserve standalone
+    // small number words that are commonly used as proper nouns/titles
+    if original
+        .chars()
+        .next()
+        .map(|c| c.is_uppercase())
+        .unwrap_or(false)
+        && !original.contains(' ')
+    {
+        match input {
+            "twelve" => return Some(original.to_string()),
+            _ => {}
+        }
     }
 
     // Check for negative
@@ -267,6 +284,13 @@ mod tests {
     #[test]
     fn test_zero() {
         assert_eq!(parse("zero"), Some("zero".to_string()));
+        assert_eq!(parse("Zero"), Some("Zero".to_string()));
+    }
+
+    #[test]
+    fn test_twelve_capitalized() {
+        assert_eq!(parse("Twelve"), Some("Twelve".to_string()));
+        assert_eq!(parse("twelve"), Some("12".to_string()));
     }
 
     #[test]

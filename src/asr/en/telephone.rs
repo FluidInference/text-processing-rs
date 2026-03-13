@@ -658,6 +658,19 @@ fn format_phone_number(digits: &str) -> String {
         return digits.to_string();
     }
 
+    // Long numbers (>11 digits): space-separated groups
+    // Format: NNN NNNN [middle] NNNN
+    if len > 11 {
+        let first = &digits[0..3];
+        let second = &digits[3..7];
+        let last = &digits[len - 4..];
+        let middle = &digits[7..len - 4];
+        if middle.is_empty() {
+            return format!("{} {} {}", first, second, last);
+        }
+        return format!("{} {} {} {}", first, second, middle, last);
+    }
+
     // Other lengths - group as XXX-rest
     if len > 3 {
         return format!("{}-{}", &digits[0..3], &digits[3..]);
