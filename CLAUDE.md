@@ -16,8 +16,8 @@ cargo build --features ffi
 
 ## Project Structure
 
-- `src/asr/` - ITN taggers (spoken to written, for ASR/STT post-processing)
-- `src/tts/` - TN taggers (written to spoken, for TTS preprocessing)
+- `src/itn/` - ITN taggers (spoken to written, Inverse Text Normalization)
+- `src/tn/` - TN taggers (written to spoken, Text Normalization)
 - `src/custom_rules.rs` - User-defined custom normalization rules
 - `src/ffi.rs` - C FFI bindings for Swift/Python integration
 - `tests/` - Integration and extensive edge-case tests
