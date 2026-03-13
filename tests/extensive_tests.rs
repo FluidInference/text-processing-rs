@@ -1453,7 +1453,7 @@ fn test_number_to_words_i64_min() {
     // through the telephone tagger (the "-" is treated as a separator).
     // i64::MIN = -9223372036854775808: negating overflows i64 but our fix
     // uses wrapping_neg + u64 to handle it safely.
-    use text_processing_rs::tts::en::number_to_words;
+    use text_processing_rs::tn::en::number_to_words;
 
     let result = number_to_words(i64::MIN);
     assert!(
