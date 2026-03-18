@@ -52,6 +52,62 @@ let result = tn_normalize("123");
 assert_eq!(result, "one hundred twenty three");
 ```
 
+### JavaScript (WASM)
+
+Build wasm artifacts:
+
+```bash
+npm run wasm:build:node
+npm run wasm:build:web
+```
+
+Node usage:
+
+```javascript
+import * as wasm from "./pkg-node/text_processing_rs.js";
+
+console.log(wasm.normalize("two hundred")); // "200"
+console.log(wasm.tnNormalize("$5.50")); // "five dollars and fifty cents"
+
+wasm.addRule("gee pee tee", "GPT");
+console.log(wasm.normalize("gee pee tee")); // "GPT"
+```
+
+The generated npm package name is `@fluidinference/text-processing-rs`.
+
+Web project usage (Vite / Next.js / webpack):
+
+```bash
+npm install @fluidinference/text-processing-rs
+```
+
+```javascript
+import init, * as wasm from "@fluidinference/text-processing-rs";
+
+async function run() {
+  // Loads and initializes the .wasm module (required once at startup)
+  await init();
+
+  const itn = wasm.normalize("two hundred");
+  const tn = wasm.tnNormalize("$5.50");
+
+  console.log(itn); // "200"
+  console.log(tn); // "five dollars and fifty cents"
+
+  wasm.addRule("gee pee tee", "GPT");
+  console.log(wasm.normalize("gee pee tee")); // "GPT"
+}
+
+run();
+```
+
+If your framework supports top-level `await`, you can initialize at module load time:
+
+```javascript
+import init, * as wasm from "@fluidinference/text-processing-rs";
+await init();
+```
+
 Sentence-level normalization scans for normalizable spans within a larger sentence:
 
 ```rust
@@ -161,6 +217,19 @@ echo "2:30 PM" | nemo-tn               # → two thirty p m
 ```bash
 cargo build
 cargo test
+```
+
+### WASM + JavaScript
+
+```bash
+# Build + smoke test (Node) + build browser artifact
+npm run wasm:ci
+
+# Create a tarball from the browser package
+npm run wasm:pack
+
+# Publish browser package to npm (requires npm auth)
+npm run wasm:publish
 ```
 
 ### CLI Tools

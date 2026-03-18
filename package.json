@@ -1,0 +1,22 @@
+{
+  "name": "@fluidinference/text-processing-rs",
+  "version": "0.1.0",
+  "description": "Inverse Text Normalization (ITN) — convert spoken-form ASR output to written form",
+  "type": "module",
+  "main": "pkg-web/text_processing_rs.js",
+  "types": "pkg-web/text_processing_rs.d.ts",
+  "files": [
+    "pkg-web/text_processing_rs.js",
+    "pkg-web/text_processing_rs.d.ts",
+    "pkg-web/text_processing_rs_bg.wasm",
+    "pkg-web/text_processing_rs_bg.wasm.d.ts"
+  ],
+  "scripts": {
+    "wasm:build:node": "wasm-pack build --release --target nodejs --features wasm && mkdir -p pkg-node && cp -f pkg/* pkg-node/ && node scripts/set-wasm-package-name.mjs pkg-node",
+    "wasm:build:web": "wasm-pack build --release --target web --features wasm && mkdir -p pkg-web && cp -f pkg/* pkg-web/ && node scripts/set-wasm-package-name.mjs pkg-web",
+    "wasm:test:node": "node wasm-tests/node-smoke.mjs",
+    "wasm:ci": "npm run wasm:build:node && npm run wasm:test:node && npm run wasm:build:web",
+    "wasm:pack": "npm pack ./pkg-web",
+    "wasm:publish": "npm publish ./pkg-web --access public"
+  }
+}
