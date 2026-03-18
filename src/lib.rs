@@ -22,6 +22,8 @@ pub mod tn;
 
 #[cfg(feature = "ffi")]
 pub mod ffi;
+#[cfg(all(target_arch = "wasm32", feature = "wasm"))]
+pub mod wasm;
 
 use itn::en::{
     cardinal, date, decimal, electronic, measure, money, ordinal, punctuation, telephone, time,

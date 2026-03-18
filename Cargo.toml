@@ -13,6 +13,8 @@ crate-type = ["lib", "staticlib", "cdylib"]
 
 [dependencies]
 lazy_static = "1"
+wasm-bindgen = { version = "0.2", optional = true }
+console_error_panic_hook = { version = "0.1", optional = true }
 
 [dev-dependencies]
 proptest = "1"
@@ -20,3 +22,4 @@ proptest = "1"
 [features]
 default = []
 ffi = []  # Enable C FFI bindings
+wasm = ["dep:wasm-bindgen", "dep:console_error_panic_hook"]

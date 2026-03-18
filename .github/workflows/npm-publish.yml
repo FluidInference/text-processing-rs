@@ -1,0 +1,27 @@
+name: Publish WASM Package
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: "https://registry.npmjs.org"
+
+      - uses: jetli/wasm-pack-action@v0.4.0
+
+      - run: rustup target add wasm32-unknown-unknown
+      - run: npm run wasm:ci
+      - run: npm run wasm:publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
