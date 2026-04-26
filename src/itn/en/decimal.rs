@@ -191,9 +191,6 @@ mod tests {
             parse("seven three seven point five"),
             Some("737.5".to_string())
         );
-        assert_eq!(
-            parse("one two point three four"),
-            Some("12.34".to_string())
-        );
+        assert_eq!(parse("one two point three four"), Some("12.34".to_string()));
     }
 }
