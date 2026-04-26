@@ -1,6 +1,6 @@
 {
   "name": "@fluidinference/text-processing-rs",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Inverse Text Normalization (ITN) — convert spoken-form ASR output to written form",
   "type": "module",
   "main": "pkg-web/text_processing_rs.js",
