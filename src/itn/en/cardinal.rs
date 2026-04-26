@@ -137,16 +137,16 @@ fn single_digit_char(word: &str) -> Option<char> {
 
 /// Convert spoken number words to integer.
 ///
-/// Algorithm:
-/// 1. Tokenize input
-/// 2. Process left-to-right, accumulating values
-/// 3. Scale words (hundred, thousand, million) multiply the current accumulator
-/// 4. Handle "and" as a separator (ignored)
+/// Two readings are accepted:
+/// - **Digit-by-digit** (codes, flight numbers, aviation frequencies):
+///   `"one three five"` → `135`. Triggered when every token is a single-digit
+///   word (`zero`-`nine`, plus `oh`/`o` for `0`).
+/// - **Grammatical** (English number grammar): `"twenty one"` → `21`,
+///   `"one hundred twenty three"` → `123`, `"one thousand two hundred thirty
+///   four"` → `1234`. Uses a left-to-right accumulator with scale words
+///   (`hundred`, `thousand`, `million`, ...) multiplying the current group.
 ///
-/// Examples:
-/// - "twenty one" → 20 + 1 = 21
-/// - "one hundred twenty three" → (1 * 100) + 20 + 3 = 123
-/// - "one thousand two hundred thirty four" → (1 * 1000) + (2 * 100) + 30 + 4 = 1234
+/// Filler words `"and"` and `"a"` are stripped.
 pub fn words_to_number(input: &str) -> Option<i128> {
     let input = input.to_lowercase();
     let words: Vec<&str> = input
@@ -158,25 +158,25 @@ pub fn words_to_number(input: &str) -> Option<i128> {
         return None;
     }
 
-    // Handle digit-by-digit reading: "one three five" → 135.
-    // When every token is a single-digit word (zero-nine, plus "oh"/"o" for 0)
-    // and there are at least two of them, interpret as digit concatenation.
-    // This is the standard reading for flight numbers, frequencies, codes,
-    // and the integer part of "frequency one three five point six two five"
-    // style inputs (issue #15). Single tokens like "one" still parse as 1
-    // via the normal path.
-    if words.len() >= 2 && words.iter().all(|w| single_digit_char(w).is_some()) {
-        let mut s = String::with_capacity(words.len());
-        for w in &words {
-            s.push(single_digit_char(w)?);
-        }
-        return s.parse::<i128>().ok();
+    // Digit-by-digit reading wins whenever it's unambiguous.
+    if words.iter().all(|w| single_digit_char(w).is_some()) {
+        return words
+            .iter()
+            .map(|w| single_digit_char(w).unwrap())
+            .collect::<String>()
+            .parse()
+            .ok();
     }
 
-    // Handle special case: "eleven hundred" = 1100
+    grammatical_words_to_number(&words)
+}
+
+/// Parse a grammatical English number with running-sum + scale multiplication.
+fn grammatical_words_to_number(words: &[&str]) -> Option<i128> {
+    // "eleven hundred" = 1100, "twenty hundred" = 2000
     if words.len() == 2 && words[1] == "hundred" {
         if let Some(&val) = ONES.get(words[0]) {
-            if val >= 11 && val <= 19 {
+            if (11..=19).contains(&val) {
                 return Some((val * 100) as i128);
             }
         }
@@ -185,15 +185,11 @@ pub fn words_to_number(input: &str) -> Option<i128> {
         }
     }
 
-    // Handle "eleven hundred twenty one" pattern
+    // "eleven hundred twenty one" = 1100 + 21
     if words.len() >= 2 && words[1] == "hundred" {
         if let Some(&first_val) = ONES.get(words[0]) {
-            if first_val >= 11 && first_val <= 99 {
+            if (11..=99).contains(&first_val) {
                 let base = (first_val * 100) as i128;
-                if words.len() == 2 {
-                    return Some(base);
-                }
-                // Parse remaining words
                 let rest = words[2..].join(" ");
                 if let Some(remainder) = words_to_number(&rest) {
                     return Some(base + remainder);
@@ -202,9 +198,6 @@ pub fn words_to_number(input: &str) -> Option<i128> {
         }
         if let Some(&first_val) = TENS.get(words[0]) {
             let base = (first_val * 100) as i128;
-            if words.len() == 2 {
-                return Some(base);
-            }
             let rest = words[2..].join(" ");
             if let Some(remainder) = words_to_number(&rest) {
                 return Some(base + remainder);
@@ -216,7 +209,7 @@ pub fn words_to_number(input: &str) -> Option<i128> {
     let mut current: i128 = 0;
     let mut found_number = false;
 
-    for word in words {
+    for &word in words {
         if let Some(&val) = ONES.get(word) {
             current += val as i128;
             found_number = true;
@@ -240,7 +233,6 @@ pub fn words_to_number(input: &str) -> Option<i128> {
                 found_number = true;
             }
         } else {
-            // Unknown word - not a valid number
             return None;
         }
     }
