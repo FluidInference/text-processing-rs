@@ -35,7 +35,7 @@ Converts written-form text to spoken form (useful for TTS preprocessing):
 ### Rust
 
 ```rust
-use nemo_text_processing::{normalize, tn_normalize};
+use text_processing_rs::{normalize, tn_normalize};
 
 // ITN: spoken → written
 let result = normalize("two hundred");
@@ -111,7 +111,7 @@ await init();
 Sentence-level normalization scans for normalizable spans within a larger sentence:
 
 ```rust
-use nemo_text_processing::{normalize_sentence, tn_normalize_sentence};
+use text_processing_rs::{normalize_sentence, tn_normalize_sentence};
 
 // ITN sentence mode
 let result = normalize_sentence("I have twenty one apples");
