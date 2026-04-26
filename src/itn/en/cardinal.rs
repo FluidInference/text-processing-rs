@@ -116,6 +116,25 @@ pub fn parse(input: &str) -> Option<String> {
     }
 }
 
+/// Map a single-digit spoken word to its character form, or `None` if the
+/// word isn't a 0-9 digit word. Recognises "oh" / "o" as 0 (common in
+/// spelled-out codes and aviation frequencies).
+fn single_digit_char(word: &str) -> Option<char> {
+    Some(match word {
+        "zero" | "oh" | "o" => '0',
+        "one" => '1',
+        "two" => '2',
+        "three" => '3',
+        "four" => '4',
+        "five" => '5',
+        "six" => '6',
+        "seven" => '7',
+        "eight" => '8',
+        "nine" => '9',
+        _ => return None,
+    })
+}
+
 /// Convert spoken number words to integer.
 ///
 /// Algorithm:
@@ -137,6 +156,21 @@ pub fn words_to_number(input: &str) -> Option<i128> {
 
     if words.is_empty() {
         return None;
+    }
+
+    // Handle digit-by-digit reading: "one three five" → 135.
+    // When every token is a single-digit word (zero-nine, plus "oh"/"o" for 0)
+    // and there are at least two of them, interpret as digit concatenation.
+    // This is the standard reading for flight numbers, frequencies, codes,
+    // and the integer part of "frequency one three five point six two five"
+    // style inputs (issue #15). Single tokens like "one" still parse as 1
+    // via the normal path.
+    if words.len() >= 2 && words.iter().all(|w| single_digit_char(w).is_some()) {
+        let mut s = String::with_capacity(words.len());
+        for w in &words {
+            s.push(single_digit_char(w)?);
+        }
+        return s.parse::<i128>().ok();
     }
 
     // Handle special case: "eleven hundred" = 1100
@@ -297,5 +331,25 @@ mod tests {
     fn test_invalid() {
         assert_eq!(parse("hello"), None);
         assert_eq!(parse("one hello"), None);
+    }
+
+    /// Digit-by-digit reading (issue #15). Sequences of single-digit words
+    /// like "one three five" should concatenate to 135, not sum to 9.
+    #[test]
+    fn test_spelled_digit_sequence() {
+        assert_eq!(parse("one three five"), Some("135".to_string()));
+        assert_eq!(parse("seven three seven"), Some("737".to_string()));
+        assert_eq!(parse("nine one one"), Some("911".to_string()));
+        assert_eq!(parse("six two five"), Some("625".to_string()));
+        assert_eq!(parse("one two"), Some("12".to_string()));
+        // "oh"/"o" read as 0 in spelled codes
+        assert_eq!(parse("five oh five"), Some("505".to_string()));
+        assert_eq!(parse("four o four"), Some("404".to_string()));
+    }
+
+    #[test]
+    fn test_words_to_number_digit_sequence() {
+        assert_eq!(words_to_number("one three five"), Some(135));
+        assert_eq!(words_to_number("six two five"), Some(625));
     }
 }

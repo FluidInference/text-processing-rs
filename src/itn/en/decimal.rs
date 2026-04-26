@@ -177,4 +177,23 @@ mod tests {
             Some("4.85 billion".to_string())
         );
     }
+
+    /// Digit-by-digit reading of the integer part (issue #15).
+    /// Aviation-style frequencies like "one three five point six two five"
+    /// should produce 135.625, not 9.625.
+    #[test]
+    fn test_spelled_digit_integer_part() {
+        assert_eq!(
+            parse("one three five point six two five"),
+            Some("135.625".to_string())
+        );
+        assert_eq!(
+            parse("seven three seven point five"),
+            Some("737.5".to_string())
+        );
+        assert_eq!(
+            parse("one two point three four"),
+            Some("12.34".to_string())
+        );
+    }
 }

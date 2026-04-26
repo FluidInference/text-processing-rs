@@ -840,3 +840,60 @@ fn test_sentence_decimal_in_context() {
         "the value is 3.14"
     );
 }
+
+// --- Issue #15: digit-by-digit integer part for decimals (aviation style) ---
+
+/// Direct reproductions of https://github.com/FluidInference/text-processing-rs/issues/15
+#[test]
+fn test_issue_15_normalize_aviation_frequency() {
+    // The whole input contains a non-number prefix ("frequency"), so single-
+    // expression mode can't return a clean number — it should leave the input
+    // unchanged rather than producing the previously-buggy "135-625" telephone
+    // formatting.
+    let out = normalize("frequency one three five point six two five");
+    assert_ne!(out, "135-625", "telephone tagger should not match decimal input");
+    assert_eq!(out, "frequency one three five point six two five");
+}
+
+#[test]
+fn test_issue_15_normalize_sentence_aviation_frequency() {
+    assert_eq!(
+        normalize_sentence("frequency one three five point six two five"),
+        "frequency 135.625"
+    );
+}
+
+#[test]
+fn test_issue_15_decimal_with_spelled_digit_integer() {
+    // Without the prefix, the whole input is a single decimal expression.
+    assert_eq!(
+        normalize("one three five point six two five"),
+        "135.625"
+    );
+}
+
+#[test]
+fn test_issue_15_decimal_with_spelled_digit_integer_in_sentence() {
+    assert_eq!(
+        normalize_sentence("the tower said one three five point six two five"),
+        "the tower said 135.625"
+    );
+}
+
+#[test]
+fn test_spelled_digit_cardinal() {
+    // Digit-by-digit reading of cardinals (codes, flight numbers, frequencies)
+    assert_eq!(normalize("one three five"), "135");
+    assert_eq!(normalize("seven three seven"), "737");
+    assert_eq!(normalize("nine one one"), "911");
+    // "oh" reads as zero in spelled codes
+    assert_eq!(normalize("five oh five"), "505");
+}
+
+#[test]
+fn test_spelled_digit_cardinal_does_not_break_normal_cardinals() {
+    // Existing cardinal phrasings must still work
+    assert_eq!(normalize("twenty one"), "21");
+    assert_eq!(normalize("one hundred thirty five"), "135");
+    assert_eq!(normalize("one thousand two hundred thirty four"), "1234");
+}
