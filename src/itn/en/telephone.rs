@@ -17,6 +17,13 @@ pub fn parse(input: &str) -> Option<String> {
         return None;
     }
 
+    // Reject inputs that contain a decimal "point" — those belong to the
+    // decimal tagger (e.g. "one three five point six two five" should be
+    // "135.625", not "135-625"). See issue #15.
+    if input_trimmed.contains(" point ") {
+        return None;
+    }
+
     // Try IP address pattern first (contains "dot")
     if input_trimmed.contains(" dot ") {
         return parse_ip_address(input_trimmed);
@@ -718,5 +725,13 @@ mod tests {
             parse("one two three dot one two three dot o dot four o"),
             Some("123.123.0.40".to_string())
         );
+    }
+
+    /// Telephone tagger must not consume decimal expressions (issue #15):
+    /// "one three five point six two five" is "135.625", not a phone number.
+    #[test]
+    fn test_rejects_decimal_point() {
+        assert_eq!(parse("one three five point six two five"), None);
+        assert_eq!(parse("seven three seven point five"), None);
     }
 }

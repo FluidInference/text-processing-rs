@@ -7,7 +7,8 @@ mod common;
 
 use std::path::Path;
 use text_processing_rs::{
-    custom_rules, normalize, normalize_sentence, normalize_sentence_with_max_span,
+    custom_rules, normalize, normalize_aviation, normalize_sentence, normalize_sentence_aviation,
+    normalize_sentence_with_max_span,
 };
 
 fn print_failures(results: &common::TestResults) {
@@ -838,5 +839,138 @@ fn test_sentence_decimal_in_context() {
     assert_eq!(
         normalize_sentence("the value is three point one four"),
         "the value is 3.14"
+    );
+}
+
+// --- Issue #15: digit-by-digit integer part for decimals (aviation style) ---
+
+/// Direct reproductions of https://github.com/FluidInference/text-processing-rs/issues/15
+#[test]
+fn test_issue_15_normalize_aviation_frequency() {
+    // The whole input contains a non-number prefix ("frequency"), so single-
+    // expression mode can't return a clean number — it should leave the input
+    // unchanged rather than producing the previously-buggy "135-625" telephone
+    // formatting.
+    let out = normalize("frequency one three five point six two five");
+    assert_ne!(
+        out, "135-625",
+        "telephone tagger should not match decimal input"
+    );
+    assert_eq!(out, "frequency one three five point six two five");
+}
+
+#[test]
+fn test_issue_15_normalize_sentence_aviation_frequency() {
+    assert_eq!(
+        normalize_sentence("frequency one three five point six two five"),
+        "frequency 135.625"
+    );
+}
+
+#[test]
+fn test_issue_15_decimal_with_spelled_digit_integer() {
+    // Without the prefix, the whole input is a single decimal expression.
+    assert_eq!(normalize("one three five point six two five"), "135.625");
+}
+
+#[test]
+fn test_issue_15_decimal_with_spelled_digit_integer_in_sentence() {
+    assert_eq!(
+        normalize_sentence("the tower said one three five point six two five"),
+        "the tower said 135.625"
+    );
+}
+
+#[test]
+fn test_spelled_digit_cardinal() {
+    // Digit-by-digit reading of cardinals (codes, flight numbers, frequencies).
+    // Note: sequences that match clock-time patterns ("five oh five") are
+    // intentionally handled by the time tagger and are not asserted here.
+    assert_eq!(normalize("one three five"), "135");
+    assert_eq!(normalize("seven three seven"), "737");
+    assert_eq!(normalize("nine one one"), "911");
+}
+
+#[test]
+fn test_spelled_digit_cardinal_does_not_break_normal_cardinals() {
+    // Existing cardinal phrasings must still work
+    assert_eq!(normalize("twenty one"), "21");
+    assert_eq!(normalize("one hundred thirty five"), "135");
+    assert_eq!(normalize("one thousand two hundred thirty four"), "1234");
+}
+
+/// Issue #14: aviation flight-number reading is exposed as an **opt-in**
+/// pipeline. Generic dispatch keeps upstream NeMo semantics (date wins for
+/// `"twenty one forty two"`, time wins for `"two thirty five"`); callers
+/// who know they're in aviation context reach for the `*_aviation`
+/// variants, which run aviation cardinal at priority 89 (above date 88
+/// and time 85).
+#[test]
+fn test_issue_14_default_dispatch_unchanged() {
+    // Scale-word grammar is preserved everywhere.
+    assert_eq!(normalize("two thousand seventeen"), "2017");
+    assert_eq!(normalize("one hundred"), "100");
+    assert_eq!(normalize_sentence("two thousand seventeen"), "2017");
+
+    // Sentence-mode default dispatch: "seven eighty eight" stays grammatical
+    // 95, NOT aviation 788.
+    assert_eq!(normalize_sentence("seven eighty eight"), "95");
+
+    // Single-input `normalize` keeps its existing telephone-tagger
+    // behaviour for whole-input flight-number-style phrases.
+    assert_eq!(normalize("seven eighty eight"), "788");
+}
+
+/// Aviation pipeline `normalize_aviation` (single-input). Aviation cardinal
+/// runs early enough to beat time/date.
+#[test]
+fn test_issue_14_normalize_aviation() {
+    assert_eq!(normalize_aviation("seven eighty eight"), "788");
+    // Beats time tagger.
+    assert_eq!(normalize_aviation("two thirty five"), "235");
+    // Beats date old-year reading.
+    assert_eq!(normalize_aviation("twenty one forty two"), "63");
+    // Non-number phrases fall through unchanged.
+    assert_eq!(normalize_aviation("hello world"), "hello world");
+    // Money / measure / decimal / ordinal still work via fallback to
+    // standard `normalize`.
+    assert_eq!(normalize_aviation("five dollars"), "$5");
+    assert_eq!(normalize_aviation("five point two"), "5.2");
+    assert_eq!(normalize_aviation("twenty first"), "21st");
+    // Scale-word grammar still wins (no digit prefix → grammatical).
+    assert_eq!(normalize_aviation("two thousand seventeen"), "2017");
+}
+
+/// Aviation pipeline `normalize_sentence_aviation` (sentence mode). The
+/// cardinal-aviation priority bump (89) makes flight-number spans win
+/// over date/time in real sentences.
+#[test]
+fn test_issue_14_normalize_sentence_aviation() {
+    // The original bug from issue #14.
+    assert_eq!(
+        normalize_sentence_aviation("United seven eighty eight"),
+        "United 788"
+    );
+    assert_eq!(
+        normalize_sentence_aviation("flight two thirty five departs at gate four"),
+        "flight 235 departs at gate 4"
+    );
+
+    // Scale-word grammar is preserved.
+    assert_eq!(
+        normalize_sentence_aviation("two thousand seventeen"),
+        "2017"
+    );
+
+    // Money / measure stay above aviation (priority 95 / 90 > 89).
+    assert_eq!(
+        normalize_sentence_aviation("I owe five dollars"),
+        "I owe $5"
+    );
+
+    // Plain natural language is untouched.
+    assert_eq!(
+        normalize_sentence_aviation("I have twenty one apples"),
+        "I have 21 apples"
     );
 }

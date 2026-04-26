@@ -212,3 +212,21 @@ fn test_tn_roundtrip_cardinal() {
         );
     }
 }
+
+/// Release-sanity check for issue #16: the public surface that hongbo-miao
+/// reported missing in crates.io 0.1.0 must compile and behave correctly
+/// against the current version. If this test stops compiling, the API
+/// surface regressed and consumers will hit `unresolved import`.
+#[test]
+fn test_issue_16_tn_normalize_sentence_public_api() {
+    // Reporter's exact snippet (https://github.com/FluidInference/text-processing-rs/issues/16)
+    let normalized_text = tn_normalize_sentence("I have twenty one apples.");
+    // The function must exist, be callable, and return a non-empty result.
+    // Behavioural assertion: the cardinal "21" is the only normalizable
+    // span here, and TN should leave the rest of the sentence intact.
+    assert!(
+        normalized_text.contains("twenty one") || normalized_text.contains("21"),
+        "tn_normalize_sentence dropped or mangled the input: {}",
+        normalized_text
+    );
+}
