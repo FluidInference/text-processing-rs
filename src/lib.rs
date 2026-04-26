@@ -894,7 +894,12 @@ const DEFAULT_MAX_SPAN_TOKENS: usize = 16;
 /// broad patterns (cardinal) last and limited to short spans.
 ///
 /// Excluded in sentence mode: `word` and `telephone` (over-fire on natural language).
-fn parse_span(span: &str) -> Option<(String, u8)> {
+///
+/// `aviation`: when `true`, `cardinal::parse_aviation` is tried at priority 89
+/// (above `date`=88 and `time`=85, below `measure`=90 / `money`=95) and the
+/// regular cardinal fallback at 70 is skipped (the aviation reader already
+/// falls back to grammatical when no digit prefix is present).
+fn parse_span(span: &str, aviation: bool) -> Option<(String, u8)> {
     let token_count = span.split_whitespace().count();
     if token_count == 0 {
         return None;
@@ -915,6 +920,15 @@ fn parse_span(span: &str) -> Option<(String, u8)> {
     if let Some(result) = measure::parse(span) {
         return Some((result, 90));
     }
+
+    // Aviation cardinal opt-in: priority 89, beats date/time. Same short-span
+    // gate as the regular cardinal fallback below.
+    if aviation && token_count <= 4 {
+        if let Some(result) = cardinal::parse_aviation(span) {
+            return Some((result, 89));
+        }
+    }
+
     if let Some(result) = date::parse(span) {
         return Some((result, 88));
     }
@@ -931,8 +945,9 @@ fn parse_span(span: &str) -> Option<(String, u8)> {
         return Some((result, 75));
     }
 
-    // Cardinal only for short spans to avoid over-matching on natural language.
-    if token_count <= 4 {
+    // Default cardinal fallback (priority 70). In aviation mode the cardinal
+    // path is already covered by the priority-89 branch above.
+    if !aviation && token_count <= 4 {
         if let Some(result) = cardinal::parse(span) {
             return Some((result, 70));
         }
@@ -957,14 +972,10 @@ pub fn normalize_sentence(input: &str) -> String {
     normalize_sentence_with_max_span(input, DEFAULT_MAX_SPAN_TOKENS)
 }
 
-/// Sentence-mode equivalent of [`normalize_aviation`].
-///
-/// Same scanning loop as [`normalize_sentence`], but each span is tried
-/// against [`parse_span_aviation`] instead of [`parse_span`]. Aviation
-/// cardinal sits at priority 89 (above `date`=88 and `time`=85, below
-/// `measure`=90 and `money`=95), so flight-number-style spans win over
-/// date/time interpretations while measure / money phrases keep their
-/// existing semantics.
+/// Sentence-mode equivalent of [`normalize_aviation`]. Aviation cardinal
+/// runs at priority 89 (above `date`=88 / `time`=85, below `measure`=90 /
+/// `money`=95), so flight-number-style spans win over date/time while
+/// measure / money phrases keep their existing semantics.
 ///
 /// ```
 /// use text_processing_rs::normalize_sentence_aviation;
@@ -990,7 +1001,7 @@ pub fn normalize_sentence_aviation(input: &str) -> String {
 
 /// [`normalize_sentence_aviation`] with a configurable max span size.
 pub fn normalize_sentence_aviation_with_max_span(input: &str, max_span_tokens: usize) -> String {
-    normalize_sentence_inner(input, max_span_tokens, parse_span_aviation)
+    normalize_sentence_inner(input, max_span_tokens, true)
 }
 
 /// Normalize a full sentence with a configurable max span size.
@@ -1007,18 +1018,12 @@ pub fn normalize_sentence_aviation_with_max_span(input: &str, max_span_tokens: u
 /// assert_eq!(normalize_sentence_with_max_span("I have twenty one apples", 4), "I have 21 apples");
 /// ```
 pub fn normalize_sentence_with_max_span(input: &str, max_span_tokens: usize) -> String {
-    normalize_sentence_inner(input, max_span_tokens, parse_span)
+    normalize_sentence_inner(input, max_span_tokens, false)
 }
 
-/// Sentence-mode dispatch loop, parameterized by which `parse_span` variant
-/// scores each candidate. Used by both `normalize_sentence_with_max_span`
-/// (default dispatch) and `normalize_sentence_aviation_with_max_span`
-/// (aviation cardinal at priority 89).
-fn normalize_sentence_inner(
-    input: &str,
-    max_span_tokens: usize,
-    parse_span_fn: fn(&str) -> Option<(String, u8)>,
-) -> String {
+/// Sentence-mode dispatch loop. The `aviation` flag is forwarded to
+/// [`parse_span`] so each span sees the right tagger priorities.
+fn normalize_sentence_inner(input: &str, max_span_tokens: usize, aviation: bool) -> String {
     let trimmed = input.trim();
     if trimmed.is_empty() {
         return trimmed.to_string();
@@ -1040,7 +1045,7 @@ fn normalize_sentence_inner(
         // Longest-span-first search keeps replacements stable and non-overlapping.
         for end in (i + 1..=max_end).rev() {
             let span = tokens[i..end].join(" ");
-            let Some((candidate, score)) = parse_span_fn(&span) else {
+            let Some((candidate, score)) = parse_span(&span, aviation) else {
                 continue;
             };
 
@@ -1076,58 +1081,6 @@ fn normalize_sentence_inner(
     }
 
     out.join(" ")
-}
-
-/// Sentence-mode dispatch with **aviation flight-number reading at priority
-/// 89**, sitting above `date` (88) and `time` (85). Otherwise identical to
-/// [`parse_span`].
-fn parse_span_aviation(span: &str) -> Option<(String, u8)> {
-    let token_count = span.split_whitespace().count();
-    if token_count == 0 {
-        return None;
-    }
-
-    if let Some(result) = custom_rules::parse(span) {
-        return Some((result, 110));
-    }
-    if let Some(result) = whitelist::parse(span) {
-        return Some((result, 100));
-    }
-    if let Some(result) = punctuation::parse(span) {
-        return Some((result, 98));
-    }
-    if let Some(result) = money::parse(span) {
-        return Some((result, 95));
-    }
-    if let Some(result) = measure::parse(span) {
-        return Some((result, 90));
-    }
-
-    // Aviation cardinal beats date/time. Same short-span gate as the regular
-    // cardinal path: avoids over-matching on natural language.
-    if token_count <= 4 {
-        if let Some(result) = cardinal::parse_aviation(span) {
-            return Some((result, 89));
-        }
-    }
-
-    if let Some(result) = date::parse(span) {
-        return Some((result, 88));
-    }
-    if let Some(result) = time::parse(span) {
-        return Some((result, 85));
-    }
-    if let Some(result) = electronic::parse(span) {
-        return Some((result, 82));
-    }
-    if let Some(result) = decimal::parse(span) {
-        return Some((result, 80));
-    }
-    if let Some(result) = ordinal::parse(span) {
-        return Some((result, 75));
-    }
-
-    None
 }
 
 // ── Text Normalization (written → spoken) ─────────────────────────────
