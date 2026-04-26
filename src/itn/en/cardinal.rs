@@ -137,21 +137,22 @@ fn single_digit_char(word: &str) -> Option<char> {
 
 /// Convert spoken number words to integer.
 ///
-/// Three readings are accepted, in order:
+/// Two readings are accepted, in order:
 /// - **Digit-by-digit** (codes, flight numbers, aviation frequencies):
 ///   `"one three five"` → `135`. Triggered when every token is a single-digit
 ///   word (`zero`-`nine`, plus `oh`/`o` for `0`).
-/// - **Aviation flight-number style**: `"seven eighty eight"` → `788`,
-///   `"two thirty five"` → `235`. A leading run of single-digit words is
-///   concatenated, then a trailing grammatical compound (e.g. `"eighty eight"`
-///   = 88) is appended. Disabled when the input contains a scale word
-///   (`hundred`/`thousand`/...), which forces grammatical reading.
 /// - **Grammatical** (English number grammar): `"twenty one"` → `21`,
 ///   `"one hundred twenty three"` → `123`, `"one thousand two hundred thirty
 ///   four"` → `1234`. Uses a left-to-right accumulator with scale words
 ///   multiplying the current group.
 ///
 /// Filler words `"and"` and `"a"` are stripped.
+///
+/// Note: aviation flight-number reading (`"seven eighty eight"` → `788`) is
+/// **not** applied here because it conflicts with date and time taggers (e.g.
+/// `"twenty one forty two"` must remain readable as old-year `2042` for
+/// `date::parse_old_year`). Use [`words_to_number_aviation`] for opt-in
+/// flight-number / call-sign contexts.
 pub fn words_to_number(input: &str) -> Option<i128> {
     let input = input.to_lowercase();
     let words: Vec<&str> = input
@@ -164,6 +165,41 @@ pub fn words_to_number(input: &str) -> Option<i128> {
     }
 
     // Digit-by-digit reading wins whenever it's unambiguous.
+    if words.iter().all(|w| single_digit_char(w).is_some()) {
+        return words
+            .iter()
+            .map(|w| single_digit_char(w).unwrap())
+            .collect::<String>()
+            .parse()
+            .ok();
+    }
+
+    grammatical_words_to_number(&words)
+}
+
+/// Aviation / flight-number / call-sign reading of a number phrase.
+///
+/// Recognises a leading run of single-digit words concatenated with a trailing
+/// grammatical compound, e.g. `"seven eighty eight"` → `788`,
+/// `"two thirty five"` → `235`. Falls back to [`words_to_number`] when the
+/// aviation pattern does not apply (no digit prefix, scale word present, etc.).
+///
+/// This is **opt-in**: callers reach for it explicitly from flight-number /
+/// call-sign contexts. Generic ITN/TN dispatch keeps using [`words_to_number`]
+/// to avoid clobbering date/time/measure semantics (e.g. `"twenty one forty
+/// two"` as old-year `2042`).
+pub fn words_to_number_aviation(input: &str) -> Option<i128> {
+    let input = input.to_lowercase();
+    let words: Vec<&str> = input
+        .split_whitespace()
+        .filter(|w| *w != "and" && *w != "a")
+        .collect();
+
+    if words.is_empty() {
+        return None;
+    }
+
+    // Digit-by-digit reading wins when unambiguous.
     if words.iter().all(|w| single_digit_char(w).is_some()) {
         return words
             .iter()
@@ -371,31 +407,53 @@ mod tests {
         assert_eq!(words_to_number("six two five"), Some(625));
     }
 
-    /// Aviation flight-number style (issue #14). A leading run of single-digit
-    /// words gets concatenated with the trailing grammatical compound, e.g.
-    /// "seven eighty eight" = "7" ‖ 88 = 788, not 7 + 80 + 8 = 95.
-    #[test]
-    fn test_aviation_flight_number_style() {
-        assert_eq!(parse("seven eighty eight"), Some("788".to_string()));
-        assert_eq!(parse("two thirty five"), Some("235".to_string()));
-        assert_eq!(parse("three forty seven"), Some("347".to_string()));
-        assert_eq!(parse("nine eleven"), Some("911".to_string()));
-        // Multi-digit prefix
-        assert_eq!(parse("two seven eighty eight"), Some("2788".to_string()));
-    }
-
+    /// Aviation flight-number style (issue #14): opt-in helper. A leading run
+    /// of single-digit words gets concatenated with the trailing grammatical
+    /// compound, e.g. "seven eighty eight" = "7" ‖ 88 = 788. Generic
+    /// `words_to_number` deliberately does *not* do this — it would break
+    /// `date::parse_old_year` ("twenty one forty two" → 2042) and overlap with
+    /// the time tagger ("two thirty five" → 02:35).
     #[test]
     fn test_words_to_number_aviation_flight_number() {
-        assert_eq!(words_to_number("seven eighty eight"), Some(788));
-        assert_eq!(words_to_number("two thirty five"), Some(235));
+        assert_eq!(words_to_number_aviation("seven eighty eight"), Some(788));
+        assert_eq!(words_to_number_aviation("two thirty five"), Some(235));
+        assert_eq!(words_to_number_aviation("three forty seven"), Some(347));
+        assert_eq!(words_to_number_aviation("nine eleven"), Some(911));
+        // Multi-digit prefix.
+        assert_eq!(
+            words_to_number_aviation("two seven eighty eight"),
+            Some(2788)
+        );
     }
 
-    /// Regression: scale words must force grammatical reading. "two thousand
-    /// seventeen" must stay 2017, not be misread as a digit-prefix pattern.
+    /// Aviation helper falls back to grammatical when no digit prefix exists.
     #[test]
-    fn test_scale_word_forces_grammatical() {
-        assert_eq!(parse("two thousand seventeen"), Some("2017".to_string()));
-        assert_eq!(parse("one hundred"), Some("100".to_string()));
-        assert_eq!(parse("two million three"), Some("2000003".to_string()));
+    fn test_words_to_number_aviation_falls_back_to_grammatical() {
+        assert_eq!(words_to_number_aviation("twenty one"), Some(21));
+        assert_eq!(words_to_number_aviation("one hundred"), Some(100));
+    }
+
+    /// Aviation helper must keep grammatical reading when a scale word is
+    /// present. "two thousand seventeen" must stay 2017, not 22017.
+    #[test]
+    fn test_words_to_number_aviation_scale_word_forces_grammatical() {
+        assert_eq!(
+            words_to_number_aviation("two thousand seventeen"),
+            Some(2017)
+        );
+        assert_eq!(
+            words_to_number_aviation("two million three"),
+            Some(2_000_003)
+        );
+    }
+
+    /// Generic `words_to_number` (the dispatch path) must NOT do aviation
+    /// reading: "seven eighty eight" stays grammatical 95 there, so date/time
+    /// taggers see consistent values.
+    #[test]
+    fn test_words_to_number_no_aviation_reading() {
+        assert_eq!(words_to_number("seven eighty eight"), Some(95));
+        assert_eq!(words_to_number("twenty one forty two"), Some(63));
+        assert_eq!(words_to_number("two thousand seventeen"), Some(2017));
     }
 }

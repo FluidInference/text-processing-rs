@@ -898,35 +898,31 @@ fn test_spelled_digit_cardinal_does_not_break_normal_cardinals() {
     assert_eq!(normalize("one thousand two hundred thirty four"), "1234");
 }
 
-/// Issue #14: aviation flight-number reading. "seven eighty eight" is the
-/// spoken form of flight 788, not 7 + 80 + 8 = 95.
+/// Issue #14: aviation flight-number reading is exposed as an **opt-in**
+/// helper (`cardinal::words_to_number_aviation`), not wired into the
+/// generic ITN/TN dispatch. Wiring it generically would clobber the date
+/// tagger's old-year reading (`"twenty one forty two"` → `2043`, see
+/// `test_sentence_adjacent_spans`) and overlap with the time tagger
+/// (`"two thirty five"` → `02:35`). Callers in flight-number / call-sign
+/// contexts reach for the helper explicitly. See `src/itn/en/cardinal.rs`
+/// for unit tests of the helper itself.
+///
+/// In single-input `normalize`, the existing `telephone` tagger already
+/// produces flight-number-style output for whole-input cases (e.g.
+/// `"seven eighty eight"` → `"788"`). The sentence-mode pipeline excludes
+/// `telephone`, so `normalize_sentence` keeps the grammatical reading.
 #[test]
-fn test_issue_14_aviation_flight_number() {
-    assert_eq!(normalize("seven eighty eight"), "788");
-    assert_eq!(normalize("two thirty five"), "235");
-    assert_eq!(normalize("three forty seven"), "347");
-}
-
-/// Issue #14 in sentence context — the original bug report. The
-/// `normalize_sentence` path reaches the cardinal tagger directly (the
-/// telephone tagger is not in the sentence-mode pipeline), so the fix has
-/// to live inside `cardinal::words_to_number`.
-#[test]
-fn test_issue_14_aviation_flight_number_in_sentence() {
-    assert_eq!(
-        normalize_sentence("United seven eighty eight"),
-        "United 788"
-    );
-    assert_eq!(
-        normalize_sentence("flight two thirty five departs at gate four"),
-        "flight 235 departs at gate 4"
-    );
-}
-
-/// Regression: scale words must keep grammatical reading. The aviation
-/// branch must not eat "two thousand seventeen" as 22017.
-#[test]
-fn test_issue_14_does_not_break_scale_grammar() {
+fn test_issue_14_aviation_is_opt_in() {
+    // Scale-word grammar is preserved everywhere.
     assert_eq!(normalize("two thousand seventeen"), "2017");
     assert_eq!(normalize("one hundred"), "100");
+    assert_eq!(normalize_sentence("two thousand seventeen"), "2017");
+
+    // Sentence-mode dispatch keeps grammatical reading for short spans:
+    // "seven eighty eight" → 7 + 80 + 8 = 95, NOT the aviation 788.
+    assert_eq!(normalize_sentence("seven eighty eight"), "95");
+
+    // Single-input `normalize` keeps its existing telephone-tagger
+    // behaviour for whole-input flight-number-style phrases.
+    assert_eq!(normalize("seven eighty eight"), "788");
 }
