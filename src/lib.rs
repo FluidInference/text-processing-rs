@@ -921,9 +921,12 @@ fn parse_span(span: &str, aviation: bool) -> Option<(String, u8)> {
         return Some((result, 90));
     }
 
-    // Aviation cardinal opt-in: priority 89, beats date/time. Same short-span
-    // gate as the regular cardinal fallback below.
-    if aviation && token_count <= 4 {
+    // Aviation cardinal opt-in: priority 89, beats date/time. No short-span
+    // gate — aviation mode is opt-in, so the caller has accepted aggressive
+    // matching across longer spans like "one thousand two hundred thirty
+    // four". `parse_aviation` falls back to grammatical when the digit-prefix
+    // pattern does not apply, so non-aviation phrases still resolve.
+    if aviation {
         if let Some(result) = cardinal::parse_aviation(span) {
             return Some((result, 89));
         }

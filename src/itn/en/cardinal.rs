@@ -180,8 +180,12 @@ pub fn words_to_number(input: &str) -> Option<i128> {
         return None;
     }
 
-    // Digit-by-digit reading wins whenever it's unambiguous.
-    if words.iter().all(|w| single_digit_char(w).is_some()) {
+    // Digit-by-digit reading wins whenever it's unambiguous, but only for
+    // multi-token inputs. Single-token "oh" / "o" must not read as 0 — those
+    // forms are only digits in the context of a longer code (e.g. "oh oh
+    // seven"). Single-token "zero" / "one" / ... fall through to grammatical
+    // and resolve correctly there.
+    if words.len() >= 2 && words.iter().all(|w| single_digit_char(w).is_some()) {
         return words
             .iter()
             .map(|w| single_digit_char(w).unwrap())
@@ -215,8 +219,9 @@ pub fn words_to_number_aviation(input: &str) -> Option<i128> {
         return None;
     }
 
-    // Digit-by-digit reading wins when unambiguous.
-    if words.iter().all(|w| single_digit_char(w).is_some()) {
+    // Digit-by-digit reading wins when unambiguous (multi-token only — see
+    // [`words_to_number`] for the rationale on rejecting bare "oh" / "o").
+    if words.len() >= 2 && words.iter().all(|w| single_digit_char(w).is_some()) {
         return words
             .iter()
             .map(|w| single_digit_char(w).unwrap())
@@ -415,6 +420,23 @@ mod tests {
         // "oh"/"o" read as 0 in spelled codes
         assert_eq!(parse("five oh five"), Some("505".to_string()));
         assert_eq!(parse("four o four"), Some("404".to_string()));
+    }
+
+    /// Single-token "oh" / "o" must not be read as digit 0. Those forms
+    /// are only digits inside a longer spelled code; in isolation they are
+    /// interjections / letters.
+    #[test]
+    fn test_bare_oh_not_zero() {
+        assert_eq!(words_to_number("oh"), None);
+        assert_eq!(words_to_number("o"), None);
+        assert_eq!(words_to_number_aviation("oh"), None);
+        assert_eq!(words_to_number_aviation("o"), None);
+        assert_eq!(parse("oh"), None);
+        assert_eq!(parse_aviation("oh"), None);
+        // Sanity: bare "zero" still resolves (via grammatical), and the
+        // multi-token spelled forms still work.
+        assert_eq!(words_to_number("zero"), Some(0));
+        assert_eq!(words_to_number("oh oh seven"), Some(7));
     }
 
     #[test]

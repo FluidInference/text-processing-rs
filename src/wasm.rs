@@ -3,7 +3,8 @@
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    custom_rules, normalize, normalize_sentence, normalize_sentence_with_max_span,
+    custom_rules, normalize, normalize_aviation, normalize_sentence, normalize_sentence_aviation,
+    normalize_sentence_aviation_with_max_span, normalize_sentence_with_max_span,
     normalize_with_lang, tn_normalize, tn_normalize_lang, tn_normalize_sentence,
     tn_normalize_sentence_lang, tn_normalize_sentence_with_max_span,
     tn_normalize_sentence_with_max_span_lang,
@@ -33,6 +34,21 @@ pub fn normalize_sentence_js(input: &str) -> String {
 #[wasm_bindgen(js_name = normalizeSentenceWithMaxSpan)]
 pub fn normalize_sentence_with_max_span_js(input: &str, max_span_tokens: u32) -> String {
     normalize_sentence_with_max_span(input, max_span_tokens as usize)
+}
+
+#[wasm_bindgen(js_name = normalizeAviation)]
+pub fn normalize_aviation_js(input: &str) -> String {
+    normalize_aviation(input)
+}
+
+#[wasm_bindgen(js_name = normalizeSentenceAviation)]
+pub fn normalize_sentence_aviation_js(input: &str) -> String {
+    normalize_sentence_aviation(input)
+}
+
+#[wasm_bindgen(js_name = normalizeSentenceAviationWithMaxSpan)]
+pub fn normalize_sentence_aviation_with_max_span_js(input: &str, max_span_tokens: u32) -> String {
+    normalize_sentence_aviation_with_max_span(input, max_span_tokens as usize)
 }
 
 #[wasm_bindgen(js_name = tnNormalize)]
