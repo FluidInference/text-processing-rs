@@ -137,14 +137,19 @@ fn single_digit_char(word: &str) -> Option<char> {
 
 /// Convert spoken number words to integer.
 ///
-/// Two readings are accepted:
+/// Three readings are accepted, in order:
 /// - **Digit-by-digit** (codes, flight numbers, aviation frequencies):
 ///   `"one three five"` → `135`. Triggered when every token is a single-digit
 ///   word (`zero`-`nine`, plus `oh`/`o` for `0`).
+/// - **Aviation flight-number style**: `"seven eighty eight"` → `788`,
+///   `"two thirty five"` → `235`. A leading run of single-digit words is
+///   concatenated, then a trailing grammatical compound (e.g. `"eighty eight"`
+///   = 88) is appended. Disabled when the input contains a scale word
+///   (`hundred`/`thousand`/...), which forces grammatical reading.
 /// - **Grammatical** (English number grammar): `"twenty one"` → `21`,
 ///   `"one hundred twenty three"` → `123`, `"one thousand two hundred thirty
 ///   four"` → `1234`. Uses a left-to-right accumulator with scale words
-///   (`hundred`, `thousand`, `million`, ...) multiplying the current group.
+///   multiplying the current group.
 ///
 /// Filler words `"and"` and `"a"` are stripped.
 pub fn words_to_number(input: &str) -> Option<i128> {
@@ -166,6 +171,27 @@ pub fn words_to_number(input: &str) -> Option<i128> {
             .collect::<String>()
             .parse()
             .ok();
+    }
+
+    // Aviation flight-number style: digit prefix + grammatical compound.
+    // "seven eighty eight" → "7" ‖ 88 = 788. Skipped if a scale word appears,
+    // since "two thousand seventeen" must stay grammatical (= 2017, not 22017).
+    let has_scale = words.iter().any(|w| SCALES.contains_key(*w));
+    if !has_scale {
+        let prefix_len = words
+            .iter()
+            .take_while(|w| single_digit_char(w).is_some())
+            .count();
+        if prefix_len >= 1 && prefix_len < words.len() {
+            if let Some(rest_num) = grammatical_words_to_number(&words[prefix_len..]) {
+                let prefix: String = words[..prefix_len]
+                    .iter()
+                    .map(|w| single_digit_char(w).unwrap())
+                    .collect();
+                let combined = format!("{}{}", prefix, rest_num);
+                return combined.parse::<i128>().ok();
+            }
+        }
     }
 
     grammatical_words_to_number(&words)
@@ -343,5 +369,33 @@ mod tests {
     fn test_words_to_number_digit_sequence() {
         assert_eq!(words_to_number("one three five"), Some(135));
         assert_eq!(words_to_number("six two five"), Some(625));
+    }
+
+    /// Aviation flight-number style (issue #14). A leading run of single-digit
+    /// words gets concatenated with the trailing grammatical compound, e.g.
+    /// "seven eighty eight" = "7" ‖ 88 = 788, not 7 + 80 + 8 = 95.
+    #[test]
+    fn test_aviation_flight_number_style() {
+        assert_eq!(parse("seven eighty eight"), Some("788".to_string()));
+        assert_eq!(parse("two thirty five"), Some("235".to_string()));
+        assert_eq!(parse("three forty seven"), Some("347".to_string()));
+        assert_eq!(parse("nine eleven"), Some("911".to_string()));
+        // Multi-digit prefix
+        assert_eq!(parse("two seven eighty eight"), Some("2788".to_string()));
+    }
+
+    #[test]
+    fn test_words_to_number_aviation_flight_number() {
+        assert_eq!(words_to_number("seven eighty eight"), Some(788));
+        assert_eq!(words_to_number("two thirty five"), Some(235));
+    }
+
+    /// Regression: scale words must force grammatical reading. "two thousand
+    /// seventeen" must stay 2017, not be misread as a digit-prefix pattern.
+    #[test]
+    fn test_scale_word_forces_grammatical() {
+        assert_eq!(parse("two thousand seventeen"), Some("2017".to_string()));
+        assert_eq!(parse("one hundred"), Some("100".to_string()));
+        assert_eq!(parse("two million three"), Some("2000003".to_string()));
     }
 }

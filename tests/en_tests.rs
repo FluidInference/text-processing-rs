@@ -897,3 +897,36 @@ fn test_spelled_digit_cardinal_does_not_break_normal_cardinals() {
     assert_eq!(normalize("one hundred thirty five"), "135");
     assert_eq!(normalize("one thousand two hundred thirty four"), "1234");
 }
+
+/// Issue #14: aviation flight-number reading. "seven eighty eight" is the
+/// spoken form of flight 788, not 7 + 80 + 8 = 95.
+#[test]
+fn test_issue_14_aviation_flight_number() {
+    assert_eq!(normalize("seven eighty eight"), "788");
+    assert_eq!(normalize("two thirty five"), "235");
+    assert_eq!(normalize("three forty seven"), "347");
+}
+
+/// Issue #14 in sentence context — the original bug report. The
+/// `normalize_sentence` path reaches the cardinal tagger directly (the
+/// telephone tagger is not in the sentence-mode pipeline), so the fix has
+/// to live inside `cardinal::words_to_number`.
+#[test]
+fn test_issue_14_aviation_flight_number_in_sentence() {
+    assert_eq!(
+        normalize_sentence("United seven eighty eight"),
+        "United 788"
+    );
+    assert_eq!(
+        normalize_sentence("flight two thirty five departs at gate four"),
+        "flight 235 departs at gate 4"
+    );
+}
+
+/// Regression: scale words must keep grammatical reading. The aviation
+/// branch must not eat "two thousand seventeen" as 22017.
+#[test]
+fn test_issue_14_does_not_break_scale_grammar() {
+    assert_eq!(normalize("two thousand seventeen"), "2017");
+    assert_eq!(normalize("one hundred"), "100");
+}
