@@ -16,7 +16,7 @@ let package = Package(
             linkerSettings: [
                 .unsafeFlags([
                     "-L../target/aarch64-apple-darwin/release",
-                    "-lnemo_text_processing"
+                    "-ltext_processing_rs"
                 ])
             ]
         ),
@@ -26,7 +26,7 @@ let package = Package(
             linkerSettings: [
                 .unsafeFlags([
                     "-L../target/aarch64-apple-darwin/release",
-                    "-lnemo_text_processing"
+                    "-ltext_processing_rs"
                 ])
             ]
         ),
@@ -36,7 +36,7 @@ let package = Package(
             linkerSettings: [
                 .unsafeFlags([
                     "-L../target/aarch64-apple-darwin/release",
-                    "-lnemo_text_processing"
+                    "-ltext_processing_rs"
                 ])
             ]
         ),

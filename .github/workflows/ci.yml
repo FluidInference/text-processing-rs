@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
 
 jobs:
   fmt:
@@ -15,16 +16,50 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: rustup component add rustfmt
-      - run: cargo fmt --check
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all --check
 
   test:
-    name: Test
-    runs-on: ubuntu-latest
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
-      - run: cargo test
-      - run: cargo test --features ffi
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.os }}
+      - name: Build
+        run: cargo build --verbose
+      - name: Run unit & integration tests
+        run: cargo test --verbose
+      - name: Run tests with FFI feature
+        run: cargo test --features ffi --verbose
+      - name: Run tests in release mode
+        run: cargo test --release --verbose
+
+  swift-ffi:
+    name: Swift FFI Tests
+    runs-on: macos-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: swift-ffi
+      - name: Build static library for Swift
+        run: cargo build --release --features ffi --target aarch64-apple-darwin
+      - name: Run Swift FFI smoke test
+        working-directory: swift-test
+        run: swift run NemoTest
 
   wasm:
     name: WASM
@@ -34,6 +69,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: wasm
       - uses: jetli/wasm-pack-action@v0.4.0
-      - run: rustup target add wasm32-unknown-unknown
       - run: npm run wasm:ci
