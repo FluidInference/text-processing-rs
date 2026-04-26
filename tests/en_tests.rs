@@ -7,7 +7,8 @@ mod common;
 
 use std::path::Path;
 use text_processing_rs::{
-    custom_rules, normalize, normalize_sentence, normalize_sentence_with_max_span,
+    custom_rules, normalize, normalize_aviation, normalize_sentence, normalize_sentence_aviation,
+    normalize_sentence_with_max_span,
 };
 
 fn print_failures(results: &common::TestResults) {
@@ -899,30 +900,77 @@ fn test_spelled_digit_cardinal_does_not_break_normal_cardinals() {
 }
 
 /// Issue #14: aviation flight-number reading is exposed as an **opt-in**
-/// helper (`cardinal::words_to_number_aviation`), not wired into the
-/// generic ITN/TN dispatch. Wiring it generically would clobber the date
-/// tagger's old-year reading (`"twenty one forty two"` → `2043`, see
-/// `test_sentence_adjacent_spans`) and overlap with the time tagger
-/// (`"two thirty five"` → `02:35`). Callers in flight-number / call-sign
-/// contexts reach for the helper explicitly. See `src/itn/en/cardinal.rs`
-/// for unit tests of the helper itself.
-///
-/// In single-input `normalize`, the existing `telephone` tagger already
-/// produces flight-number-style output for whole-input cases (e.g.
-/// `"seven eighty eight"` → `"788"`). The sentence-mode pipeline excludes
-/// `telephone`, so `normalize_sentence` keeps the grammatical reading.
+/// pipeline. Generic dispatch keeps upstream NeMo semantics (date wins for
+/// `"twenty one forty two"`, time wins for `"two thirty five"`); callers
+/// who know they're in aviation context reach for the `*_aviation`
+/// variants, which run aviation cardinal at priority 89 (above date 88
+/// and time 85).
 #[test]
-fn test_issue_14_aviation_is_opt_in() {
+fn test_issue_14_default_dispatch_unchanged() {
     // Scale-word grammar is preserved everywhere.
     assert_eq!(normalize("two thousand seventeen"), "2017");
     assert_eq!(normalize("one hundred"), "100");
     assert_eq!(normalize_sentence("two thousand seventeen"), "2017");
 
-    // Sentence-mode dispatch keeps grammatical reading for short spans:
-    // "seven eighty eight" → 7 + 80 + 8 = 95, NOT the aviation 788.
+    // Sentence-mode default dispatch: "seven eighty eight" stays grammatical
+    // 95, NOT aviation 788.
     assert_eq!(normalize_sentence("seven eighty eight"), "95");
 
     // Single-input `normalize` keeps its existing telephone-tagger
     // behaviour for whole-input flight-number-style phrases.
     assert_eq!(normalize("seven eighty eight"), "788");
+}
+
+/// Aviation pipeline `normalize_aviation` (single-input). Aviation cardinal
+/// runs early enough to beat time/date.
+#[test]
+fn test_issue_14_normalize_aviation() {
+    assert_eq!(normalize_aviation("seven eighty eight"), "788");
+    // Beats time tagger.
+    assert_eq!(normalize_aviation("two thirty five"), "235");
+    // Beats date old-year reading.
+    assert_eq!(normalize_aviation("twenty one forty two"), "63");
+    // Non-number phrases fall through unchanged.
+    assert_eq!(normalize_aviation("hello world"), "hello world");
+    // Money / measure / decimal / ordinal still work via fallback to
+    // standard `normalize`.
+    assert_eq!(normalize_aviation("five dollars"), "$5");
+    assert_eq!(normalize_aviation("five point two"), "5.2");
+    assert_eq!(normalize_aviation("twenty first"), "21st");
+    // Scale-word grammar still wins (no digit prefix → grammatical).
+    assert_eq!(normalize_aviation("two thousand seventeen"), "2017");
+}
+
+/// Aviation pipeline `normalize_sentence_aviation` (sentence mode). The
+/// cardinal-aviation priority bump (89) makes flight-number spans win
+/// over date/time in real sentences.
+#[test]
+fn test_issue_14_normalize_sentence_aviation() {
+    // The original bug from issue #14.
+    assert_eq!(
+        normalize_sentence_aviation("United seven eighty eight"),
+        "United 788"
+    );
+    assert_eq!(
+        normalize_sentence_aviation("flight two thirty five departs at gate four"),
+        "flight 235 departs at gate 4"
+    );
+
+    // Scale-word grammar is preserved.
+    assert_eq!(
+        normalize_sentence_aviation("two thousand seventeen"),
+        "2017"
+    );
+
+    // Money / measure stay above aviation (priority 95 / 90 > 89).
+    assert_eq!(
+        normalize_sentence_aviation("I owe five dollars"),
+        "I owe $5"
+    );
+
+    // Plain natural language is untouched.
+    assert_eq!(
+        normalize_sentence_aviation("I have twenty one apples"),
+        "I have 21 apples"
+    );
 }

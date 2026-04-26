@@ -111,6 +111,57 @@ pub fn normalize(input: &str) -> String {
     input.to_string()
 }
 
+/// Normalize a single input with **aviation flight-number reading
+/// prioritized**.
+///
+/// Same dispatch as [`normalize`], with one twist: `cardinal::parse_aviation`
+/// is tried *after* the high-confidence taggers (`custom_rules`, `whitelist`,
+/// `punctuation`, `word`) but *before* `time` and `date`. The result: when
+/// the whole input is a number-only phrase like `"two thirty five"` or
+/// `"seven eighty eight"`, the aviation reading wins (`"235"`, `"788"`)
+/// instead of being eaten as a time (`"02:35"`) or as an old-year via the
+/// date tagger.
+///
+/// Use this from flight-number / call-sign / aviation-radio contexts. Phrases
+/// that aren't pure number words still flow through the rest of the
+/// pipeline normally (`"five dollars"` → `"$5"` via the money tagger).
+///
+/// ```
+/// use text_processing_rs::normalize_aviation;
+///
+/// assert_eq!(normalize_aviation("seven eighty eight"), "788");
+/// assert_eq!(normalize_aviation("two thirty five"), "235");
+/// // Non-number phrases are unaffected.
+/// assert_eq!(normalize_aviation("hello world"), "hello world");
+/// ```
+pub fn normalize_aviation(input: &str) -> String {
+    let input = input.trim();
+
+    // High-confidence rules still win.
+    if let Some(result) = custom_rules::parse(input) {
+        return result;
+    }
+    if let Some(result) = whitelist::parse(input) {
+        return result;
+    }
+    if let Some(result) = punctuation::parse(input) {
+        return result;
+    }
+    if let Some(result) = word::parse(input) {
+        return result;
+    }
+
+    // Aviation cardinal beats time/date here. This is the whole point of
+    // calling `normalize_aviation` instead of `normalize`.
+    if let Some(num) = cardinal::parse_aviation(input) {
+        return num;
+    }
+
+    // Fall back to the standard pipeline for anything aviation cardinal
+    // didn't recognise (money, measure, decimal, ordinal, telephone, etc.).
+    normalize(input)
+}
+
 /// Normalize with language selection.
 ///
 /// Supports language-specific ITN taggers for converting spoken-form
@@ -906,6 +957,42 @@ pub fn normalize_sentence(input: &str) -> String {
     normalize_sentence_with_max_span(input, DEFAULT_MAX_SPAN_TOKENS)
 }
 
+/// Sentence-mode equivalent of [`normalize_aviation`].
+///
+/// Same scanning loop as [`normalize_sentence`], but each span is tried
+/// against [`parse_span_aviation`] instead of [`parse_span`]. Aviation
+/// cardinal sits at priority 89 (above `date`=88 and `time`=85, below
+/// `measure`=90 and `money`=95), so flight-number-style spans win over
+/// date/time interpretations while measure / money phrases keep their
+/// existing semantics.
+///
+/// ```
+/// use text_processing_rs::normalize_sentence_aviation;
+///
+/// // Aviation cardinal beats time/date for pure-number spans.
+/// assert_eq!(
+///     normalize_sentence_aviation("United seven eighty eight"),
+///     "United 788"
+/// );
+/// assert_eq!(
+///     normalize_sentence_aviation("flight two thirty five departs at gate four"),
+///     "flight 235 departs at gate 4"
+/// );
+/// // Non-aviation spans flow through normally.
+/// assert_eq!(
+///     normalize_sentence_aviation("I have twenty one apples"),
+///     "I have 21 apples"
+/// );
+/// ```
+pub fn normalize_sentence_aviation(input: &str) -> String {
+    normalize_sentence_aviation_with_max_span(input, DEFAULT_MAX_SPAN_TOKENS)
+}
+
+/// [`normalize_sentence_aviation`] with a configurable max span size.
+pub fn normalize_sentence_aviation_with_max_span(input: &str, max_span_tokens: usize) -> String {
+    normalize_sentence_inner(input, max_span_tokens, parse_span_aviation)
+}
+
 /// Normalize a full sentence with a configurable max span size.
 ///
 /// `max_span_tokens` controls the maximum number of consecutive tokens
@@ -920,6 +1007,18 @@ pub fn normalize_sentence(input: &str) -> String {
 /// assert_eq!(normalize_sentence_with_max_span("I have twenty one apples", 4), "I have 21 apples");
 /// ```
 pub fn normalize_sentence_with_max_span(input: &str, max_span_tokens: usize) -> String {
+    normalize_sentence_inner(input, max_span_tokens, parse_span)
+}
+
+/// Sentence-mode dispatch loop, parameterized by which `parse_span` variant
+/// scores each candidate. Used by both `normalize_sentence_with_max_span`
+/// (default dispatch) and `normalize_sentence_aviation_with_max_span`
+/// (aviation cardinal at priority 89).
+fn normalize_sentence_inner(
+    input: &str,
+    max_span_tokens: usize,
+    parse_span_fn: fn(&str) -> Option<(String, u8)>,
+) -> String {
     let trimmed = input.trim();
     if trimmed.is_empty() {
         return trimmed.to_string();
@@ -941,7 +1040,7 @@ pub fn normalize_sentence_with_max_span(input: &str, max_span_tokens: usize) -> 
         // Longest-span-first search keeps replacements stable and non-overlapping.
         for end in (i + 1..=max_end).rev() {
             let span = tokens[i..end].join(" ");
-            let Some((candidate, score)) = parse_span(&span) else {
+            let Some((candidate, score)) = parse_span_fn(&span) else {
                 continue;
             };
 
@@ -977,6 +1076,58 @@ pub fn normalize_sentence_with_max_span(input: &str, max_span_tokens: usize) -> 
     }
 
     out.join(" ")
+}
+
+/// Sentence-mode dispatch with **aviation flight-number reading at priority
+/// 89**, sitting above `date` (88) and `time` (85). Otherwise identical to
+/// [`parse_span`].
+fn parse_span_aviation(span: &str) -> Option<(String, u8)> {
+    let token_count = span.split_whitespace().count();
+    if token_count == 0 {
+        return None;
+    }
+
+    if let Some(result) = custom_rules::parse(span) {
+        return Some((result, 110));
+    }
+    if let Some(result) = whitelist::parse(span) {
+        return Some((result, 100));
+    }
+    if let Some(result) = punctuation::parse(span) {
+        return Some((result, 98));
+    }
+    if let Some(result) = money::parse(span) {
+        return Some((result, 95));
+    }
+    if let Some(result) = measure::parse(span) {
+        return Some((result, 90));
+    }
+
+    // Aviation cardinal beats date/time. Same short-span gate as the regular
+    // cardinal path: avoids over-matching on natural language.
+    if token_count <= 4 {
+        if let Some(result) = cardinal::parse_aviation(span) {
+            return Some((result, 89));
+        }
+    }
+
+    if let Some(result) = date::parse(span) {
+        return Some((result, 88));
+    }
+    if let Some(result) = time::parse(span) {
+        return Some((result, 85));
+    }
+    if let Some(result) = electronic::parse(span) {
+        return Some((result, 82));
+    }
+    if let Some(result) = decimal::parse(span) {
+        return Some((result, 80));
+    }
+    if let Some(result) = ordinal::parse(span) {
+        return Some((result, 75));
+    }
+
+    None
 }
 
 // ── Text Normalization (written → spoken) ─────────────────────────────

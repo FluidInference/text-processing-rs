@@ -73,6 +73,22 @@ lazy_static! {
 ///
 /// Returns None if the input cannot be parsed as a number.
 pub fn parse(input: &str) -> Option<String> {
+    parse_with_reading(input, words_to_number)
+}
+
+/// Aviation / flight-number / call-sign reading variant of [`parse`].
+///
+/// Recognises digit-prefix + grammatical-compound phrases like
+/// `"seven eighty eight"` → `"788"`. Use this from contexts where flight
+/// numbers or call signs are expected. Generic dispatch keeps using
+/// [`parse`] to avoid clobbering date/time semantics.
+pub fn parse_aviation(input: &str) -> Option<String> {
+    parse_with_reading(input, words_to_number_aviation)
+}
+
+/// Shared body of [`parse`] and [`parse_aviation`]. The only thing that
+/// differs is which words-to-number reading is applied to the cleaned input.
+fn parse_with_reading(input: &str, reader: fn(&str) -> Option<i128>) -> Option<String> {
     let original = input.trim();
     let input = original.to_lowercase();
     let input = input.as_str();
@@ -107,7 +123,7 @@ pub fn parse(input: &str) -> Option<String> {
         (false, input)
     };
 
-    let num = words_to_number(rest)?;
+    let num = reader(rest)?;
 
     if is_negative {
         Some(format!("-{}", num))
