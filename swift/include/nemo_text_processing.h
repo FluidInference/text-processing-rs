@@ -40,9 +40,17 @@ char* nemo_normalize_sentence(const char* input);
  *        words concatenate (aviation flight-number style — e.g.
  *        "thirty five sixty two" -> "3562", "seven eighty eight" -> "788")
  *        instead of adding.
+ * @param disable_bare_second When non-zero, the bare word "second" is NOT
+ *        rewritten to "2nd" (issue #22), so phrases like
+ *        "give me a second" stay literal. Compound ordinals
+ *        ("twenty second" -> "22nd") still convert.
  * @return Newly allocated string, must be freed with nemo_free_string().
  */
-char* nemo_normalize_with_options(const char* input, uint32_t concat_compound_numbers);
+char* nemo_normalize_with_options(
+    const char* input,
+    uint32_t concat_compound_numbers,
+    uint32_t disable_bare_second
+);
 
 /**
  * Normalize a full sentence with caller-specified options.
@@ -51,12 +59,14 @@ char* nemo_normalize_with_options(const char* input, uint32_t concat_compound_nu
  * @param concat_compound_numbers See nemo_normalize_with_options.
  * @param max_span_tokens Maximum consecutive tokens per span. Pass 0 to
  *        use the library default (16).
+ * @param disable_bare_second See nemo_normalize_with_options.
  * @return Newly allocated string, must be freed with nemo_free_string().
  */
 char* nemo_normalize_sentence_with_options(
     const char* input,
     uint32_t concat_compound_numbers,
-    uint32_t max_span_tokens
+    uint32_t max_span_tokens,
+    uint32_t disable_bare_second
 );
 
 /**

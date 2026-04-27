@@ -9,11 +9,16 @@ extern "C" {
 
 char* nemo_normalize(const char* input);
 char* nemo_normalize_sentence(const char* input);
-char* nemo_normalize_with_options(const char* input, uint32_t concat_compound_numbers);
+char* nemo_normalize_with_options(
+    const char* input,
+    uint32_t concat_compound_numbers,
+    uint32_t disable_bare_second
+);
 char* nemo_normalize_sentence_with_options(
     const char* input,
     uint32_t concat_compound_numbers,
-    uint32_t max_span_tokens
+    uint32_t max_span_tokens,
+    uint32_t disable_bare_second
 );
 void nemo_add_rule(const char* spoken, const char* written);
 int32_t nemo_remove_rule(const char* spoken);

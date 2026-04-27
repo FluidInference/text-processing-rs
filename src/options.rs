@@ -19,6 +19,12 @@ pub struct NormalizeOptions {
     /// Sentence-mode sliding-window cap (in tokens). `None` uses
     /// [`DEFAULT_MAX_SPAN_TOKENS`]. Ignored in single-expression mode.
     pub max_span_tokens: Option<usize>,
+
+    /// Skip the ordinal tagger for the bare word `"second"` so it is not
+    /// rewritten to `"2nd"` in phrases like `"give me a second"` (issue #22).
+    /// Compound ordinals (`"twenty second"` → `"22nd"`) and date contexts
+    /// (`"January second twenty twenty five"`) still convert. Default `false`.
+    pub disable_bare_second: bool,
 }
 
 impl NormalizeOptions {
@@ -27,6 +33,7 @@ impl NormalizeOptions {
         Self {
             concat_compound_numbers: false,
             max_span_tokens: None,
+            disable_bare_second: false,
         }
     }
 
@@ -39,6 +46,12 @@ impl NormalizeOptions {
     /// Set [`Self::max_span_tokens`].
     pub const fn with_max_span_tokens(mut self, max_span_tokens: usize) -> Self {
         self.max_span_tokens = Some(max_span_tokens);
+        self
+    }
+
+    /// Set [`Self::disable_bare_second`].
+    pub const fn with_disable_bare_second(mut self, enabled: bool) -> Self {
+        self.disable_bare_second = enabled;
         self
     }
 }
