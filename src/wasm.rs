@@ -13,7 +13,11 @@ use crate::{
 ///
 /// `max_span_tokens == 0` is treated as "use library default" so JS callers
 /// can pass `0` rather than dealing with optional values across the boundary.
-fn js_options(concat_compound_numbers: bool, max_span_tokens: u32) -> NormalizeOptions {
+fn js_options(
+    concat_compound_numbers: bool,
+    max_span_tokens: u32,
+    disable_bare_second: bool,
+) -> NormalizeOptions {
     NormalizeOptions {
         concat_compound_numbers,
         max_span_tokens: if max_span_tokens == 0 {
@@ -21,6 +25,7 @@ fn js_options(concat_compound_numbers: bool, max_span_tokens: u32) -> NormalizeO
         } else {
             Some(max_span_tokens as usize)
         },
+        disable_bare_second,
     }
 }
 
@@ -48,21 +53,39 @@ pub fn normalize_sentence_js(input: &str) -> String {
 /// Unified single-expression normalize. `concatCompoundNumbers=true` reads
 /// consecutive number words as concatenation rather than addition, e.g.
 /// `"thirty five sixty two"` → `"3562"`, `"seven eighty eight"` → `"788"`.
+/// `disableBareSecond=true` blocks the bare word `"second"` from converting
+/// to `"2nd"` (issue #22).
 #[wasm_bindgen(js_name = normalizeWithOptions)]
-pub fn normalize_with_options_js(input: &str, concat_compound_numbers: bool) -> String {
-    normalize_with_options(input, js_options(concat_compound_numbers, 0))
+pub fn normalize_with_options_js(
+    input: &str,
+    concat_compound_numbers: bool,
+    disable_bare_second: bool,
+) -> String {
+    normalize_with_options(
+        input,
+        js_options(concat_compound_numbers, 0, disable_bare_second),
+    )
 }
 
 /// Unified sentence normalize. `concatCompoundNumbers` mirrors the
 /// single-expression flag; `maxSpanTokens == 0` means "use library default"
-/// (16).
+/// (16). `disableBareSecond=true` keeps phrases like `"give me a second"`
+/// literal (issue #22).
 #[wasm_bindgen(js_name = normalizeSentenceWithOptions)]
 pub fn normalize_sentence_with_options_js(
     input: &str,
     concat_compound_numbers: bool,
     max_span_tokens: u32,
+    disable_bare_second: bool,
 ) -> String {
-    normalize_sentence_with_options(input, js_options(concat_compound_numbers, max_span_tokens))
+    normalize_sentence_with_options(
+        input,
+        js_options(
+            concat_compound_numbers,
+            max_span_tokens,
+            disable_bare_second,
+        ),
+    )
 }
 
 #[wasm_bindgen(js_name = tnNormalize)]

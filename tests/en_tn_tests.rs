@@ -230,3 +230,34 @@ fn test_issue_16_tn_normalize_sentence_public_api() {
         normalized_text
     );
 }
+
+/// Regression: PR #25 introduced a pretokenizer that splits trailing
+/// punctuation off of words so ITN can match `"twenty one,"` as
+/// `"twenty one"`. The shared sentence loop must rejoin pretokens using
+/// their original separator (no inserted whitespace), otherwise the TN
+/// whitelist sees `"Dr ."` instead of `"Dr."` and abbreviation entries
+/// like `"e.g."` / `"Prof."` / `"Inc."` stop matching. Reported by Devin
+/// AI on PR #25:
+/// https://github.com/FluidInference/text-processing-rs/pull/25#pullrequestreview-4178192149
+#[test]
+fn test_pr25_tn_abbreviation_regression() {
+    // Both-form whitelist entries (`Dr` / `Dr.`, `vs` / `vs.`): the period
+    // must be consumed by the abbreviation, not left orphaned.
+    assert_eq!(
+        tn_normalize_sentence("I see Dr. Smith today."),
+        "I see doctor Smith today."
+    );
+    assert_eq!(tn_normalize_sentence("vs. them"), "versus them");
+
+    // Period-only whitelist entries: only match when the trailing period
+    // is preserved across the pretokenizer split.
+    assert_eq!(
+        tn_normalize_sentence("e.g. she is here"),
+        "for example she is here"
+    );
+    assert_eq!(
+        tn_normalize_sentence("Inc. and Co."),
+        "incorporated and company"
+    );
+    assert_eq!(tn_normalize_sentence("Prof. Jones"), "professor Jones");
+}

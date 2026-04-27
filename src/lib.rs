@@ -38,6 +38,13 @@ use itn::en::{
 /// Tries taggers in order of specificity (most specific first).
 /// Returns original text if no tagger matches.
 pub fn normalize(input: &str) -> String {
+    normalize_inner(input, false)
+}
+
+/// Single-expression dispatch with the `disable_bare_second` flag plumbed in.
+/// Issue #22: when the flag is set and the trimmed input is exactly the bare
+/// word `"second"`, the ordinal tagger is skipped so it stays literal.
+fn normalize_inner(input: &str, disable_bare_second: bool) -> String {
     let input = input.trim();
 
     // Apply custom user rules first (highest priority)
@@ -100,9 +107,12 @@ pub fn normalize(input: &str) -> String {
         return result;
     }
 
-    // Try ordinal numbers
-    if let Some(result) = ordinal::parse(input) {
-        return result;
+    // Try ordinal numbers (issue #22: skip the bare "second" case when opted out).
+    let skip_ordinal = disable_bare_second && input.eq_ignore_ascii_case("second");
+    if !skip_ordinal {
+        if let Some(result) = ordinal::parse(input) {
+            return result;
+        }
     }
 
     // Try cardinal number
@@ -136,7 +146,7 @@ pub fn normalize(input: &str) -> String {
 /// ```
 pub fn normalize_with_options(input: &str, options: NormalizeOptions) -> String {
     if !options.concat_compound_numbers {
-        return normalize(input);
+        return normalize_inner(input, options.disable_bare_second);
     }
 
     let input = input.trim();
@@ -162,7 +172,7 @@ pub fn normalize_with_options(input: &str, options: NormalizeOptions) -> String 
 
     // Fall back to the standard pipeline for anything not recognised
     // (money, measure, decimal, ordinal, telephone, etc.).
-    normalize(input)
+    normalize_inner(input, options.disable_bare_second)
 }
 
 /// Normalize with language selection.
@@ -900,7 +910,11 @@ fn tn_parse_span_lang(span: &str, lang: &str) -> Option<(String, u8)> {
 /// `money`=95) and the regular cardinal fallback at 70 is skipped (the
 /// concat-compound reader already falls back to grammatical when the
 /// concat pattern does not apply).
-fn parse_span(span: &str, concat_compound: bool) -> Option<(String, u8)> {
+fn parse_span(
+    span: &str,
+    concat_compound: bool,
+    disable_bare_second: bool,
+) -> Option<(String, u8)> {
     let token_count = span.split_whitespace().count();
     if token_count == 0 {
         return None;
@@ -945,8 +959,17 @@ fn parse_span(span: &str, concat_compound: bool) -> Option<(String, u8)> {
     if let Some(result) = decimal::parse(span) {
         return Some((result, 80));
     }
-    if let Some(result) = ordinal::parse(span) {
-        return Some((result, 75));
+    // Issue #22: when `disable_bare_second` is set, the bare standalone
+    // word `"second"` is *not* converted to `"2nd"` so phrases like
+    // `"give me a second"` stay literal. Compound ordinals
+    // (`"twenty second"`) still flow through this branch because they
+    // span 2+ tokens.
+    let skip_ordinal =
+        disable_bare_second && token_count == 1 && span.trim().eq_ignore_ascii_case("second");
+    if !skip_ordinal {
+        if let Some(result) = ordinal::parse(span) {
+            return Some((result, 75));
+        }
     }
 
     // Default cardinal fallback (priority 70). In concat-compound mode the
@@ -973,7 +996,7 @@ fn parse_span(span: &str, concat_compound: bool) -> Option<(String, u8)> {
 /// assert_eq!(normalize_sentence("hello world"), "hello world");
 /// ```
 pub fn normalize_sentence(input: &str) -> String {
-    normalize_sentence_inner(input, DEFAULT_MAX_SPAN_TOKENS, false)
+    normalize_sentence_inner(input, DEFAULT_MAX_SPAN_TOKENS, false, false)
 }
 
 /// Unified sentence-mode entry point.
@@ -1002,7 +1025,12 @@ pub fn normalize_sentence(input: &str) -> String {
 /// ```
 pub fn normalize_sentence_with_options(input: &str, options: NormalizeOptions) -> String {
     let max_span = options.max_span_tokens.unwrap_or(DEFAULT_MAX_SPAN_TOKENS);
-    normalize_sentence_inner(input, max_span, options.concat_compound_numbers)
+    normalize_sentence_inner(
+        input,
+        max_span,
+        options.concat_compound_numbers,
+        options.disable_bare_second,
+    )
 }
 
 /// Per-pretoken record: the token text plus the original separator that
@@ -1110,13 +1138,23 @@ where
         let max_end = usize::min(pretokens.len(), i + max_span);
         let mut best: Option<(usize, String, u8)> = None;
 
-        // Longest-span-first search keeps replacements stable and non-overlapping.
+        // Longest-span-first search keeps replacements stable and
+        // non-overlapping. Reconstruct each span using the per-pretoken
+        // separator so adjacency is preserved: pretokens that came from a
+        // single original word (e.g. `"Dr."` -> `["Dr", "."]` with sep=`""`
+        // on the period) re-emerge as `"Dr."`, not `"Dr ."`. This is what
+        // the TN whitelist needs to match abbreviations like `"e.g."` /
+        // `"Prof."` (PR #25 review feedback). Trying smaller `end` values
+        // already handles "ignore trailing punctuation" cases like
+        // `"twenty one,"` -> match `"twenty one"`.
         for end in (i + 1..=max_end).rev() {
-            let span: String = pretokens[i..end]
-                .iter()
-                .map(|p| p.text.as_str())
-                .collect::<Vec<_>>()
-                .join(" ");
+            let mut span = String::new();
+            for (idx, p) in pretokens[i..end].iter().enumerate() {
+                if idx > 0 {
+                    span.push_str(p.sep);
+                }
+                span.push_str(&p.text);
+            }
             let Some((candidate, score)) = parser(&span) else {
                 continue;
             };
@@ -1157,9 +1195,15 @@ where
     out
 }
 
-/// Sentence-mode dispatch loop. The `concat_compound` flag is forwarded to
-/// [`parse_span`] so each span sees the right tagger priorities.
-fn normalize_sentence_inner(input: &str, max_span_tokens: usize, concat_compound: bool) -> String {
+/// Sentence-mode dispatch loop. The `concat_compound` and
+/// `disable_bare_second` flags are forwarded to [`parse_span`] so each span
+/// sees the right tagger priorities.
+fn normalize_sentence_inner(
+    input: &str,
+    max_span_tokens: usize,
+    concat_compound: bool,
+    disable_bare_second: bool,
+) -> String {
     let trimmed = input.trim();
     if trimmed.is_empty() {
         return trimmed.to_string();
@@ -1167,7 +1211,7 @@ fn normalize_sentence_inner(input: &str, max_span_tokens: usize, concat_compound
 
     let pretokens = pretokenize(trimmed);
     sentence_loop(&pretokens, max_span_tokens, |span| {
-        parse_span(span, concat_compound)
+        parse_span(span, concat_compound, disable_bare_second)
     })
 }
 

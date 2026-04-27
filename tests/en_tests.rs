@@ -1169,6 +1169,101 @@ fn test_issue_21_space_before_punct_preserved() {
     );
 }
 
+/// Issue #22: bare `"second"` is ambiguous (ordinal vs SI time unit vs
+/// verb). The opt-in `disable_bare_second` flag blocks the ordinal tagger
+/// for the standalone word so phrases like `"give me a second"` stay
+/// literal, while compound ordinals (`"twenty second"` → `"22nd"`) and date
+/// contexts still convert.
+#[test]
+fn test_issue_22_default_behavior_unchanged() {
+    // No flag, default options: today's behavior is preserved.
+    assert_eq!(
+        normalize_sentence("Give me a second to check."),
+        "Give me a 2nd to check."
+    );
+    assert_eq!(
+        normalize_sentence_with_options("Give me a second to check.", NormalizeOptions::new()),
+        "Give me a 2nd to check."
+    );
+}
+
+#[test]
+fn test_issue_22_sentence_disable_bare_second() {
+    let opts = NormalizeOptions::new().with_disable_bare_second(true);
+
+    // Reported case from issue #22.
+    assert_eq!(
+        normalize_sentence_with_options("Give me a second to check.", opts),
+        "Give me a second to check."
+    );
+
+    // Other common false-positive contexts.
+    assert_eq!(
+        normalize_sentence_with_options("Wait a second, I need to think.", opts),
+        "Wait a second, I need to think."
+    );
+    assert_eq!(
+        normalize_sentence_with_options("I'll second that motion.", opts),
+        "I'll second that motion."
+    );
+
+    // Compound ordinals must still convert.
+    assert_eq!(
+        normalize_sentence_with_options("He finished in the twenty second place", opts),
+        "He finished in the 22nd place"
+    );
+    assert_eq!(
+        normalize_sentence_with_options("the one hundred second time", opts),
+        "the 102nd time"
+    );
+
+    // Date contexts still route through the date tagger.
+    assert_eq!(
+        normalize_sentence_with_options("January second twenty twenty five", opts),
+        "January 2 2025"
+    );
+
+    // The flag also drops bare-ordinal "second" used as an actual ordinal
+    // (e.g. "I came in second"); that's the documented trade-off for
+    // killing the false positives.
+    assert_eq!(
+        normalize_sentence_with_options("I came in second", opts),
+        "I came in second"
+    );
+
+    // Other ordinals are not affected by this flag.
+    assert_eq!(
+        normalize_sentence_with_options("the third time", opts),
+        "the 3rd time"
+    );
+    assert_eq!(
+        normalize_sentence_with_options("the first time", opts),
+        "the 1st time"
+    );
+}
+
+#[test]
+fn test_issue_22_single_expression_disable_bare_second() {
+    let opts = NormalizeOptions::new().with_disable_bare_second(true);
+
+    // Bare "second" stays literal in single-expression mode when opted in.
+    assert_eq!(normalize_with_options("second", opts), "second");
+    assert_eq!(normalize_with_options("Second", opts), "Second");
+
+    // Compound forms still convert in single-expression mode.
+    assert_eq!(normalize_with_options("twenty second", opts), "22nd");
+
+    // Other ordinals unaffected.
+    assert_eq!(normalize_with_options("third", opts), "3rd");
+    assert_eq!(normalize_with_options("first", opts), "1st");
+
+    // Default options: bare "second" still converts (no behavior change).
+    assert_eq!(
+        normalize_with_options("second", NormalizeOptions::new()),
+        "2nd"
+    );
+}
+
 /// Punctuation other than `,` and `.` is also split, including paired
 /// brackets and quotes, while contractions and hyphenated words remain
 /// intact.

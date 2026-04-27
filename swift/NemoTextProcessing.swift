@@ -68,19 +68,24 @@ public enum NemoTextProcessing {
     ///     `"seven eighty eight"` → `"788"`) instead of adding.
     ///   - maxSpanTokens: Maximum consecutive tokens per normalizable span.
     ///     Pass `0` to use the library default (16).
+    ///   - disableBareSecond: When true, the bare word `"second"` is NOT
+    ///     rewritten to `"2nd"` (issue #22). Compound ordinals like
+    ///     `"twenty second"` → `"22nd"` still convert.
     /// - Returns: Sentence with spoken-form spans replaced
     public static func normalizeSentence(
         _ input: String,
         concatCompoundNumbers: Bool = false,
-        maxSpanTokens: UInt32 = 0
+        maxSpanTokens: UInt32 = 0,
+        disableBareSecond: Bool = false
     ) -> String {
         guard let cString = input.cString(using: .utf8) else {
             return input
         }
 
         let concatFlag: UInt32 = concatCompoundNumbers ? 1 : 0
+        let bareSecondFlag: UInt32 = disableBareSecond ? 1 : 0
         guard let resultPtr = nemo_normalize_sentence_with_options(
-            cString, concatFlag, maxSpanTokens
+            cString, concatFlag, maxSpanTokens, bareSecondFlag
         ) else {
             return input
         }
@@ -94,18 +99,23 @@ public enum NemoTextProcessing {
     ///
     /// - Parameters:
     ///   - input: Spoken-form text
-    ///   - concatCompoundNumbers: See `normalizeSentence(_:concatCompoundNumbers:maxSpanTokens:)`.
+    ///   - concatCompoundNumbers: See `normalizeSentence(_:concatCompoundNumbers:maxSpanTokens:disableBareSecond:)`.
+    ///   - disableBareSecond: See `normalizeSentence(_:concatCompoundNumbers:maxSpanTokens:disableBareSecond:)`.
     /// - Returns: Written-form text, or original if no normalization applies.
     public static func normalize(
         _ input: String,
-        concatCompoundNumbers: Bool
+        concatCompoundNumbers: Bool = false,
+        disableBareSecond: Bool = false
     ) -> String {
         guard let cString = input.cString(using: .utf8) else {
             return input
         }
 
         let concatFlag: UInt32 = concatCompoundNumbers ? 1 : 0
-        guard let resultPtr = nemo_normalize_with_options(cString, concatFlag) else {
+        let bareSecondFlag: UInt32 = disableBareSecond ? 1 : 0
+        guard let resultPtr = nemo_normalize_with_options(
+            cString, concatFlag, bareSecondFlag
+        ) else {
             return input
         }
 

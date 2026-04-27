@@ -17,7 +17,14 @@ use crate::{
 ///
 /// `max_span_tokens`: `0` means "use library default" (16); any positive
 /// value is a caller-specified max span.
-fn options_from_ffi(concat_compound_numbers: u32, max_span_tokens: u32) -> NormalizeOptions {
+///
+/// `disable_bare_second`: any non-zero value blocks the bare word
+/// `"second"` from converting to `"2nd"` (issue #22).
+fn options_from_ffi(
+    concat_compound_numbers: u32,
+    max_span_tokens: u32,
+    disable_bare_second: u32,
+) -> NormalizeOptions {
     NormalizeOptions {
         concat_compound_numbers: concat_compound_numbers != 0,
         max_span_tokens: if max_span_tokens == 0 {
@@ -25,6 +32,7 @@ fn options_from_ffi(concat_compound_numbers: u32, max_span_tokens: u32) -> Norma
         } else {
             Some(max_span_tokens as usize)
         },
+        disable_bare_second: disable_bare_second != 0,
     }
 }
 
@@ -86,6 +94,9 @@ pub unsafe extern "C" fn nemo_normalize_sentence(input: *const c_char) -> *mut c
 /// concatenate rather than add — e.g. `"thirty five sixty two"` → `"3562"`,
 /// `"seven eighty eight"` → `"788"`.
 ///
+/// `disable_bare_second`: `0` keeps the default behavior, non-zero blocks
+/// the bare word `"second"` from being rewritten to `"2nd"` (issue #22).
+///
 /// # Safety
 /// - `input` must be a valid null-terminated UTF-8 string
 /// - Returns a newly allocated string that must be freed with `nemo_free_string`
@@ -93,6 +104,7 @@ pub unsafe extern "C" fn nemo_normalize_sentence(input: *const c_char) -> *mut c
 pub unsafe extern "C" fn nemo_normalize_with_options(
     input: *const c_char,
     concat_compound_numbers: u32,
+    disable_bare_second: u32,
 ) -> *mut c_char {
     if input.is_null() {
         return ptr::null_mut();
@@ -103,7 +115,7 @@ pub unsafe extern "C" fn nemo_normalize_with_options(
         Err(_) => return ptr::null_mut(),
     };
 
-    let options = options_from_ffi(concat_compound_numbers, 0);
+    let options = options_from_ffi(concat_compound_numbers, 0, disable_bare_second);
     let result = normalize_with_options(c_str, options);
 
     match CString::new(result) {
@@ -121,6 +133,9 @@ pub unsafe extern "C" fn nemo_normalize_with_options(
 /// - `0` — use library default (`16`).
 /// - `>0` — use the specified max span.
 ///
+/// `disable_bare_second`: `0` keeps the default behavior, non-zero blocks
+/// the bare word `"second"` from being rewritten to `"2nd"` (issue #22).
+///
 /// # Safety
 /// - `input` must be a valid null-terminated UTF-8 string
 /// - Returns a newly allocated string that must be freed with `nemo_free_string`
@@ -129,6 +144,7 @@ pub unsafe extern "C" fn nemo_normalize_sentence_with_options(
     input: *const c_char,
     concat_compound_numbers: u32,
     max_span_tokens: u32,
+    disable_bare_second: u32,
 ) -> *mut c_char {
     if input.is_null() {
         return ptr::null_mut();
@@ -139,7 +155,11 @@ pub unsafe extern "C" fn nemo_normalize_sentence_with_options(
         Err(_) => return ptr::null_mut(),
     };
 
-    let options = options_from_ffi(concat_compound_numbers, max_span_tokens);
+    let options = options_from_ffi(
+        concat_compound_numbers,
+        max_span_tokens,
+        disable_bare_second,
+    );
     let result = normalize_sentence_with_options(c_str, options);
 
     match CString::new(result) {
@@ -435,7 +455,7 @@ mod tests {
     fn test_ffi_normalize_with_options_concat_compound() {
         unsafe {
             let input = CString::new("seven eighty eight").unwrap();
-            let result = nemo_normalize_with_options(input.as_ptr(), 1);
+            let result = nemo_normalize_with_options(input.as_ptr(), 1, 0);
             assert!(!result.is_null());
             let result_str = CStr::from_ptr(result).to_str().unwrap();
             assert_eq!(result_str, "788");
@@ -447,11 +467,32 @@ mod tests {
     fn test_ffi_normalize_sentence_with_options_concat_compound() {
         unsafe {
             let input = CString::new("United seven eighty eight").unwrap();
-            let result = nemo_normalize_sentence_with_options(input.as_ptr(), 1, 0);
+            let result = nemo_normalize_sentence_with_options(input.as_ptr(), 1, 0, 0);
             assert!(!result.is_null());
             let result_str = CStr::from_ptr(result).to_str().unwrap();
             assert_eq!(result_str, "United 788");
             nemo_free_string(result);
+        }
+    }
+
+    #[test]
+    fn test_ffi_normalize_sentence_with_options_disable_bare_second() {
+        unsafe {
+            let input = CString::new("Give me a second to check.").unwrap();
+            // Default flag (0) keeps today's behavior.
+            let baseline = nemo_normalize_sentence_with_options(input.as_ptr(), 0, 0, 0);
+            assert_eq!(
+                CStr::from_ptr(baseline).to_str().unwrap(),
+                "Give me a 2nd to check."
+            );
+            nemo_free_string(baseline);
+            // Non-zero flag blocks bare second.
+            let opted_in = nemo_normalize_sentence_with_options(input.as_ptr(), 0, 0, 1);
+            assert_eq!(
+                CStr::from_ptr(opted_in).to_str().unwrap(),
+                "Give me a second to check."
+            );
+            nemo_free_string(opted_in);
         }
     }
 }
