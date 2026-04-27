@@ -18,6 +18,7 @@
 
 pub mod custom_rules;
 pub mod itn;
+pub mod options;
 pub mod tn;
 
 #[cfg(feature = "ffi")]
@@ -25,72 +26,12 @@ pub mod ffi;
 #[cfg(all(target_arch = "wasm32", feature = "wasm"))]
 pub mod wasm;
 
+pub use options::{NormalizeOptions, DEFAULT_MAX_SPAN_TOKENS};
+
 use itn::en::{
     cardinal, date, decimal, electronic, measure, money, ordinal, punctuation, telephone, time,
     whitelist, word,
 };
-
-/// Options for the unified [`normalize_with_options`] /
-/// [`normalize_sentence_with_options`] entry points.
-///
-/// Keeping options on a struct (rather than separate `*_aviation` /
-/// `*_with_max_span` functions) lets new knobs land without exploding the
-/// public API surface — see issues #15 and #23 for the motivating discussion.
-///
-/// The flags are intentionally orthogonal and *not* tied to a particular
-/// domain. Aviation, military codes, dispatch IDs, etc. all reuse the same
-/// underlying behavior toggles.
-///
-/// # Examples
-///
-/// ```
-/// use text_processing_rs::{normalize_sentence_with_options, NormalizeOptions};
-///
-/// let opts = NormalizeOptions {
-///     concat_compound_numbers: true,
-///     max_span_tokens: Some(8),
-/// };
-/// assert_eq!(
-///     normalize_sentence_with_options("United seven eighty eight", opts),
-///     "United 788"
-/// );
-/// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub struct NormalizeOptions {
-    /// When `true`, sequences of spoken number words concatenate rather than
-    /// add. `"thirty five sixty two"` → `"3562"` (instead of `35 + 62 = 97`)
-    /// and `"seven eighty eight"` → `"788"`. Aviation, flight-numbers,
-    /// call-signs, and other code-style readings want this on.
-    ///
-    /// Scale-word grammar is preserved: `"two thousand seventeen"` still
-    /// resolves to `"2017"` regardless of this flag.
-    pub concat_compound_numbers: bool,
-    /// Maximum span size (tokens) considered in sentence mode. `None` means
-    /// use [`DEFAULT_MAX_SPAN_TOKENS`]. Ignored by [`normalize_with_options`].
-    pub max_span_tokens: Option<usize>,
-}
-
-impl NormalizeOptions {
-    /// Default options: standard ITN dispatch, default max span.
-    pub const fn new() -> Self {
-        Self {
-            concat_compound_numbers: false,
-            max_span_tokens: None,
-        }
-    }
-
-    /// Enable / disable compound-number concatenation.
-    pub const fn with_concat_compound_numbers(mut self, enabled: bool) -> Self {
-        self.concat_compound_numbers = enabled;
-        self
-    }
-
-    /// Set the sentence-mode max span (in tokens).
-    pub const fn with_max_span_tokens(mut self, max_span_tokens: usize) -> Self {
-        self.max_span_tokens = Some(max_span_tokens);
-        self
-    }
-}
 
 /// Normalize spoken-form text to written form.
 ///
@@ -945,9 +886,6 @@ fn tn_parse_span_lang(span: &str, lang: &str) -> Option<(String, u8)> {
 
     None
 }
-
-/// Default maximum token span to consider when scanning a sentence.
-const DEFAULT_MAX_SPAN_TOKENS: usize = 16;
 
 /// Try to parse a span of text using sentence-safe taggers.
 ///
