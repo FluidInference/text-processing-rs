@@ -4,11 +4,29 @@ use std::ffi::{c_char, CStr, CString};
 use std::ptr;
 
 use crate::{
-    custom_rules, normalize, normalize_aviation, normalize_sentence, normalize_sentence_aviation,
-    normalize_sentence_aviation_with_max_span, normalize_sentence_with_max_span, tn_normalize,
-    tn_normalize_lang, tn_normalize_sentence, tn_normalize_sentence_lang,
-    tn_normalize_sentence_with_max_span, tn_normalize_sentence_with_max_span_lang,
+    custom_rules, normalize, normalize_sentence, normalize_sentence_with_options,
+    normalize_with_options, tn_normalize, tn_normalize_lang, tn_normalize_sentence,
+    tn_normalize_sentence_lang, tn_normalize_sentence_with_max_span,
+    tn_normalize_sentence_with_max_span_lang, NormalizeOptions,
 };
+
+/// Build [`NormalizeOptions`] from FFI primitives.
+///
+/// `concat_compound_numbers`: any non-zero value enables concat behavior
+/// (`"thirty five sixty two"` → `"3562"`, `"seven eighty eight"` → `"788"`).
+///
+/// `max_span_tokens`: `0` means "use library default" (16); any positive
+/// value is a caller-specified max span.
+fn options_from_ffi(concat_compound_numbers: u32, max_span_tokens: u32) -> NormalizeOptions {
+    NormalizeOptions {
+        concat_compound_numbers: concat_compound_numbers != 0,
+        max_span_tokens: if max_span_tokens == 0 {
+            None
+        } else {
+            Some(max_span_tokens as usize)
+        },
+    }
+}
 
 /// Normalize spoken-form text to written form.
 ///
@@ -61,17 +79,55 @@ pub unsafe extern "C" fn nemo_normalize_sentence(input: *const c_char) -> *mut c
     }
 }
 
-/// Normalize a full sentence with a configurable max span size.
+/// Unified single-expression normalize with caller-specified options.
 ///
-/// `max_span_tokens` controls the maximum number of consecutive tokens
-/// considered as a single normalizable expression (default is 16).
+/// `concat_compound_numbers`: `0` for standard ITN, non-zero for
+/// concat-compound (aviation-style) reading where consecutive number words
+/// concatenate rather than add — e.g. `"thirty five sixty two"` → `"3562"`,
+/// `"seven eighty eight"` → `"788"`.
 ///
 /// # Safety
 /// - `input` must be a valid null-terminated UTF-8 string
 /// - Returns a newly allocated string that must be freed with `nemo_free_string`
 #[no_mangle]
-pub unsafe extern "C" fn nemo_normalize_sentence_with_max_span(
+pub unsafe extern "C" fn nemo_normalize_with_options(
     input: *const c_char,
+    concat_compound_numbers: u32,
+) -> *mut c_char {
+    if input.is_null() {
+        return ptr::null_mut();
+    }
+
+    let c_str = match CStr::from_ptr(input).to_str() {
+        Ok(s) => s,
+        Err(_) => return ptr::null_mut(),
+    };
+
+    let options = options_from_ffi(concat_compound_numbers, 0);
+    let result = normalize_with_options(c_str, options);
+
+    match CString::new(result) {
+        Ok(c_string) => c_string.into_raw(),
+        Err(_) => ptr::null_mut(),
+    }
+}
+
+/// Unified sentence normalize with caller-specified options.
+///
+/// `concat_compound_numbers`: `0` for standard ITN, non-zero for
+/// concat-compound reading.
+///
+/// `max_span_tokens`:
+/// - `0` — use library default (`16`).
+/// - `>0` — use the specified max span.
+///
+/// # Safety
+/// - `input` must be a valid null-terminated UTF-8 string
+/// - Returns a newly allocated string that must be freed with `nemo_free_string`
+#[no_mangle]
+pub unsafe extern "C" fn nemo_normalize_sentence_with_options(
+    input: *const c_char,
+    concat_compound_numbers: u32,
     max_span_tokens: u32,
 ) -> *mut c_char {
     if input.is_null() {
@@ -83,90 +139,8 @@ pub unsafe extern "C" fn nemo_normalize_sentence_with_max_span(
         Err(_) => return ptr::null_mut(),
     };
 
-    let result = normalize_sentence_with_max_span(c_str, max_span_tokens as usize);
-
-    match CString::new(result) {
-        Ok(c_string) => c_string.into_raw(),
-        Err(_) => ptr::null_mut(),
-    }
-}
-
-/// Aviation-flavoured single-input normalize.
-///
-/// Layered on top of [`nemo_normalize`]: tries `cardinal::parse_aviation`
-/// first so flight-number / call-sign phrases like `"seven eighty eight"`
-/// resolve to `"788"`, then falls back to the regular dispatch.
-///
-/// # Safety
-/// - `input` must be a valid null-terminated UTF-8 string
-/// - Returns a newly allocated string that must be freed with `nemo_free_string`
-#[no_mangle]
-pub unsafe extern "C" fn nemo_normalize_aviation(input: *const c_char) -> *mut c_char {
-    if input.is_null() {
-        return ptr::null_mut();
-    }
-
-    let c_str = match CStr::from_ptr(input).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
-
-    let result = normalize_aviation(c_str);
-
-    match CString::new(result) {
-        Ok(c_string) => c_string.into_raw(),
-        Err(_) => ptr::null_mut(),
-    }
-}
-
-/// Aviation-flavoured sentence normalize.
-///
-/// Sentence-mode equivalent of [`nemo_normalize_aviation`]. Aviation cardinal
-/// runs at priority 89 (above date / time, below money / measure), so
-/// flight-number-style spans win without disturbing money / measure / decimal.
-///
-/// # Safety
-/// - `input` must be a valid null-terminated UTF-8 string
-/// - Returns a newly allocated string that must be freed with `nemo_free_string`
-#[no_mangle]
-pub unsafe extern "C" fn nemo_normalize_sentence_aviation(input: *const c_char) -> *mut c_char {
-    if input.is_null() {
-        return ptr::null_mut();
-    }
-
-    let c_str = match CStr::from_ptr(input).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
-
-    let result = normalize_sentence_aviation(c_str);
-
-    match CString::new(result) {
-        Ok(c_string) => c_string.into_raw(),
-        Err(_) => ptr::null_mut(),
-    }
-}
-
-/// Aviation sentence normalize with a configurable max span size.
-///
-/// # Safety
-/// - `input` must be a valid null-terminated UTF-8 string
-/// - Returns a newly allocated string that must be freed with `nemo_free_string`
-#[no_mangle]
-pub unsafe extern "C" fn nemo_normalize_sentence_aviation_with_max_span(
-    input: *const c_char,
-    max_span_tokens: u32,
-) -> *mut c_char {
-    if input.is_null() {
-        return ptr::null_mut();
-    }
-
-    let c_str = match CStr::from_ptr(input).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
-
-    let result = normalize_sentence_aviation_with_max_span(c_str, max_span_tokens as usize);
+    let options = options_from_ffi(concat_compound_numbers, max_span_tokens);
+    let result = normalize_sentence_with_options(c_str, options);
 
     match CString::new(result) {
         Ok(c_string) => c_string.into_raw(),
@@ -458,10 +432,10 @@ mod tests {
     }
 
     #[test]
-    fn test_ffi_normalize_aviation() {
+    fn test_ffi_normalize_with_options_concat_compound() {
         unsafe {
             let input = CString::new("seven eighty eight").unwrap();
-            let result = nemo_normalize_aviation(input.as_ptr());
+            let result = nemo_normalize_with_options(input.as_ptr(), 1);
             assert!(!result.is_null());
             let result_str = CStr::from_ptr(result).to_str().unwrap();
             assert_eq!(result_str, "788");
@@ -470,10 +444,10 @@ mod tests {
     }
 
     #[test]
-    fn test_ffi_normalize_sentence_aviation() {
+    fn test_ffi_normalize_sentence_with_options_concat_compound() {
         unsafe {
             let input = CString::new("United seven eighty eight").unwrap();
-            let result = nemo_normalize_sentence_aviation(input.as_ptr());
+            let result = nemo_normalize_sentence_with_options(input.as_ptr(), 1, 0);
             assert!(!result.is_null());
             let result_str = CStr::from_ptr(result).to_str().unwrap();
             assert_eq!(result_str, "United 788");

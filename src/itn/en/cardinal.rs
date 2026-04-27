@@ -199,10 +199,17 @@ pub fn words_to_number(input: &str) -> Option<i128> {
 
 /// Aviation / flight-number / call-sign reading of a number phrase.
 ///
-/// Recognises a leading run of single-digit words concatenated with a trailing
-/// grammatical compound, e.g. `"seven eighty eight"` → `788`,
-/// `"two thirty five"` → `235`. Falls back to [`words_to_number`] when the
-/// aviation pattern does not apply (no digit prefix, scale word present, etc.).
+/// Recognises consecutive 0-99 compounds and concatenates them rather than
+/// summing. Examples:
+/// - `"seven eighty eight"` → `788` (digit + tens+ones compound)
+/// - `"two thirty five"` → `235`
+/// - `"thirty five sixty two"` → `3562` (two tens+ones compounds — fixes #23)
+/// - `"twenty one"` → `21` (single chunk; identical to grammatical)
+///
+/// Falls back to [`words_to_number`] (grammatical addition) when the chunk
+/// pattern does not apply, including any phrase containing a scale word
+/// (`hundred`, `thousand`, ...). This preserves `"two thousand seventeen"`
+/// → `2017`.
 ///
 /// This is **opt-in**: callers reach for it explicitly from flight-number /
 /// call-sign contexts. Generic ITN/TN dispatch keeps using [`words_to_number`]
@@ -230,28 +237,59 @@ pub fn words_to_number_aviation(input: &str) -> Option<i128> {
             .ok();
     }
 
-    // Aviation flight-number style: digit prefix + grammatical compound.
-    // "seven eighty eight" → "7" ‖ 88 = 788. Skipped if a scale word appears,
-    // since "two thousand seventeen" must stay grammatical (= 2017, not 22017).
+    // Concatenated 0-99 compound chunks. Skipped if a scale word appears,
+    // since `"two thousand seventeen"` must stay grammatical (= 2017).
     let has_scale = words.iter().any(|w| SCALES.contains_key(*w));
     if !has_scale {
-        let prefix_len = words
-            .iter()
-            .take_while(|w| single_digit_char(w).is_some())
-            .count();
-        if prefix_len >= 1 && prefix_len < words.len() {
-            if let Some(rest_num) = grammatical_words_to_number(&words[prefix_len..]) {
-                let prefix: String = words[..prefix_len]
-                    .iter()
-                    .map(|w| single_digit_char(w).unwrap())
-                    .collect();
-                let combined = format!("{}{}", prefix, rest_num);
+        if let Some(chunks) = peel_compound_chunks(&words) {
+            if chunks.len() >= 2 {
+                let combined: String = chunks.iter().map(|n| n.to_string()).collect();
                 return combined.parse::<i128>().ok();
             }
         }
     }
 
     grammatical_words_to_number(&words)
+}
+
+/// Greedily peel `words` into 0-99 number chunks. Each chunk is one of:
+/// - A single ONES word (0-19), e.g. `"seven"` → 7, `"sixteen"` → 16
+/// - A single TENS word (20, 30, ... 90), e.g. `"twenty"` → 20
+/// - A TENS word followed by a ones word (1-9), e.g. `"twenty one"` → 21
+///
+/// Returns `None` if any token isn't a recognised number word, so this
+/// function refuses to swallow non-number tokens. `"and"` / `"a"` filler
+/// must already be removed by the caller.
+fn peel_compound_chunks(words: &[&str]) -> Option<Vec<i128>> {
+    let mut chunks = Vec::new();
+    let mut i = 0;
+    while i < words.len() {
+        if let Some(&tens) = TENS.get(words[i]) {
+            // Greedy: try TENS + ones (1-9) before falling back to standalone.
+            if i + 1 < words.len() {
+                if let Some(&ones) = ONES.get(words[i + 1]) {
+                    if (1..=9).contains(&ones) {
+                        chunks.push((tens + ones) as i128);
+                        i += 2;
+                        continue;
+                    }
+                }
+            }
+            chunks.push(tens as i128);
+            i += 1;
+        } else if let Some(&ones) = ONES.get(words[i]) {
+            // 0-19 standalone (covers digit words, ten, and teens).
+            chunks.push(ones as i128);
+            i += 1;
+        } else {
+            return None;
+        }
+    }
+    if chunks.is_empty() {
+        None
+    } else {
+        Some(chunks)
+    }
 }
 
 /// Parse a grammatical English number with running-sum + scale multiplication.
