@@ -1005,31 +1005,119 @@ pub fn normalize_sentence_with_options(input: &str, options: NormalizeOptions) -
     normalize_sentence_inner(input, max_span, options.concat_compound_numbers)
 }
 
-/// Sentence-mode dispatch loop. The `concat_compound` flag is forwarded to
-/// [`parse_span`] so each span sees the right tagger priorities.
-fn normalize_sentence_inner(input: &str, max_span_tokens: usize, concat_compound: bool) -> String {
-    let trimmed = input.trim();
-    if trimmed.is_empty() {
-        return trimmed.to_string();
+/// Per-pretoken record: the token text plus the original separator that
+/// preceded it (`" "` for whitespace, `""` if the token came from a
+/// punctuation split or starts the input).
+struct Pretoken {
+    text: String,
+    sep: &'static str,
+}
+
+/// ASCII punctuation characters that are split off the leading or trailing
+/// edge of a whitespace-separated word so taggers see clean number phrases
+/// (issue #21). Apostrophes and hyphens are intentionally excluded so
+/// contractions ("don't") and hyphenated words ("twenty-one") stay intact.
+fn is_split_punct(c: char) -> bool {
+    matches!(
+        c,
+        ',' | '.' | ';' | ':' | '!' | '?' | '(' | ')' | '[' | ']' | '{' | '}' | '"'
+    )
+}
+
+/// Split each whitespace-separated word into leading punctuation, core, and
+/// trailing punctuation pretokens, preserving the original leading separator
+/// on the first piece of each word so output reconstruction matches input
+/// spacing.
+fn pretokenize(input: &str) -> Vec<Pretoken> {
+    let mut out: Vec<Pretoken> = Vec::new();
+    let mut first_word = true;
+
+    for word in input.split_whitespace() {
+        let word_lead: &'static str = if first_word { "" } else { " " };
+        first_word = false;
+
+        // char_indices keeps multi-byte chars intact when slicing.
+        let chars: Vec<(usize, char)> = word.char_indices().collect();
+        if chars.is_empty() {
+            continue;
+        }
+
+        let mut start = 0usize;
+        while start < chars.len() && is_split_punct(chars[start].1) {
+            start += 1;
+        }
+        let mut end = chars.len();
+        while end > start && is_split_punct(chars[end - 1].1) {
+            end -= 1;
+        }
+
+        let mut next_sep = word_lead;
+
+        // Leading punctuation: each character becomes its own pretoken.
+        for &(_, ch) in &chars[..start] {
+            out.push(Pretoken {
+                text: ch.to_string(),
+                sep: next_sep,
+            });
+            next_sep = "";
+        }
+
+        // Core text (may be empty if the whole word was punctuation).
+        if start < end {
+            let core_start = chars[start].0;
+            let core_end = if end < chars.len() {
+                chars[end].0
+            } else {
+                word.len()
+            };
+            out.push(Pretoken {
+                text: word[core_start..core_end].to_string(),
+                sep: next_sep,
+            });
+            next_sep = "";
+        }
+
+        // Trailing punctuation.
+        for &(_, ch) in &chars[end..] {
+            out.push(Pretoken {
+                text: ch.to_string(),
+                sep: next_sep,
+            });
+            next_sep = "";
+        }
     }
 
+    out
+}
+
+/// Shared sliding-window match loop used by the three sentence-mode entry
+/// points. `parser` returns `Some((replacement, score))` if the joined span
+/// can be normalized.
+fn sentence_loop<F>(pretokens: &[Pretoken], max_span_tokens: usize, parser: F) -> String
+where
+    F: Fn(&str) -> Option<(String, u8)>,
+{
     let max_span = if max_span_tokens == 0 {
         1
     } else {
         max_span_tokens
     };
-    let tokens: Vec<&str> = trimmed.split_whitespace().collect();
-    let mut out: Vec<String> = Vec::with_capacity(tokens.len());
+
+    let mut out = String::new();
     let mut i = 0usize;
 
-    while i < tokens.len() {
-        let max_end = usize::min(tokens.len(), i + max_span);
+    while i < pretokens.len() {
+        let max_end = usize::min(pretokens.len(), i + max_span);
         let mut best: Option<(usize, String, u8)> = None;
 
         // Longest-span-first search keeps replacements stable and non-overlapping.
         for end in (i + 1..=max_end).rev() {
-            let span = tokens[i..end].join(" ");
-            let Some((candidate, score)) = parse_span(&span, concat_compound) else {
+            let span: String = pretokens[i..end]
+                .iter()
+                .map(|p| p.text.as_str())
+                .collect::<Vec<_>>()
+                .join(" ");
+            let Some((candidate, score)) = parser(&span) else {
                 continue;
             };
 
@@ -1056,15 +1144,31 @@ fn normalize_sentence_inner(input: &str, max_span_tokens: usize, concat_compound
         }
 
         if let Some((end, replacement, _)) = best {
-            out.push(replacement);
+            out.push_str(pretokens[i].sep);
+            out.push_str(&replacement);
             i = end;
         } else {
-            out.push(tokens[i].to_string());
+            out.push_str(pretokens[i].sep);
+            out.push_str(&pretokens[i].text);
             i += 1;
         }
     }
 
-    out.join(" ")
+    out
+}
+
+/// Sentence-mode dispatch loop. The `concat_compound` flag is forwarded to
+/// [`parse_span`] so each span sees the right tagger priorities.
+fn normalize_sentence_inner(input: &str, max_span_tokens: usize, concat_compound: bool) -> String {
+    let trimmed = input.trim();
+    if trimmed.is_empty() {
+        return trimmed.to_string();
+    }
+
+    let pretokens = pretokenize(trimmed);
+    sentence_loop(&pretokens, max_span_tokens, |span| {
+        parse_span(span, concat_compound)
+    })
 }
 
 // ── Text Normalization (written → spoken) ─────────────────────────────
@@ -1210,56 +1314,10 @@ pub fn tn_normalize_sentence_with_max_span_lang(
                 return trimmed.to_string();
             }
 
-            let max_span = if max_span_tokens == 0 {
-                1
-            } else {
-                max_span_tokens
-            };
-            let tokens: Vec<&str> = trimmed.split_whitespace().collect();
-            let mut out: Vec<String> = Vec::with_capacity(tokens.len());
-            let mut i = 0usize;
-
-            while i < tokens.len() {
-                let max_end = usize::min(tokens.len(), i + max_span);
-                let mut best: Option<(usize, String, u8)> = None;
-
-                for end in (i + 1..=max_end).rev() {
-                    let span = tokens[i..end].join(" ");
-                    let Some((candidate, score)) = tn_parse_span_lang(&span, lang) else {
-                        continue;
-                    };
-
-                    let candidate_trimmed = candidate.trim();
-                    if candidate_trimmed.is_empty() || candidate_trimmed == span {
-                        continue;
-                    }
-
-                    let candidate_len = end - i;
-                    match &best {
-                        None => {
-                            best = Some((end, candidate, score));
-                        }
-                        Some((best_end, _, best_score)) => {
-                            let best_len = *best_end - i;
-                            if candidate_len > best_len
-                                || (candidate_len == best_len && score > *best_score)
-                            {
-                                best = Some((end, candidate, score));
-                            }
-                        }
-                    }
-                }
-
-                if let Some((end, replacement, _)) = best {
-                    out.push(replacement);
-                    i = end;
-                } else {
-                    out.push(tokens[i].to_string());
-                    i += 1;
-                }
-            }
-
-            out.join(" ")
+            let pretokens = pretokenize(trimmed);
+            sentence_loop(&pretokens, max_span_tokens, |span| {
+                tn_parse_span_lang(span, lang)
+            })
         }
     }
 }
@@ -1271,56 +1329,8 @@ pub fn tn_normalize_sentence_with_max_span(input: &str, max_span_tokens: usize) 
         return trimmed.to_string();
     }
 
-    let max_span = if max_span_tokens == 0 {
-        1
-    } else {
-        max_span_tokens
-    };
-    let tokens: Vec<&str> = trimmed.split_whitespace().collect();
-    let mut out: Vec<String> = Vec::with_capacity(tokens.len());
-    let mut i = 0usize;
-
-    while i < tokens.len() {
-        let max_end = usize::min(tokens.len(), i + max_span);
-        let mut best: Option<(usize, String, u8)> = None;
-
-        for end in (i + 1..=max_end).rev() {
-            let span = tokens[i..end].join(" ");
-            let Some((candidate, score)) = tn_parse_span(&span) else {
-                continue;
-            };
-
-            let candidate_trimmed = candidate.trim();
-            if candidate_trimmed.is_empty() || candidate_trimmed == span {
-                continue;
-            }
-
-            let candidate_len = end - i;
-            match &best {
-                None => {
-                    best = Some((end, candidate, score));
-                }
-                Some((best_end, _, best_score)) => {
-                    let best_len = *best_end - i;
-                    if candidate_len > best_len
-                        || (candidate_len == best_len && score > *best_score)
-                    {
-                        best = Some((end, candidate, score));
-                    }
-                }
-            }
-        }
-
-        if let Some((end, replacement, _)) = best {
-            out.push(replacement);
-            i = end;
-        } else {
-            out.push(tokens[i].to_string());
-            i += 1;
-        }
-    }
-
-    out.join(" ")
+    let pretokens = pretokenize(trimmed);
+    sentence_loop(&pretokens, max_span_tokens, tn_parse_span)
 }
 
 #[cfg(test)]
