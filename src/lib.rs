@@ -173,60 +173,31 @@ pub fn normalize(input: &str) -> String {
     input.to_string()
 }
 
-/// Normalize a single input with **aviation flight-number reading
-/// prioritized**.
+/// Single-expression normalize with caller-specified [`NormalizeOptions`].
 ///
-/// Same dispatch as [`normalize`], with one twist: `cardinal::parse_aviation`
+/// When `options.concat_compound_numbers` is `true`, `cardinal::parse_aviation`
 /// is tried *after* the high-confidence taggers (`custom_rules`, `whitelist`,
 /// `punctuation`, `word`) but *before* `time` and `date`. The result: when
 /// the whole input is a number-only phrase like `"two thirty five"` or
-/// `"seven eighty eight"`, the aviation reading wins (`"235"`, `"788"`)
-/// instead of being eaten as a time (`"02:35"`) or as an old-year via the
-/// date tagger.
-///
-/// Use this from flight-number / call-sign / aviation-radio contexts. Phrases
-/// that aren't pure number words still flow through the rest of the
-/// pipeline normally (`"five dollars"` → `"$5"` via the money tagger).
-///
-/// ```
-/// use text_processing_rs::normalize_aviation;
-///
-/// assert_eq!(normalize_aviation("seven eighty eight"), "788");
-/// assert_eq!(normalize_aviation("two thirty five"), "235");
-/// // Non-number phrases are unaffected.
-/// assert_eq!(normalize_aviation("hello world"), "hello world");
-/// ```
-pub fn normalize_aviation(input: &str) -> String {
-    normalize_with_options(
-        input,
-        NormalizeOptions::new().with_concat_compound_numbers(true),
-    )
-}
-
-/// Unified single-expression normalize entry point.
-///
-/// Switches between standard and concat-compound (aviation-style) dispatch
-/// based on `options.concat_compound_numbers`. The `max_span_tokens` field on
-/// [`NormalizeOptions`] is ignored here — it only applies to
-/// [`normalize_sentence_with_options`].
+/// `"seven eighty eight"`, concat-compound reading wins (`"235"`, `"788"`)
+/// instead of being eaten as a time (`"02:35"`) or an old-year via the date
+/// tagger. Non-number phrases still flow through the rest of the pipeline
+/// (`"five dollars"` → `"$5"` via the money tagger).
 ///
 /// ```
 /// use text_processing_rs::{normalize_with_options, NormalizeOptions};
 ///
 /// let opts = NormalizeOptions::new().with_concat_compound_numbers(true);
 /// assert_eq!(normalize_with_options("seven eighty eight", opts), "788");
+/// assert_eq!(normalize_with_options("two thirty five", opts), "235");
+/// // Non-number phrases are unaffected.
+/// assert_eq!(normalize_with_options("hello world", opts), "hello world");
 /// ```
 pub fn normalize_with_options(input: &str, options: NormalizeOptions) -> String {
-    if options.concat_compound_numbers {
-        normalize_aviation_inner(input)
-    } else {
-        normalize(input)
+    if !options.concat_compound_numbers {
+        return normalize(input);
     }
-}
 
-/// Aviation single-expression dispatch. Kept private; callers go through
-/// [`normalize_aviation`] or [`normalize_with_options`].
-fn normalize_aviation_inner(input: &str) -> String {
     let input = input.trim();
 
     // High-confidence rules still win.
@@ -243,14 +214,13 @@ fn normalize_aviation_inner(input: &str) -> String {
         return result;
     }
 
-    // Aviation cardinal beats time/date here. This is the whole point of
-    // the aviation domain.
+    // Concat-compound cardinal beats time/date.
     if let Some(num) = cardinal::parse_aviation(input) {
         return num;
     }
 
-    // Fall back to the standard pipeline for anything aviation cardinal
-    // didn't recognise (money, measure, decimal, ordinal, telephone, etc.).
+    // Fall back to the standard pipeline for anything not recognised
+    // (money, measure, decimal, ordinal, telephone, etc.).
     normalize(input)
 }
 
@@ -987,11 +957,12 @@ const DEFAULT_MAX_SPAN_TOKENS: usize = 16;
 ///
 /// Excluded in sentence mode: `word` and `telephone` (over-fire on natural language).
 ///
-/// `aviation`: when `true`, `cardinal::parse_aviation` is tried at priority 89
-/// (above `date`=88 and `time`=85, below `measure`=90 / `money`=95) and the
-/// regular cardinal fallback at 70 is skipped (the aviation reader already
-/// falls back to grammatical when no digit prefix is present).
-fn parse_span(span: &str, aviation: bool) -> Option<(String, u8)> {
+/// `concat_compound`: when `true`, `cardinal::parse_aviation` is tried at
+/// priority 89 (above `date`=88 and `time`=85, below `measure`=90 /
+/// `money`=95) and the regular cardinal fallback at 70 is skipped (the
+/// concat-compound reader already falls back to grammatical when the
+/// concat pattern does not apply).
+fn parse_span(span: &str, concat_compound: bool) -> Option<(String, u8)> {
     let token_count = span.split_whitespace().count();
     if token_count == 0 {
         return None;
@@ -1013,12 +984,12 @@ fn parse_span(span: &str, aviation: bool) -> Option<(String, u8)> {
         return Some((result, 90));
     }
 
-    // Aviation cardinal opt-in: priority 89, beats date/time. No short-span
-    // gate — aviation mode is opt-in, so the caller has accepted aggressive
-    // matching across longer spans like "one thousand two hundred thirty
-    // four". `parse_aviation` falls back to grammatical when the digit-prefix
-    // pattern does not apply, so non-aviation phrases still resolve.
-    if aviation {
+    // Concat-compound cardinal opt-in: priority 89, beats date/time. No
+    // short-span gate — this is opt-in, so the caller has accepted
+    // aggressive matching across longer spans like "one thousand two
+    // hundred thirty four". `parse_aviation` falls back to grammatical when
+    // the concat pattern does not apply, so non-concat phrases still resolve.
+    if concat_compound {
         if let Some(result) = cardinal::parse_aviation(span) {
             return Some((result, 89));
         }
@@ -1040,9 +1011,9 @@ fn parse_span(span: &str, aviation: bool) -> Option<(String, u8)> {
         return Some((result, 75));
     }
 
-    // Default cardinal fallback (priority 70). In aviation mode the cardinal
-    // path is already covered by the priority-89 branch above.
-    if !aviation && token_count <= 4 {
+    // Default cardinal fallback (priority 70). In concat-compound mode the
+    // cardinal path is already covered by the priority-89 branch above.
+    if !concat_compound && token_count <= 4 {
         if let Some(result) = cardinal::parse(span) {
             return Some((result, 70));
         }
@@ -1064,7 +1035,7 @@ fn parse_span(span: &str, aviation: bool) -> Option<(String, u8)> {
 /// assert_eq!(normalize_sentence("hello world"), "hello world");
 /// ```
 pub fn normalize_sentence(input: &str) -> String {
-    normalize_sentence_with_max_span(input, DEFAULT_MAX_SPAN_TOKENS)
+    normalize_sentence_inner(input, DEFAULT_MAX_SPAN_TOKENS, false)
 }
 
 /// Unified sentence-mode entry point.
@@ -1096,69 +1067,9 @@ pub fn normalize_sentence_with_options(input: &str, options: NormalizeOptions) -
     normalize_sentence_inner(input, max_span, options.concat_compound_numbers)
 }
 
-/// Sentence-mode equivalent of [`normalize_aviation`]. Aviation cardinal
-/// runs at priority 89 (above `date`=88 / `time`=85, below `measure`=90 /
-/// `money`=95), so flight-number-style spans win over date/time while
-/// measure / money phrases keep their existing semantics.
-///
-/// ```
-/// use text_processing_rs::normalize_sentence_aviation;
-///
-/// // Aviation cardinal beats time/date for pure-number spans.
-/// assert_eq!(
-///     normalize_sentence_aviation("United seven eighty eight"),
-///     "United 788"
-/// );
-/// assert_eq!(
-///     normalize_sentence_aviation("flight two thirty five departs at gate four"),
-///     "flight 235 departs at gate 4"
-/// );
-/// // Non-aviation spans flow through normally.
-/// assert_eq!(
-///     normalize_sentence_aviation("I have twenty one apples"),
-///     "I have 21 apples"
-/// );
-/// ```
-pub fn normalize_sentence_aviation(input: &str) -> String {
-    normalize_sentence_with_options(
-        input,
-        NormalizeOptions::new().with_concat_compound_numbers(true),
-    )
-}
-
-/// [`normalize_sentence_aviation`] with a configurable max span size.
-pub fn normalize_sentence_aviation_with_max_span(input: &str, max_span_tokens: usize) -> String {
-    normalize_sentence_with_options(
-        input,
-        NormalizeOptions::new()
-            .with_concat_compound_numbers(true)
-            .with_max_span_tokens(max_span_tokens),
-    )
-}
-
-/// Normalize a full sentence with a configurable max span size.
-///
-/// `max_span_tokens` controls the maximum number of consecutive tokens
-/// that will be considered as a single normalizable expression.
-/// Smaller values are faster but may miss multi-word expressions.
-/// Larger values catch more patterns but do more work per token.
-///
-/// ```
-/// use text_processing_rs::normalize_sentence_with_max_span;
-///
-/// // Short span: only catches small expressions
-/// assert_eq!(normalize_sentence_with_max_span("I have twenty one apples", 4), "I have 21 apples");
-/// ```
-pub fn normalize_sentence_with_max_span(input: &str, max_span_tokens: usize) -> String {
-    normalize_sentence_with_options(
-        input,
-        NormalizeOptions::new().with_max_span_tokens(max_span_tokens),
-    )
-}
-
-/// Sentence-mode dispatch loop. The `aviation` flag is forwarded to
+/// Sentence-mode dispatch loop. The `concat_compound` flag is forwarded to
 /// [`parse_span`] so each span sees the right tagger priorities.
-fn normalize_sentence_inner(input: &str, max_span_tokens: usize, aviation: bool) -> String {
+fn normalize_sentence_inner(input: &str, max_span_tokens: usize, concat_compound: bool) -> String {
     let trimmed = input.trim();
     if trimmed.is_empty() {
         return trimmed.to_string();
@@ -1180,7 +1091,7 @@ fn normalize_sentence_inner(input: &str, max_span_tokens: usize, aviation: bool)
         // Longest-span-first search keeps replacements stable and non-overlapping.
         for end in (i + 1..=max_end).rev() {
             let span = tokens[i..end].join(" ");
-            let Some((candidate, score)) = parse_span(&span, aviation) else {
+            let Some((candidate, score)) = parse_span(&span, concat_compound) else {
                 continue;
             };
 

@@ -16,8 +16,22 @@ enum NemoTextProcessing {
         return String(cString: resultPtr)
     }
 
-    static func normalizeSentence(_ input: String, maxSpanTokens: UInt32) -> String {
-        guard let resultPtr = nemo_normalize_sentence_with_max_span(input, maxSpanTokens) else { return input }
+    static func normalizeSentence(
+        _ input: String,
+        concatCompoundNumbers: Bool = false,
+        maxSpanTokens: UInt32 = 0
+    ) -> String {
+        let concatFlag: UInt32 = concatCompoundNumbers ? 1 : 0
+        guard let resultPtr = nemo_normalize_sentence_with_options(
+            input, concatFlag, maxSpanTokens
+        ) else { return input }
+        defer { nemo_free_string(resultPtr) }
+        return String(cString: resultPtr)
+    }
+
+    static func normalize(_ input: String, concatCompoundNumbers: Bool) -> String {
+        let concatFlag: UInt32 = concatCompoundNumbers ? 1 : 0
+        guard let resultPtr = nemo_normalize_with_options(input, concatFlag) else { return input }
         defer { nemo_free_string(resultPtr) }
         return String(cString: resultPtr)
     }

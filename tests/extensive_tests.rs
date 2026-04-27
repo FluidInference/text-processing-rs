@@ -5,8 +5,8 @@
 //! boundary conditions, roundtrip consistency, and cross-tagger interference.
 
 use text_processing_rs::{
-    normalize, normalize_sentence, normalize_sentence_with_max_span, tn_normalize,
-    tn_normalize_sentence,
+    normalize, normalize_sentence, normalize_sentence_with_options, tn_normalize,
+    tn_normalize_sentence, NormalizeOptions,
 };
 
 // ════════════════════════════════════════════════════════════════════════
@@ -953,7 +953,10 @@ fn test_sentence_itn_single_word_number() {
 #[test]
 fn test_sentence_itn_max_span_tokens() {
     // With max_span=1, multi-word expressions shouldn't be matched
-    let result = normalize_sentence_with_max_span("twenty one", 1);
+    let result = normalize_sentence_with_options(
+        "twenty one",
+        NormalizeOptions::new().with_max_span_tokens(1),
+    );
     // With span=1, "twenty" alone and "one" alone are both single cardinals
     // This tests the sliding window behavior
     assert_eq!(result, "20 1");

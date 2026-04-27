@@ -7,10 +7,14 @@ mod common;
 
 use std::path::Path;
 use text_processing_rs::{
-    custom_rules, normalize, normalize_aviation, normalize_sentence, normalize_sentence_aviation,
-    normalize_sentence_with_max_span, normalize_sentence_with_options, normalize_with_options,
-    NormalizeOptions,
+    custom_rules, normalize, normalize_sentence, normalize_sentence_with_options,
+    normalize_with_options, NormalizeOptions,
 };
+
+/// Test helper: shorthand for the concat-compound (aviation-style) options.
+fn concat_opts() -> NormalizeOptions {
+    NormalizeOptions::new().with_concat_compound_numbers(true)
+}
 
 fn print_failures(results: &common::TestResults) {
     for f in &results.failures {
@@ -554,7 +558,10 @@ fn test_max_span_tokens() {
 
     // Span of 2 is too short to catch "five dollars and fifty cents" (5 tokens)
     // but can still catch "five dollars" (2 tokens) → "$5"
-    let result = normalize_sentence_with_max_span("five dollars and fifty cents for lunch", 2);
+    let result = normalize_sentence_with_options(
+        "five dollars and fifty cents for lunch",
+        NormalizeOptions::new().with_max_span_tokens(2),
+    );
     // With max_span=2, it can only see 2 tokens at a time
     // "five dollars" → "$5", "and" → pass, "fifty cents" → "$0.50"
     // The exact behavior depends on money tagger matching "fifty cents" alone
@@ -563,7 +570,10 @@ fn test_max_span_tokens() {
     assert_ne!(result, "$5.50 for lunch");
 
     // Span of 1 should basically only catch single-word tokens
-    let result_1 = normalize_sentence_with_max_span("I have twenty one apples", 1);
+    let result_1 = normalize_sentence_with_options(
+        "I have twenty one apples",
+        NormalizeOptions::new().with_max_span_tokens(1),
+    );
     // "twenty" alone isn't meaningful as a cardinal in most taggers,
     // but "one" alone → "1"
     println!("max_span=1: {}", result_1);
@@ -900,12 +910,12 @@ fn test_spelled_digit_cardinal_does_not_break_normal_cardinals() {
     assert_eq!(normalize("one thousand two hundred thirty four"), "1234");
 }
 
-/// Issue #14: aviation flight-number reading is exposed as an **opt-in**
-/// pipeline. Generic dispatch keeps upstream NeMo semantics (date wins for
-/// `"twenty one forty two"`, time wins for `"two thirty five"`); callers
-/// who know they're in aviation context reach for the `*_aviation`
-/// variants, which run aviation cardinal at priority 89 (above date 88
-/// and time 85).
+/// Issue #14: concat-compound (aviation-style) reading is exposed as an
+/// **opt-in** option. Default dispatch keeps upstream NeMo semantics
+/// (date wins for `"twenty one forty two"`, time wins for `"two thirty
+/// five"`); callers who know they're in aviation context pass
+/// `concat_compound_numbers: true`, which runs the concat cardinal at
+/// priority 89 (above date 88 and time 85).
 #[test]
 fn test_issue_14_default_dispatch_unchanged() {
     // Scale-word grammar is preserved everywhere.
@@ -922,57 +932,61 @@ fn test_issue_14_default_dispatch_unchanged() {
     assert_eq!(normalize("seven eighty eight"), "788");
 }
 
-/// Aviation pipeline `normalize_aviation` (single-input). Aviation cardinal
-/// runs early enough to beat time/date.
+/// Single-input concat-compound mode. Aviation cardinal runs early enough
+/// to beat time/date.
 #[test]
 fn test_issue_14_normalize_aviation() {
-    assert_eq!(normalize_aviation("seven eighty eight"), "788");
+    let opts = concat_opts();
+    assert_eq!(normalize_with_options("seven eighty eight", opts), "788");
     // Beats time tagger.
-    assert_eq!(normalize_aviation("two thirty five"), "235");
+    assert_eq!(normalize_with_options("two thirty five", opts), "235");
     // Two consecutive 0-99 compounds concatenate (issue #23 fix).
     // Was previously `"63"` (= 20+1+40+2) under the old grammatical fallback.
-    assert_eq!(normalize_aviation("twenty one forty two"), "2142");
+    assert_eq!(normalize_with_options("twenty one forty two", opts), "2142");
     // Non-number phrases fall through unchanged.
-    assert_eq!(normalize_aviation("hello world"), "hello world");
+    assert_eq!(normalize_with_options("hello world", opts), "hello world");
     // Money / measure / decimal / ordinal still work via fallback to
     // standard `normalize`.
-    assert_eq!(normalize_aviation("five dollars"), "$5");
-    assert_eq!(normalize_aviation("five point two"), "5.2");
-    assert_eq!(normalize_aviation("twenty first"), "21st");
+    assert_eq!(normalize_with_options("five dollars", opts), "$5");
+    assert_eq!(normalize_with_options("five point two", opts), "5.2");
+    assert_eq!(normalize_with_options("twenty first", opts), "21st");
     // Scale-word grammar still wins (no digit prefix → grammatical).
-    assert_eq!(normalize_aviation("two thousand seventeen"), "2017");
+    assert_eq!(
+        normalize_with_options("two thousand seventeen", opts),
+        "2017"
+    );
 }
 
-/// Aviation pipeline `normalize_sentence_aviation` (sentence mode). The
-/// cardinal-aviation priority bump (89) makes flight-number spans win
-/// over date/time in real sentences.
+/// Sentence-mode concat-compound. The cardinal-aviation priority bump
+/// (89) makes flight-number spans win over date/time in real sentences.
 #[test]
 fn test_issue_14_normalize_sentence_aviation() {
+    let opts = concat_opts();
     // The original bug from issue #14.
     assert_eq!(
-        normalize_sentence_aviation("United seven eighty eight"),
+        normalize_sentence_with_options("United seven eighty eight", opts),
         "United 788"
     );
     assert_eq!(
-        normalize_sentence_aviation("flight two thirty five departs at gate four"),
+        normalize_sentence_with_options("flight two thirty five departs at gate four", opts),
         "flight 235 departs at gate 4"
     );
 
     // Scale-word grammar is preserved.
     assert_eq!(
-        normalize_sentence_aviation("two thousand seventeen"),
+        normalize_sentence_with_options("two thousand seventeen", opts),
         "2017"
     );
 
     // Money / measure stay above aviation (priority 95 / 90 > 89).
     assert_eq!(
-        normalize_sentence_aviation("I owe five dollars"),
+        normalize_sentence_with_options("I owe five dollars", opts),
         "I owe $5"
     );
 
     // Plain natural language is untouched.
     assert_eq!(
-        normalize_sentence_aviation("I have twenty one apples"),
+        normalize_sentence_with_options("I have twenty one apples", opts),
         "I have 21 apples"
     );
 }
@@ -989,8 +1003,8 @@ fn test_options_default_matches_normalize() {
     assert_eq!(normalize_with_options("two thirty five", opts), "02:35");
 }
 
-/// `concat_compound_numbers: true` should make `normalize_with_options`
-/// behave like `normalize_aviation`.
+/// `concat_compound_numbers: true` enables aviation-style concat-compound
+/// reading on the unified single-expression path.
 #[test]
 fn test_options_concat_matches_aviation() {
     let opts = NormalizeOptions::new().with_concat_compound_numbers(true);
@@ -1019,7 +1033,8 @@ fn test_sentence_options_default_matches_default() {
     );
 }
 
-/// Sentence mode with concat enabled matches `normalize_sentence_aviation`.
+/// Sentence mode with concat enabled produces aviation-style flight-number
+/// spans.
 #[test]
 fn test_sentence_options_concat_compound() {
     let opts = NormalizeOptions::new().with_concat_compound_numbers(true);
@@ -1072,30 +1087,41 @@ fn test_sentence_options_builder_compose() {
 /// `"thirty five sixty two"` → `"3562"`, not `"97"` (= 35 + 62).
 #[test]
 fn test_issue_23_compound_concat() {
+    let opts = concat_opts();
+
     // Whole-input single-expression form.
-    assert_eq!(normalize_aviation("thirty five sixty two"), "3562");
+    assert_eq!(
+        normalize_with_options("thirty five sixty two", opts),
+        "3562"
+    );
 
     // Sentence form — the original report.
     assert_eq!(
-        normalize_sentence_aviation(
-            "Alright thirty five sixty two appreciate your help United seven eighty eight"
+        normalize_sentence_with_options(
+            "Alright thirty five sixty two appreciate your help United seven eighty eight",
+            opts,
         ),
         "Alright 3562 appreciate your help United 788"
     );
 
-    // Through the unified options API too.
-    let opts = NormalizeOptions::new().with_concat_compound_numbers(true);
+    // Through the sentence options API too.
     assert_eq!(
         normalize_sentence_with_options("thirty five sixty two", opts),
         "3562"
     );
 
     // Mixed digit prefix + compounds: "two thirty five sixty two" → 23562.
-    assert_eq!(normalize_aviation("two thirty five sixty two"), "23562");
+    assert_eq!(
+        normalize_with_options("two thirty five sixty two", opts),
+        "23562"
+    );
 
     // Single chunks must NOT concatenate (preserves grammatical reading).
-    assert_eq!(normalize_aviation("twenty one"), "21");
+    assert_eq!(normalize_with_options("twenty one", opts), "21");
 
     // Scale words still anchor grammatical addition.
-    assert_eq!(normalize_aviation("two thousand seventeen"), "2017");
+    assert_eq!(
+        normalize_with_options("two thousand seventeen", opts),
+        "2017"
+    );
 }

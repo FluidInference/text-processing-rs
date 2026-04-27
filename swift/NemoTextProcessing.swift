@@ -59,18 +59,53 @@ public enum NemoTextProcessing {
         return String(cString: resultPtr)
     }
 
-    /// Normalize a full sentence with a configurable max span size.
+    /// Normalize a full sentence with caller-specified options.
     ///
     /// - Parameters:
     ///   - input: Sentence containing spoken-form spans
-    ///   - maxSpanTokens: Maximum consecutive tokens per normalizable span (default 16)
+    ///   - concatCompoundNumbers: When true, consecutive 0-99 number words
+    ///     concatenate (e.g. `"thirty five sixty two"` → `"3562"`,
+    ///     `"seven eighty eight"` → `"788"`) instead of adding.
+    ///   - maxSpanTokens: Maximum consecutive tokens per normalizable span.
+    ///     Pass `0` to use the library default (16).
     /// - Returns: Sentence with spoken-form spans replaced
-    public static func normalizeSentence(_ input: String, maxSpanTokens: UInt32) -> String {
+    public static func normalizeSentence(
+        _ input: String,
+        concatCompoundNumbers: Bool = false,
+        maxSpanTokens: UInt32 = 0
+    ) -> String {
         guard let cString = input.cString(using: .utf8) else {
             return input
         }
 
-        guard let resultPtr = nemo_normalize_sentence_with_max_span(cString, maxSpanTokens) else {
+        let concatFlag: UInt32 = concatCompoundNumbers ? 1 : 0
+        guard let resultPtr = nemo_normalize_sentence_with_options(
+            cString, concatFlag, maxSpanTokens
+        ) else {
+            return input
+        }
+
+        defer { nemo_free_string(resultPtr) }
+
+        return String(cString: resultPtr)
+    }
+
+    /// Normalize a single spoken-form expression with caller-specified options.
+    ///
+    /// - Parameters:
+    ///   - input: Spoken-form text
+    ///   - concatCompoundNumbers: See `normalizeSentence(_:concatCompoundNumbers:maxSpanTokens:)`.
+    /// - Returns: Written-form text, or original if no normalization applies.
+    public static func normalize(
+        _ input: String,
+        concatCompoundNumbers: Bool
+    ) -> String {
+        guard let cString = input.cString(using: .utf8) else {
+            return input
+        }
+
+        let concatFlag: UInt32 = concatCompoundNumbers ? 1 : 0
+        guard let resultPtr = nemo_normalize_with_options(cString, concatFlag) else {
             return input
         }
 
