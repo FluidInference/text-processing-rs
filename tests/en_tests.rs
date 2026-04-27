@@ -1125,3 +1125,68 @@ fn test_issue_23_compound_concat() {
         "2017"
     );
 }
+
+/// Issue #21: trailing punctuation glued to the last word of a number phrase
+/// (e.g. `"eight,"`) used to block the cardinal tagger because
+/// `split_whitespace` left punctuation attached. The pretokenizer splits
+/// leading/trailing ASCII punctuation off each whitespace token while
+/// preserving the original spacing on output.
+#[test]
+fn test_issue_21_trailing_comma() {
+    let opts = concat_opts();
+    assert_eq!(
+        normalize_sentence_with_options(
+            "United seven eighty eight, please come up on frequency one three five point six two five, thanks.",
+            opts,
+        ),
+        "United 788, please come up on frequency 135.625, thanks."
+    );
+}
+
+#[test]
+fn test_issue_21_trailing_period() {
+    let opts = concat_opts();
+    assert_eq!(
+        normalize_sentence_with_options(
+            "United seven eighty eight. please come up on frequency one three five point six two five. thanks.",
+            opts,
+        ),
+        "United 788. please come up on frequency 135.625. thanks."
+    );
+}
+
+/// The pre-existing space-before-punctuation case must continue to work,
+/// preserving the explicit space in output.
+#[test]
+fn test_issue_21_space_before_punct_preserved() {
+    let opts = concat_opts();
+    assert_eq!(
+        normalize_sentence_with_options(
+            "United seven eighty eight , please come up on frequency one three five point six two five , thanks .",
+            opts,
+        ),
+        "United 788 , please come up on frequency 135.625 , thanks ."
+    );
+}
+
+/// Punctuation other than `,` and `.` is also split, including paired
+/// brackets and quotes, while contractions and hyphenated words remain
+/// intact.
+#[test]
+fn test_issue_21_other_punctuation() {
+    // Default options (no concat) still benefits from the fix.
+    assert_eq!(
+        normalize_sentence("I have twenty one apples."),
+        "I have 21 apples."
+    );
+    assert_eq!(
+        normalize_sentence("I have (twenty one) apples!"),
+        "I have (21) apples!"
+    );
+    assert_eq!(normalize_sentence("\"twenty one\" apples"), "\"21\" apples");
+    // Apostrophe inside contraction is NOT split.
+    assert_eq!(
+        normalize_sentence("don't eat twenty one apples"),
+        "don't eat 21 apples"
+    );
+}
