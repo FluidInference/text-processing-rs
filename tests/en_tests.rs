@@ -8,7 +8,8 @@ mod common;
 use std::path::Path;
 use text_processing_rs::{
     custom_rules, normalize, normalize_aviation, normalize_sentence, normalize_sentence_aviation,
-    normalize_sentence_with_max_span,
+    normalize_sentence_with_max_span, normalize_sentence_with_options, normalize_with_options,
+    NormalizeOptions,
 };
 
 fn print_failures(results: &common::TestResults) {
@@ -928,8 +929,9 @@ fn test_issue_14_normalize_aviation() {
     assert_eq!(normalize_aviation("seven eighty eight"), "788");
     // Beats time tagger.
     assert_eq!(normalize_aviation("two thirty five"), "235");
-    // Beats date old-year reading.
-    assert_eq!(normalize_aviation("twenty one forty two"), "63");
+    // Two consecutive 0-99 compounds concatenate (issue #23 fix).
+    // Was previously `"63"` (= 20+1+40+2) under the old grammatical fallback.
+    assert_eq!(normalize_aviation("twenty one forty two"), "2142");
     // Non-number phrases fall through unchanged.
     assert_eq!(normalize_aviation("hello world"), "hello world");
     // Money / measure / decimal / ordinal still work via fallback to
@@ -973,4 +975,127 @@ fn test_issue_14_normalize_sentence_aviation() {
         normalize_sentence_aviation("I have twenty one apples"),
         "I have 21 apples"
     );
+}
+
+// ── Unified options API (issues #15 and #23 follow-up) ────────────────
+
+/// `NormalizeOptions::default()` should behave identically to `normalize`.
+#[test]
+fn test_options_default_matches_normalize() {
+    let opts = NormalizeOptions::default();
+    assert_eq!(normalize_with_options("two hundred", opts), "200");
+    assert_eq!(normalize_with_options("five dollars", opts), "$5");
+    // Time tagger still wins by default.
+    assert_eq!(normalize_with_options("two thirty five", opts), "02:35");
+}
+
+/// `concat_compound_numbers: true` should make `normalize_with_options`
+/// behave like `normalize_aviation`.
+#[test]
+fn test_options_concat_matches_aviation() {
+    let opts = NormalizeOptions::new().with_concat_compound_numbers(true);
+    assert_eq!(normalize_with_options("seven eighty eight", opts), "788");
+    assert_eq!(normalize_with_options("two thirty five", opts), "235");
+    assert_eq!(normalize_with_options("hello world", opts), "hello world");
+    // Money / scale-word fallthrough still works.
+    assert_eq!(normalize_with_options("five dollars", opts), "$5");
+    assert_eq!(
+        normalize_with_options("two thousand seventeen", opts),
+        "2017"
+    );
+}
+
+/// Sentence mode default options match `normalize_sentence`.
+#[test]
+fn test_sentence_options_default_matches_default() {
+    let opts = NormalizeOptions::default();
+    assert_eq!(
+        normalize_sentence_with_options("I have twenty one apples", opts),
+        "I have 21 apples"
+    );
+    assert_eq!(
+        normalize_sentence_with_options("hello world", opts),
+        "hello world"
+    );
+}
+
+/// Sentence mode with concat enabled matches `normalize_sentence_aviation`.
+#[test]
+fn test_sentence_options_concat_compound() {
+    let opts = NormalizeOptions::new().with_concat_compound_numbers(true);
+    assert_eq!(
+        normalize_sentence_with_options("United seven eighty eight", opts),
+        "United 788"
+    );
+    assert_eq!(
+        normalize_sentence_with_options("flight two thirty five departs at gate four", opts),
+        "flight 235 departs at gate 4"
+    );
+}
+
+/// `max_span_tokens` on the options struct is honoured.
+#[test]
+fn test_sentence_options_max_span() {
+    let opts = NormalizeOptions::new().with_max_span_tokens(4);
+    assert_eq!(
+        normalize_sentence_with_options("I have twenty one apples", opts),
+        "I have 21 apples"
+    );
+}
+
+/// `None` for `max_span_tokens` should give the same default as
+/// `normalize_sentence` (16).
+#[test]
+fn test_sentence_options_none_max_span_uses_default() {
+    let with_default = NormalizeOptions::new();
+    let with_explicit = NormalizeOptions::new().with_max_span_tokens(16);
+    let input = "United seven eighty eight";
+    assert_eq!(
+        normalize_sentence_with_options(input, with_default),
+        normalize_sentence_with_options(input, with_explicit),
+    );
+}
+
+/// Builder methods compose: concat flag + max span on one struct.
+#[test]
+fn test_sentence_options_builder_compose() {
+    let opts = NormalizeOptions::new()
+        .with_concat_compound_numbers(true)
+        .with_max_span_tokens(8);
+    assert_eq!(
+        normalize_sentence_with_options("United seven eighty eight", opts),
+        "United 788"
+    );
+}
+
+/// Issue #23: consecutive 0-99 compounds should concatenate, not add.
+/// `"thirty five sixty two"` → `"3562"`, not `"97"` (= 35 + 62).
+#[test]
+fn test_issue_23_compound_concat() {
+    // Whole-input single-expression form.
+    assert_eq!(normalize_aviation("thirty five sixty two"), "3562");
+
+    // Sentence form — the original report.
+    assert_eq!(
+        normalize_sentence_aviation(
+            "Alright thirty five sixty two appreciate your help United seven eighty eight"
+        ),
+        "Alright 3562 appreciate your help United 788"
+    );
+
+    // Through the unified options API too.
+    let opts = NormalizeOptions::new().with_concat_compound_numbers(true);
+    assert_eq!(
+        normalize_sentence_with_options("thirty five sixty two", opts),
+        "3562"
+    );
+
+    // Mixed digit prefix + compounds: "two thirty five sixty two" → 23562.
+    assert_eq!(normalize_aviation("two thirty five sixty two"), "23562");
+
+    // Single chunks must NOT concatenate (preserves grammatical reading).
+    assert_eq!(normalize_aviation("twenty one"), "21");
+
+    // Scale words still anchor grammatical addition.
+    assert_eq!(normalize_aviation("two thousand seventeen"), "2017");
 }

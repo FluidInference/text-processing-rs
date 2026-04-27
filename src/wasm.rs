@@ -5,10 +5,26 @@ use wasm_bindgen::prelude::*;
 use crate::{
     custom_rules, normalize, normalize_aviation, normalize_sentence, normalize_sentence_aviation,
     normalize_sentence_aviation_with_max_span, normalize_sentence_with_max_span,
-    normalize_with_lang, tn_normalize, tn_normalize_lang, tn_normalize_sentence,
-    tn_normalize_sentence_lang, tn_normalize_sentence_with_max_span,
-    tn_normalize_sentence_with_max_span_lang,
+    normalize_sentence_with_options, normalize_with_lang, normalize_with_options, tn_normalize,
+    tn_normalize_lang, tn_normalize_sentence, tn_normalize_sentence_lang,
+    tn_normalize_sentence_with_max_span, tn_normalize_sentence_with_max_span_lang,
+    NormalizeOptions,
 };
+
+/// Build [`NormalizeOptions`] from JS-friendly primitives.
+///
+/// `max_span_tokens == 0` is treated as "use library default" so JS callers
+/// can pass `0` rather than dealing with optional values across the boundary.
+fn js_options(concat_compound_numbers: bool, max_span_tokens: u32) -> NormalizeOptions {
+    NormalizeOptions {
+        concat_compound_numbers,
+        max_span_tokens: if max_span_tokens == 0 {
+            None
+        } else {
+            Some(max_span_tokens as usize)
+        },
+    }
+}
 
 /// Initialize panic hook for better error messages in browser devtools.
 #[wasm_bindgen]
@@ -49,6 +65,26 @@ pub fn normalize_sentence_aviation_js(input: &str) -> String {
 #[wasm_bindgen(js_name = normalizeSentenceAviationWithMaxSpan)]
 pub fn normalize_sentence_aviation_with_max_span_js(input: &str, max_span_tokens: u32) -> String {
     normalize_sentence_aviation_with_max_span(input, max_span_tokens as usize)
+}
+
+/// Unified single-expression normalize. `concatCompoundNumbers=true` reads
+/// consecutive number words as concatenation rather than addition, e.g.
+/// `"thirty five sixty two"` → `"3562"`, `"seven eighty eight"` → `"788"`.
+#[wasm_bindgen(js_name = normalizeWithOptions)]
+pub fn normalize_with_options_js(input: &str, concat_compound_numbers: bool) -> String {
+    normalize_with_options(input, js_options(concat_compound_numbers, 0))
+}
+
+/// Unified sentence normalize. `concatCompoundNumbers` mirrors the
+/// single-expression flag; `maxSpanTokens == 0` means "use library default"
+/// (16).
+#[wasm_bindgen(js_name = normalizeSentenceWithOptions)]
+pub fn normalize_sentence_with_options_js(
+    input: &str,
+    concat_compound_numbers: bool,
+    max_span_tokens: u32,
+) -> String {
+    normalize_sentence_with_options(input, js_options(concat_compound_numbers, max_span_tokens))
 }
 
 #[wasm_bindgen(js_name = tnNormalize)]

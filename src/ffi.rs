@@ -5,10 +5,29 @@ use std::ptr;
 
 use crate::{
     custom_rules, normalize, normalize_aviation, normalize_sentence, normalize_sentence_aviation,
-    normalize_sentence_aviation_with_max_span, normalize_sentence_with_max_span, tn_normalize,
-    tn_normalize_lang, tn_normalize_sentence, tn_normalize_sentence_lang,
-    tn_normalize_sentence_with_max_span, tn_normalize_sentence_with_max_span_lang,
+    normalize_sentence_aviation_with_max_span, normalize_sentence_with_max_span,
+    normalize_sentence_with_options, normalize_with_options, tn_normalize, tn_normalize_lang,
+    tn_normalize_sentence, tn_normalize_sentence_lang, tn_normalize_sentence_with_max_span,
+    tn_normalize_sentence_with_max_span_lang, NormalizeOptions,
 };
+
+/// Build [`NormalizeOptions`] from FFI primitives.
+///
+/// `concat_compound_numbers`: any non-zero value enables concat behavior
+/// (`"thirty five sixty two"` → `"3562"`, `"seven eighty eight"` → `"788"`).
+///
+/// `max_span_tokens`: `0` means "use library default" (16); any positive
+/// value is a caller-specified max span.
+fn options_from_ffi(concat_compound_numbers: u32, max_span_tokens: u32) -> NormalizeOptions {
+    NormalizeOptions {
+        concat_compound_numbers: concat_compound_numbers != 0,
+        max_span_tokens: if max_span_tokens == 0 {
+            None
+        } else {
+            Some(max_span_tokens as usize)
+        },
+    }
+}
 
 /// Normalize spoken-form text to written form.
 ///
@@ -167,6 +186,75 @@ pub unsafe extern "C" fn nemo_normalize_sentence_aviation_with_max_span(
     };
 
     let result = normalize_sentence_aviation_with_max_span(c_str, max_span_tokens as usize);
+
+    match CString::new(result) {
+        Ok(c_string) => c_string.into_raw(),
+        Err(_) => ptr::null_mut(),
+    }
+}
+
+/// Unified single-expression normalize with caller-specified options.
+///
+/// `concat_compound_numbers`: `0` for standard ITN, non-zero for
+/// concat-compound (aviation-style) reading where consecutive number words
+/// concatenate rather than add — e.g. `"thirty five sixty two"` → `"3562"`,
+/// `"seven eighty eight"` → `"788"`.
+///
+/// # Safety
+/// - `input` must be a valid null-terminated UTF-8 string
+/// - Returns a newly allocated string that must be freed with `nemo_free_string`
+#[no_mangle]
+pub unsafe extern "C" fn nemo_normalize_with_options(
+    input: *const c_char,
+    concat_compound_numbers: u32,
+) -> *mut c_char {
+    if input.is_null() {
+        return ptr::null_mut();
+    }
+
+    let c_str = match CStr::from_ptr(input).to_str() {
+        Ok(s) => s,
+        Err(_) => return ptr::null_mut(),
+    };
+
+    let options = options_from_ffi(concat_compound_numbers, 0);
+    let result = normalize_with_options(c_str, options);
+
+    match CString::new(result) {
+        Ok(c_string) => c_string.into_raw(),
+        Err(_) => ptr::null_mut(),
+    }
+}
+
+/// Unified sentence normalize with caller-specified options.
+///
+/// `concat_compound_numbers`: `0` for standard ITN, non-zero for
+/// concat-compound reading.
+///
+/// `max_span_tokens`:
+/// - `0` — use library default (`16`).
+/// - `>0` — use the specified max span.
+///
+/// # Safety
+/// - `input` must be a valid null-terminated UTF-8 string
+/// - Returns a newly allocated string that must be freed with `nemo_free_string`
+#[no_mangle]
+pub unsafe extern "C" fn nemo_normalize_sentence_with_options(
+    input: *const c_char,
+    concat_compound_numbers: u32,
+    max_span_tokens: u32,
+) -> *mut c_char {
+    if input.is_null() {
+        return ptr::null_mut();
+    }
+
+    let c_str = match CStr::from_ptr(input).to_str() {
+        Ok(s) => s,
+        Err(_) => return ptr::null_mut(),
+    };
+
+    let options = options_from_ffi(concat_compound_numbers, max_span_tokens);
+    let result = normalize_sentence_with_options(c_str, options);
 
     match CString::new(result) {
         Ok(c_string) => c_string.into_raw(),

@@ -30,6 +30,68 @@ use itn::en::{
     whitelist, word,
 };
 
+/// Options for the unified [`normalize_with_options`] /
+/// [`normalize_sentence_with_options`] entry points.
+///
+/// Keeping options on a struct (rather than separate `*_aviation` /
+/// `*_with_max_span` functions) lets new knobs land without exploding the
+/// public API surface — see issues #15 and #23 for the motivating discussion.
+///
+/// The flags are intentionally orthogonal and *not* tied to a particular
+/// domain. Aviation, military codes, dispatch IDs, etc. all reuse the same
+/// underlying behavior toggles.
+///
+/// # Examples
+///
+/// ```
+/// use text_processing_rs::{normalize_sentence_with_options, NormalizeOptions};
+///
+/// let opts = NormalizeOptions {
+///     concat_compound_numbers: true,
+///     max_span_tokens: Some(8),
+/// };
+/// assert_eq!(
+///     normalize_sentence_with_options("United seven eighty eight", opts),
+///     "United 788"
+/// );
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct NormalizeOptions {
+    /// When `true`, sequences of spoken number words concatenate rather than
+    /// add. `"thirty five sixty two"` → `"3562"` (instead of `35 + 62 = 97`)
+    /// and `"seven eighty eight"` → `"788"`. Aviation, flight-numbers,
+    /// call-signs, and other code-style readings want this on.
+    ///
+    /// Scale-word grammar is preserved: `"two thousand seventeen"` still
+    /// resolves to `"2017"` regardless of this flag.
+    pub concat_compound_numbers: bool,
+    /// Maximum span size (tokens) considered in sentence mode. `None` means
+    /// use [`DEFAULT_MAX_SPAN_TOKENS`]. Ignored by [`normalize_with_options`].
+    pub max_span_tokens: Option<usize>,
+}
+
+impl NormalizeOptions {
+    /// Default options: standard ITN dispatch, default max span.
+    pub const fn new() -> Self {
+        Self {
+            concat_compound_numbers: false,
+            max_span_tokens: None,
+        }
+    }
+
+    /// Enable / disable compound-number concatenation.
+    pub const fn with_concat_compound_numbers(mut self, enabled: bool) -> Self {
+        self.concat_compound_numbers = enabled;
+        self
+    }
+
+    /// Set the sentence-mode max span (in tokens).
+    pub const fn with_max_span_tokens(mut self, max_span_tokens: usize) -> Self {
+        self.max_span_tokens = Some(max_span_tokens);
+        self
+    }
+}
+
 /// Normalize spoken-form text to written form.
 ///
 /// Tries taggers in order of specificity (most specific first).
@@ -135,6 +197,36 @@ pub fn normalize(input: &str) -> String {
 /// assert_eq!(normalize_aviation("hello world"), "hello world");
 /// ```
 pub fn normalize_aviation(input: &str) -> String {
+    normalize_with_options(
+        input,
+        NormalizeOptions::new().with_concat_compound_numbers(true),
+    )
+}
+
+/// Unified single-expression normalize entry point.
+///
+/// Switches between standard and concat-compound (aviation-style) dispatch
+/// based on `options.concat_compound_numbers`. The `max_span_tokens` field on
+/// [`NormalizeOptions`] is ignored here — it only applies to
+/// [`normalize_sentence_with_options`].
+///
+/// ```
+/// use text_processing_rs::{normalize_with_options, NormalizeOptions};
+///
+/// let opts = NormalizeOptions::new().with_concat_compound_numbers(true);
+/// assert_eq!(normalize_with_options("seven eighty eight", opts), "788");
+/// ```
+pub fn normalize_with_options(input: &str, options: NormalizeOptions) -> String {
+    if options.concat_compound_numbers {
+        normalize_aviation_inner(input)
+    } else {
+        normalize(input)
+    }
+}
+
+/// Aviation single-expression dispatch. Kept private; callers go through
+/// [`normalize_aviation`] or [`normalize_with_options`].
+fn normalize_aviation_inner(input: &str) -> String {
     let input = input.trim();
 
     // High-confidence rules still win.
@@ -152,7 +244,7 @@ pub fn normalize_aviation(input: &str) -> String {
     }
 
     // Aviation cardinal beats time/date here. This is the whole point of
-    // calling `normalize_aviation` instead of `normalize`.
+    // the aviation domain.
     if let Some(num) = cardinal::parse_aviation(input) {
         return num;
     }
@@ -975,6 +1067,35 @@ pub fn normalize_sentence(input: &str) -> String {
     normalize_sentence_with_max_span(input, DEFAULT_MAX_SPAN_TOKENS)
 }
 
+/// Unified sentence-mode entry point.
+///
+/// Combines `concat_compound_numbers` and `max_span_tokens` configuration in
+/// a single call. When `max_span_tokens` is `None`, [`DEFAULT_MAX_SPAN_TOKENS`]
+/// (16) is used.
+///
+/// ```
+/// use text_processing_rs::{normalize_sentence_with_options, NormalizeOptions};
+///
+/// // Default behavior, default span
+/// assert_eq!(
+///     normalize_sentence_with_options("I have twenty one apples", NormalizeOptions::new()),
+///     "I have 21 apples"
+/// );
+///
+/// // Concat-compound (aviation-style), custom span
+/// let opts = NormalizeOptions::new()
+///     .with_concat_compound_numbers(true)
+///     .with_max_span_tokens(8);
+/// assert_eq!(
+///     normalize_sentence_with_options("United seven eighty eight", opts),
+///     "United 788"
+/// );
+/// ```
+pub fn normalize_sentence_with_options(input: &str, options: NormalizeOptions) -> String {
+    let max_span = options.max_span_tokens.unwrap_or(DEFAULT_MAX_SPAN_TOKENS);
+    normalize_sentence_inner(input, max_span, options.concat_compound_numbers)
+}
+
 /// Sentence-mode equivalent of [`normalize_aviation`]. Aviation cardinal
 /// runs at priority 89 (above `date`=88 / `time`=85, below `measure`=90 /
 /// `money`=95), so flight-number-style spans win over date/time while
@@ -999,12 +1120,20 @@ pub fn normalize_sentence(input: &str) -> String {
 /// );
 /// ```
 pub fn normalize_sentence_aviation(input: &str) -> String {
-    normalize_sentence_aviation_with_max_span(input, DEFAULT_MAX_SPAN_TOKENS)
+    normalize_sentence_with_options(
+        input,
+        NormalizeOptions::new().with_concat_compound_numbers(true),
+    )
 }
 
 /// [`normalize_sentence_aviation`] with a configurable max span size.
 pub fn normalize_sentence_aviation_with_max_span(input: &str, max_span_tokens: usize) -> String {
-    normalize_sentence_inner(input, max_span_tokens, true)
+    normalize_sentence_with_options(
+        input,
+        NormalizeOptions::new()
+            .with_concat_compound_numbers(true)
+            .with_max_span_tokens(max_span_tokens),
+    )
 }
 
 /// Normalize a full sentence with a configurable max span size.
@@ -1021,7 +1150,10 @@ pub fn normalize_sentence_aviation_with_max_span(input: &str, max_span_tokens: u
 /// assert_eq!(normalize_sentence_with_max_span("I have twenty one apples", 4), "I have 21 apples");
 /// ```
 pub fn normalize_sentence_with_max_span(input: &str, max_span_tokens: usize) -> String {
-    normalize_sentence_inner(input, max_span_tokens, false)
+    normalize_sentence_with_options(
+        input,
+        NormalizeOptions::new().with_max_span_tokens(max_span_tokens),
+    )
 }
 
 /// Sentence-mode dispatch loop. The `aviation` flag is forwarded to
