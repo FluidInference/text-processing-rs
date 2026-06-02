@@ -1,0 +1,9 @@
+text-processing-rs
+Copyright 2026 FluidInference
+
+This product is a Rust port of NVIDIA NeMo Text Processing
+(https://github.com/NVIDIA/NeMo-text-processing), which is licensed
+under the Apache License, Version 2.0.
+
+   Copyright (c) NVIDIA CORPORATION & AFFILIATES.
+   Licensed under the Apache License, Version 2.0.
