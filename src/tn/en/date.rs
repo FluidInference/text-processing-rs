@@ -60,36 +60,12 @@ pub fn parse(input: &str) -> Option<String> {
     None
 }
 
-/// Parse decade: "1980s" → "nineteen eighties", "2000s" → "two thousands"
-fn parse_decade(input: &str) -> Option<String> {
-    let s = input.strip_suffix('s')?;
-    if s.len() != 4 || !s.chars().all(|c| c.is_ascii_digit()) {
-        return None;
-    }
-
-    let year: u32 = s.parse().ok()?;
-    if year < 1000 {
-        return None;
-    }
-
-    let decade_digit = year % 10;
-    if decade_digit != 0 {
-        return None; // "1985s" is not a valid decade
-    }
-
-    let base_year = year;
-    let year_words = verbalize_year(base_year)?;
-
-    // Replace the last word with its plural/decade form
-    // "nineteen eighty" → "nineteen eighties"
-    // "two thousand" → "two thousands"
-    let words: Vec<&str> = year_words.split_whitespace().collect();
-    if words.is_empty() {
-        return None;
-    }
-
-    let last = *words.last()?;
-    let plural = match last {
+/// Pluralize the final word of a spelled decade into its `-s`/`-ies` form,
+/// e.g. `"eighty"` → `"eighties"`, `"hundred"` → `"hundreds"`. Returns `None`
+/// for any word that is not a round decade term (so `"zero"` from `"00s"` is
+/// rejected rather than becoming `"zeros"`).
+fn pluralize_decade_word(word: &str) -> Option<&'static str> {
+    let plural = match word {
         "ten" => "tens",
         "twenty" => "twenties",
         "thirty" => "thirties",
@@ -103,6 +79,52 @@ fn parse_decade(input: &str) -> Option<String> {
         "thousand" => "thousands",
         _ => return None,
     };
+    Some(plural)
+}
+
+/// Parse decade: "1980s" → "nineteen eighties", "2000s" → "two thousands",
+/// "90s"/"'90s" → "nineties". A leading apostrophe (elided century) is
+/// accepted; two-digit forms read as the century-less tens word, which the
+/// spoken form drops anyway ("'90s" and "1990s" are both "nineties").
+fn parse_decade(input: &str) -> Option<String> {
+    // Strip the trailing plural `s`, then an optional leading apostrophe.
+    // `is_split_punct` keeps `'` attached to the token, so we handle it here.
+    let s = input.strip_suffix('s')?;
+    let s = s.strip_prefix('\'').unwrap_or(s);
+
+    if s.is_empty() || !s.chars().all(|c| c.is_ascii_digit()) {
+        return None;
+    }
+
+    // Two-digit decade ("90s", "'90s") → tens word pluralized. "00s" maps to
+    // "zero", which `pluralize_decade_word` rejects, so it is left untouched.
+    if s.len() == 2 {
+        let tens: u32 = s.parse().ok()?;
+        if tens % 10 != 0 {
+            return None; // "95s" is not a valid decade
+        }
+        let word = number_to_words(tens as i64);
+        return pluralize_decade_word(&word).map(str::to_string);
+    }
+
+    // Four-digit decade ("1980s") → year-style reading, last word pluralized.
+    if s.len() != 4 {
+        return None;
+    }
+
+    let year: u32 = s.parse().ok()?;
+    if year < 1000 {
+        return None;
+    }
+
+    if year % 10 != 0 {
+        return None; // "1985s" is not a valid decade
+    }
+
+    let year_words = verbalize_year(year)?;
+    let words: Vec<&str> = year_words.split_whitespace().collect();
+    let last = *words.last()?;
+    let plural = pluralize_decade_word(last)?;
 
     if words.len() == 1 {
         Some(plural.to_string())
@@ -357,6 +379,28 @@ mod tests {
         assert_eq!(parse("1980s"), Some("nineteen eighties".to_string()));
         assert_eq!(parse("2000s"), Some("two thousands".to_string()));
         assert_eq!(parse("1990s"), Some("nineteen nineties".to_string()));
+        assert_eq!(parse("1900s"), Some("nineteen hundreds".to_string()));
+        assert_eq!(parse("2010s"), Some("twenty tens".to_string()));
+    }
+
+    #[test]
+    fn test_two_digit_and_apostrophe_decade() {
+        // Two-digit and apostrophe-elided decades read as the tens word.
+        assert_eq!(parse("90s"), Some("nineties".to_string()));
+        assert_eq!(parse("'90s"), Some("nineties".to_string()));
+        assert_eq!(parse("80s"), Some("eighties".to_string()));
+        assert_eq!(parse("'20s"), Some("twenties".to_string()));
+        assert_eq!(parse("10s"), Some("tens".to_string()));
+        assert_eq!(parse("'1980s"), Some("nineteen eighties".to_string()));
+    }
+
+    #[test]
+    fn test_invalid_decade() {
+        assert_eq!(parse("95s"), None); // not a round decade
+        assert_eq!(parse("00s"), None); // "zero" is not a decade word
+        assert_eq!(parse("'00s"), None);
+        assert_eq!(parse("5s"), None); // single digit
+        assert_eq!(parse("'s"), None); // no digits
     }
 
     #[test]
