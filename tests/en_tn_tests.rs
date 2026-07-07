@@ -261,3 +261,20 @@ fn test_pr25_tn_abbreviation_regression() {
     );
     assert_eq!(tn_normalize_sentence("Prof. Jones"), "professor Jones");
 }
+
+#[test]
+fn test_tn_fraction() {
+    let results = common::run_test_file(Path::new("tests/data/en/tn_fraction.txt"), tn_normalize);
+    println!(
+        "tn_fraction: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
+    print_failures(&results);
+    assert!(
+        results.failures.is_empty(),
+        "{} fraction TN tests failed",
+        results.failures.len()
+    );
+}

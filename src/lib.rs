@@ -1246,6 +1246,9 @@ pub fn tn_normalize(input: &str) -> String {
     if let Some(result) = tn::en::time::parse(input) {
         return result;
     }
+    if let Some(result) = tn::en::fraction::parse(input) {
+        return result;
+    }
     if let Some(result) = tn::en::electronic::parse(input) {
         return result;
     }
@@ -1287,6 +1290,9 @@ fn tn_parse_span(span: &str) -> Option<(String, u8)> {
     }
     if let Some(result) = tn::en::time::parse(span) {
         return Some((result, 85));
+    }
+    if let Some(result) = tn::en::fraction::parse(span) {
+        return Some((result, 81));
     }
     if let Some(result) = tn::en::electronic::parse(span) {
         return Some((result, 82));
