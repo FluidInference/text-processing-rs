@@ -152,3 +152,20 @@ fn test_word() {
     );
     print_failures(&results);
 }
+
+#[test]
+fn test_fraction() {
+    let results = common::run_test_file(Path::new("tests/data/fr/fraction.txt"), normalize_fr);
+    println!(
+        "fraction: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
+    print_failures(&results);
+    assert!(
+        results.failures.is_empty(),
+        "{} fraction ITN tests failed",
+        results.failures.len()
+    );
+}

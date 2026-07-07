@@ -268,6 +268,12 @@ fn try_fr_taggers(input: &str) -> Option<String> {
     if let Some(result) = itn::fr::electronic::parse(input) {
         return Some(result);
     }
+    // Fraction before ordinal: `un cinquième` is a fraction (1/5), but the
+    // ordinal tagger would otherwise greedily read the `-ième` word. Bare
+    // ordinals (`cinquième`) return None from fraction and fall through.
+    if let Some(result) = itn::fr::fraction::parse(input) {
+        return Some(result);
+    }
     if let Some(result) = itn::fr::ordinal::parse(input) {
         return Some(result);
     }
