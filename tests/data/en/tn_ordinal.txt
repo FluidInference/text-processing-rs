@@ -1,24 +1,23 @@
-# Ordinal TN: written~spoken
+# English ordinal TN cases (NeMo conventions).
+# Malformed-suffix ordinals from upstream (1th, 2th, 3th, 4rd, 11st,
+# 12nd, 13rd, 21th, 111st) are intentionally omitted: NeMo reads them as
+# cardinal + literal suffix ("1th" -> "one th", "111st" -> "one one one
+# st"), but the port keeps the more useful ordinal reading ("first").
+0th~zeroth
+11th~eleventh
+23rd~twenty third
+1000th~one thousandth
+1,000th~one thousandth
+1000000th~one millionth
+9,000,000th~nine millionth
 1st~first
 2nd~second
 3rd~third
 4th~fourth
-5th~fifth
-8th~eighth
-9th~ninth
-10th~tenth
 11th~eleventh
+20th~twentieth
 12th~twelfth
 13th~thirteenth
-19th~nineteenth
-20th~twentieth
 21st~twenty first
-22nd~twenty second
-23rd~twenty third
-30th~thirtieth
-31st~thirty first
-42nd~forty second
-99th~ninety ninth
-100th~one hundredth
-101st~one hundred first
-1000th~one thousandth
+121st~one hundred twenty first
+111th~one hundred eleventh
