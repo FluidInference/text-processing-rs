@@ -25,16 +25,19 @@ pub fn parse(input: &str) -> Option<String> {
         return None;
     };
 
-    // The part before the suffix must be all digits
-    if num_str.is_empty() || !num_str.chars().all(|c| c.is_ascii_digit()) {
+    // The part before the suffix must be digits (comma grouping allowed:
+    // "1,000th" → "one thousandth").
+    let digits: String = num_str.chars().filter(|c| *c != ',').collect();
+    if digits.is_empty() || !digits.chars().all(|c| c.is_ascii_digit()) {
         return None;
     }
 
-    let n: i64 = num_str.parse().ok()?;
-    if n <= 0 {
+    let n: i64 = digits.parse().ok()?;
+    if n < 0 {
         return None;
     }
 
+    // "0th" → "zeroth" (cardinal_to_ordinal maps the "zero" tail to "zeroth").
     let cardinal = number_to_words(n);
     Some(cardinal_to_ordinal(&cardinal))
 }
@@ -136,9 +139,15 @@ mod tests {
     }
 
     #[test]
+    fn test_zeroth_and_commas() {
+        assert_eq!(parse("0th"), Some("zeroth".to_string()));
+        assert_eq!(parse("1,000th"), Some("one thousandth".to_string()));
+        assert_eq!(parse("9,000,000th"), Some("nine millionth".to_string()));
+    }
+
+    #[test]
     fn test_non_ordinals() {
         assert_eq!(parse("hello"), None);
         assert_eq!(parse("st"), None);
-        assert_eq!(parse("0th"), None);
     }
 }

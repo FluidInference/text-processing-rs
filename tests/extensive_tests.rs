@@ -713,9 +713,9 @@ fn test_tn_ordinal_compound() {
 }
 
 #[test]
-fn test_tn_ordinal_zero_invalid() {
-    // 0th should not be a valid ordinal
-    assert_eq!(tn_normalize("0th"), "0th");
+fn test_tn_ordinal_zeroth() {
+    // "0th" reads as "zeroth" (NeMo).
+    assert_eq!(tn_normalize("0th"), "zeroth");
 }
 
 // ════════════════════════════════════════════════════════════════════════
