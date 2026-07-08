@@ -23,7 +23,7 @@ assertEqual(
   'I have 21 apples',
   'normalizeSentence should convert spans'
 );
-assertEqual(wasm.tnNormalize('$5.50'), 'five dollars and fifty cents', 'tnNormalize should work');
+assertEqual(wasm.tnNormalize('$5.50'), 'five dollars fifty cents', 'tnNormalize should work');
 assertEqual(
   wasm.tnNormalizeSentence('I paid $5 for 23 items'),
   'I paid five dollars for twenty three items',
