@@ -1,0 +1,54 @@
+name: XCFramework
+
+# Builds NemoTextProcessing.xcframework (macOS universal + iOS device + iOS
+# simulator) so Apple consumers (e.g. FluidAudio) can link the native FFI via
+# a SwiftPM `.binaryTarget(url:checksum:)` instead of hand-linking the lib.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  xcframework:
+    name: Build & publish xcframework
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin,aarch64-apple-ios,aarch64-apple-ios-sim
+
+      - name: Build xcframework
+        run: ./build-xcframework.sh
+
+      - name: Package + checksum
+        working-directory: output
+        run: |
+          zip -ry NemoTextProcessing.xcframework.zip NemoTextProcessing.xcframework
+          # SwiftPM binary-target checksum is the SHA-256 of the zip.
+          shasum -a 256 NemoTextProcessing.xcframework.zip | cut -d' ' -f1 \
+            > NemoTextProcessing.xcframework.zip.checksum
+          echo "checksum: $(cat NemoTextProcessing.xcframework.zip.checksum)"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NemoTextProcessing-xcframework
+          path: |
+            output/NemoTextProcessing.xcframework.zip
+            output/NemoTextProcessing.xcframework.zip.checksum
+            output/NemoTextProcessing.swift
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${GITHUB_REF_NAME}" \
+            output/NemoTextProcessing.xcframework.zip \
+            output/NemoTextProcessing.xcframework.zip.checksum \
+            output/NemoTextProcessing.swift --clobber
