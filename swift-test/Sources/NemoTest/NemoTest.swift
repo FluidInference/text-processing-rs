@@ -264,10 +264,10 @@ let tnMoneyTests: [TC] = [
 let tnTimeTests: [TC] = [
     ("2:30", "two thirty"),
     ("2:05", "two oh five"),
-    ("2:00 PM", "two p m"),
-    ("2:30 PM", "two thirty p m"),
-    ("8:15 AM", "eight fifteen a m"),
-    ("14:00", "two p m"),
+    ("2:00 PM", "two PM"),
+    ("2:30 PM", "two thirty PM"),
+    ("8:15 AM", "eight fifteen AM"),
+    ("14:00", "fourteen o'clock"),
 ]
 
 let tnDateTests: [TC] = [
