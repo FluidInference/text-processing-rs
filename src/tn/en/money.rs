@@ -1,13 +1,45 @@
 //! Money TN tagger.
 //!
 //! Converts written currency expressions to spoken form:
-//! - "$5.50" → "five dollars and fifty cents"
+//! - "$5.50" → "five dollars fifty cents"
 //! - "$1" → "one dollar"
 //! - "$0.01" → "one cent"
 //! - "€100" → "one hundred euros"
 //! - "$2.5 billion" → "two point five billion dollars"
 
-use super::number_to_words;
+use super::{number_to_words, number_to_words_and, spell_digits};
+
+/// Spell a non-negative money amount with NeMo's British "and": the multiplier
+/// groups (thousand and up) read plainly, while the final group takes an "and"
+/// — either inside the hundreds (`854` → "eight hundred and fifty four") or,
+/// when it is a bare sub-100 value after a larger part, in front of it
+/// (`18081` → "eighteen thousand and eighty one").
+fn amount_words(n: i64) -> String {
+    if n <= 0 {
+        return number_to_words(n);
+    }
+    let n = n as u128;
+    let units = (n % 1000) as u32;
+    let higher = n - u128::from(units);
+
+    if higher == 0 {
+        // Single group: use the within-hundreds "and" only.
+        return number_to_words_and(n);
+    }
+
+    let higher_words = number_to_words((higher) as i64);
+    match units {
+        0 => higher_words,
+        // Bare sub-100 final group takes a leading "and".
+        1..=99 => format!("{} and {}", higher_words, number_to_words(units as i64)),
+        // A hundreds final group carries its own internal "and".
+        _ => format!(
+            "{} {}",
+            higher_words,
+            number_to_words_and(u128::from(units))
+        ),
+    }
+}
 
 /// Currency info: (symbol, singular, plural, cent_singular, cent_plural)
 struct Currency {
@@ -98,21 +130,30 @@ pub fn parse(input: &str) -> Option<String> {
     // Parse the numeric amount
     if let Some(scale_word) = scale {
         // With scale: "$2.5 billion" → "two point five billion dollars"
+        // The multiplier before a scale word is not a final group, so it takes
+        // no "and" (`₩460 billion` → "four hundred sixty billion won").
         if amount_str.contains('.') {
             let parts: Vec<&str> = amount_str.splitn(2, '.').collect();
             if parts.len() == 2 {
                 let int_val: i64 = parts[0].parse().ok()?;
-                let int_words = number_to_words(int_val);
-                let frac_words = super::spell_digits(parts[1]);
+                let frac_words = spell_digits(parts[1]);
                 return Some(format!(
                     "{} point {} {} {}",
-                    int_words, frac_words, scale_word, currency.plural
+                    number_to_words(int_val),
+                    frac_words,
+                    scale_word,
+                    currency.plural
                 ));
             }
         } else {
-            let n: i64 = amount_str.parse().ok()?;
-            let words = number_to_words(n);
-            return Some(format!("{} {} {}", words, scale_word, currency.plural));
+            let clean: String = amount_str.chars().filter(|c| *c != ',').collect();
+            let n: i64 = clean.parse().ok()?;
+            return Some(format!(
+                "{} {} {}",
+                number_to_words(n),
+                scale_word,
+                currency.plural
+            ));
         }
     }
 
@@ -120,99 +161,109 @@ pub fn parse(input: &str) -> Option<String> {
     if amount_str.contains('.') {
         parse_dollars_cents(amount_str, currency)
     } else {
-        // Strip commas
         let clean: String = amount_str.chars().filter(|c| *c != ',').collect();
         let n: i64 = clean.parse().ok()?;
-        let words = number_to_words(n);
         let unit = if n == 1 {
             currency.singular
         } else {
             currency.plural
         };
-        Some(format!("{} {}", words, unit))
+        Some(format!("{} {}", amount_words(n), unit))
     }
 }
 
-/// Parse "$X.YY" → "X dollars and Y cents"
+/// Parse `$X.Y`. A fractional part that is a whole number of cents (≤ 2
+/// significant digits after trimming trailing zeros) reads as cents with no
+/// "and" — `$20.50` → "twenty dollars fifty cents". Otherwise it reads as a
+/// decimal amount — `$20.506` → "twenty point five zero six dollars".
 fn parse_dollars_cents(amount: &str, currency: &Currency) -> Option<String> {
-    let parts: Vec<&str> = amount.splitn(2, '.').collect();
-    if parts.len() != 2 {
-        return None;
+    let (int_str, frac_str) = amount.split_once('.')?;
+    let int_clean: String = int_str.chars().filter(|c| *c != ',').collect();
+
+    // More than two significant fractional digits → spoken as a decimal.
+    if frac_str.trim_end_matches('0').len() > 2 {
+        let frac_words = spell_digits(frac_str);
+        if int_clean.is_empty() {
+            return Some(format!("point {} {}", frac_words, currency.plural));
+        }
+        let int_val: i64 = int_clean.parse().ok()?;
+        return Some(format!(
+            "{} point {} {}",
+            amount_words(int_val),
+            frac_words,
+            currency.plural
+        ));
     }
 
-    let dollars: i64 = if parts[0].is_empty() {
+    // Whole cents.
+    let dollars: i64 = if int_clean.is_empty() {
         0
     } else {
-        parts[0].parse().ok()?
+        int_clean.parse().ok()?
     };
-    let cents_str = parts[1];
-
-    // Pad or truncate cents to 2 digits
-    let cents: i64 = if cents_str.is_empty() {
-        0
-    } else if cents_str.len() == 1 {
-        cents_str.parse::<i64>().ok()? * 10
-    } else if cents_str.len() == 2 {
-        cents_str.parse().ok()?
-    } else {
-        // More than 2 decimal places — take first 2
-        cents_str[..2].parse().ok()?
+    let cents: i64 = match frac_str.trim_end_matches('0') {
+        "" => 0,
+        one if one.len() == 1 => one.parse::<i64>().ok()? * 10,
+        two => two.parse().ok()?,
     };
 
-    if dollars == 0 && cents == 0 {
-        return Some(format!("zero {}", currency.plural));
-    }
-
-    if dollars == 0 {
-        let cents_words = number_to_words(cents);
-        let unit = if cents == 1 {
-            currency.cent_singular
-        } else {
-            currency.cent_plural
-        };
-        return Some(format!("{} {}", cents_words, unit));
-    }
-
-    if cents == 0 {
-        let dollar_words = number_to_words(dollars);
+    let dollar_part = (dollars != 0).then(|| {
         let unit = if dollars == 1 {
             currency.singular
         } else {
             currency.plural
         };
-        return Some(format!("{} {}", dollar_words, unit));
+        format!("{} {}", amount_words(dollars), unit)
+    });
+    let cent_part = (cents != 0).then(|| {
+        let unit = if cents == 1 {
+            currency.cent_singular
+        } else {
+            currency.cent_plural
+        };
+        format!("{} {}", amount_words(cents), unit)
+    });
+
+    match (dollar_part, cent_part) {
+        (Some(d), Some(c)) => Some(format!("{} {}", d, c)),
+        (Some(d), None) => Some(d),
+        (None, Some(c)) => Some(c),
+        (None, None) => Some(format!("zero {}", currency.plural)),
     }
-
-    let dollar_words = number_to_words(dollars);
-    let cents_words = number_to_words(cents);
-    let dollar_unit = if dollars == 1 {
-        currency.singular
-    } else {
-        currency.plural
-    };
-    let cent_unit = if cents == 1 {
-        currency.cent_singular
-    } else {
-        currency.cent_plural
-    };
-
-    Some(format!(
-        "{} {} and {} {}",
-        dollar_words, dollar_unit, cents_words, cent_unit
-    ))
 }
 
-/// Extract scale suffix from the amount string.
+/// Single-letter magnitude abbreviations after an amount (`¥30b`).
+const SCALE_ABBREVS: &[(&str, &str)] = &[
+    ("b", "billion"),
+    ("m", "million"),
+    ("k", "thousand"),
+    ("t", "trillion"),
+];
+
+/// Extract a trailing scale word or single-letter magnitude abbreviation.
 fn extract_scale(input: &str) -> (&str, Option<&str>) {
+    let numeric = |s: &str| {
+        !s.is_empty()
+            && s.chars()
+                .all(|c| c.is_ascii_digit() || c == '.' || c == ',')
+    };
+
     for &scale in SCALE_SUFFIXES {
         if let Some(before) = input.strip_suffix(scale) {
             let before = before.trim_end();
-            if !before.is_empty()
-                && before
-                    .chars()
-                    .all(|c| c.is_ascii_digit() || c == '.' || c == ',')
-            {
+            if numeric(before) {
                 return (before, Some(scale));
+            }
+        }
+    }
+    // `30b` / `30 B` → billion. Case-insensitive; requires a numeric amount
+    // immediately (optionally space-separated) before the letter.
+    if let Some(last) = input.chars().last() {
+        let lower = last.to_ascii_lowercase().to_string();
+        if let Some(&(_, word)) = SCALE_ABBREVS.iter().find(|(a, _)| *a == lower) {
+            let before = input[..input.len() - last.len_utf8()].trim_end();
+            if numeric(before) {
+                return (before, Some(word));
             }
         }
     }
@@ -232,13 +283,41 @@ mod tests {
 
     #[test]
     fn test_dollars_and_cents() {
-        assert_eq!(
-            parse("$5.50"),
-            Some("five dollars and fifty cents".to_string())
-        );
-        assert_eq!(parse("$1.01"), Some("one dollar and one cent".to_string()));
+        // NeMo: no "and" between the dollar and cent parts.
+        assert_eq!(parse("$5.50"), Some("five dollars fifty cents".to_string()));
+        assert_eq!(parse("$1.01"), Some("one dollar one cent".to_string()));
         assert_eq!(parse("$0.01"), Some("one cent".to_string()));
         assert_eq!(parse("$0.99"), Some("ninety nine cents".to_string()));
+        // Trailing zeros trimmed to whole cents.
+        assert_eq!(
+            parse("$20.500"),
+            Some("twenty dollars fifty cents".to_string())
+        );
+    }
+
+    #[test]
+    fn test_british_and_in_amount() {
+        assert_eq!(
+            parse("$18854"),
+            Some("eighteen thousand eight hundred and fifty four dollars".to_string())
+        );
+        // Bare sub-100 final group after a larger part takes a leading "and".
+        assert_eq!(
+            parse("$18081"),
+            Some("eighteen thousand and eighty one dollars".to_string())
+        );
+    }
+
+    #[test]
+    fn test_more_than_two_decimals_reads_as_decimal() {
+        assert_eq!(
+            parse("$20.506"),
+            Some("twenty point five zero six dollars".to_string())
+        );
+        assert_eq!(
+            parse("$.506"),
+            Some("point five zero six dollars".to_string())
+        );
     }
 
     #[test]
@@ -251,6 +330,13 @@ mod tests {
             parse("$50 million"),
             Some("fifty million dollars".to_string())
         );
+        // Multiplier before a scale word takes no "and".
+        assert_eq!(
+            parse("₩460 billion"),
+            Some("four hundred sixty billion won".to_string())
+        );
+        // Single-letter magnitude abbreviation.
+        assert_eq!(parse("¥30b"), Some("thirty billion yen".to_string()));
     }
 
     #[test]
