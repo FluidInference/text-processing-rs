@@ -4,7 +4,7 @@
 //! - "200 km/h" → "two hundred kilometers per hour"
 //! - "1 kg" → "one kilogram"
 //! - "2 kg" → "two kilograms"
-//! - "72°F" → "seventy two degrees fahrenheit"
+//! - "72°F" → "seventy two degrees Fahrenheit"
 
 use super::number_to_words;
 
@@ -53,6 +53,11 @@ lazy_static! {
         m.insert("m/s", UnitInfo { singular: "meter per second", plural: "meters per second" });
         m.insert("kph", UnitInfo { singular: "kilometer per hour", plural: "kilometers per hour" });
 
+        // Data rate
+        m.insert("mbps", UnitInfo { singular: "megabit per second", plural: "megabits per second" });
+        m.insert("gbps", UnitInfo { singular: "gigabit per second", plural: "gigabits per second" });
+        m.insert("kbps", UnitInfo { singular: "kilobit per second", plural: "kilobits per second" });
+
         // Time
         m.insert("s", UnitInfo { singular: "second", plural: "seconds" });
         m.insert("sec", UnitInfo { singular: "second", plural: "seconds" });
@@ -62,11 +67,11 @@ lazy_static! {
         m.insert("hrs", UnitInfo { singular: "hour", plural: "hours" });
 
         // Temperature
-        m.insert("°C", UnitInfo { singular: "degree celsius", plural: "degrees celsius" });
-        m.insert("°F", UnitInfo { singular: "degree fahrenheit", plural: "degrees fahrenheit" });
+        m.insert("°C", UnitInfo { singular: "degree Celsius", plural: "degrees Celsius" });
+        m.insert("°F", UnitInfo { singular: "degree Fahrenheit", plural: "degrees Fahrenheit" });
         m.insert("°K", UnitInfo { singular: "kelvin", plural: "kelvin" });
-        m.insert("C", UnitInfo { singular: "degree celsius", plural: "degrees celsius" });
-        m.insert("F", UnitInfo { singular: "degree fahrenheit", plural: "degrees fahrenheit" });
+        m.insert("C", UnitInfo { singular: "degree Celsius", plural: "degrees Celsius" });
+        m.insert("F", UnitInfo { singular: "degree Fahrenheit", plural: "degrees Fahrenheit" });
 
         // Data. Bare "B" is intentionally omitted: after a number an uppercase
         // B/K/M/G/T is a magnitude abbreviation (billion, …) kept literal by the
@@ -222,11 +227,11 @@ mod tests {
     fn test_temperature() {
         assert_eq!(
             parse("72°F"),
-            Some("seventy two degrees fahrenheit".to_string())
+            Some("seventy two degrees Fahrenheit".to_string())
         );
         assert_eq!(
             parse("100°C"),
-            Some("one hundred degrees celsius".to_string())
+            Some("one hundred degrees Celsius".to_string())
         );
     }
 

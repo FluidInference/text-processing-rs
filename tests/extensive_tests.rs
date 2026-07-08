@@ -732,9 +732,9 @@ fn test_tn_measure_singular_plural() {
 
 #[test]
 fn test_tn_measure_temperature() {
-    assert_eq!(tn_normalize("72°F"), "seventy two degrees fahrenheit");
-    assert_eq!(tn_normalize("100°C"), "one hundred degrees celsius");
-    assert_eq!(tn_normalize("0°C"), "zero degrees celsius");
+    assert_eq!(tn_normalize("72°F"), "seventy two degrees Fahrenheit");
+    assert_eq!(tn_normalize("100°C"), "one hundred degrees Celsius");
+    assert_eq!(tn_normalize("0°C"), "zero degrees Celsius");
 }
 
 #[test]
@@ -760,7 +760,7 @@ fn test_tn_measure_data() {
 
 #[test]
 fn test_tn_measure_negative() {
-    assert_eq!(tn_normalize("-10°C"), "minus ten degrees celsius");
+    assert_eq!(tn_normalize("-10°C"), "minus ten degrees Celsius");
     assert_eq!(tn_normalize("-66 kg"), "minus sixty six kilograms");
 }
 
@@ -1299,7 +1299,7 @@ fn test_tts_scenario_price() {
 fn test_tts_scenario_temperature() {
     let result = tn_normalize_sentence("It is 72°F outside");
     assert!(
-        result.contains("seventy two degrees fahrenheit"),
+        result.contains("seventy two degrees Fahrenheit"),
         "Temperature should be spoken: {}",
         result
     );
