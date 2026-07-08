@@ -68,8 +68,9 @@ lazy_static! {
         m.insert("C", UnitInfo { singular: "degree celsius", plural: "degrees celsius" });
         m.insert("F", UnitInfo { singular: "degree fahrenheit", plural: "degrees fahrenheit" });
 
-        // Data
-        m.insert("B", UnitInfo { singular: "byte", plural: "bytes" });
+        // Data. Bare "B" is intentionally omitted: after a number an uppercase
+        // B/K/M/G/T is a magnitude abbreviation (billion, …) kept literal by the
+        // decimal tagger (NeMo). KB/MB/GB/TB still spell out as bytes.
         m.insert("KB", UnitInfo { singular: "kilobyte", plural: "kilobytes" });
         m.insert("MB", UnitInfo { singular: "megabyte", plural: "megabytes" });
         m.insert("GB", UnitInfo { singular: "gigabyte", plural: "gigabytes" });
