@@ -297,10 +297,13 @@ fn test_tn_cardinal_teens() {
 #[test]
 fn test_tn_cardinal_large() {
     assert_eq!(tn_normalize("1000"), "one thousand");
-    assert_eq!(tn_normalize("1000000"), "one million");
+    // Unformatted integers longer than four digits read digit-by-digit (NeMo).
+    assert_eq!(tn_normalize("1000000"), "one zero zero zero zero zero zero");
+    assert_eq!(tn_normalize("1234567"), "one two three four five six seven");
+    // Comma grouping keeps the word form.
     assert_eq!(
-        tn_normalize("1234567"),
-        "one million two hundred thirty four thousand five hundred sixty seven"
+        tn_normalize("1,234,567"),
+        "one million two hundred thirty four thousand five hundred and sixty seven"
     );
 }
 
@@ -317,7 +320,7 @@ fn test_tn_cardinal_with_commas() {
     assert_eq!(tn_normalize("1,000,000"), "one million");
     assert_eq!(
         tn_normalize("1,234"),
-        "one thousand two hundred thirty four"
+        "one thousand two hundred and thirty four"
     );
 }
 
@@ -1070,7 +1073,7 @@ fn test_roundtrip_cardinal() {
     // Written → Spoken → Written
     let written = "123";
     let spoken = tn_normalize(written);
-    assert_eq!(spoken, "one hundred twenty three");
+    assert_eq!(spoken, "one hundred and twenty three");
     let back_to_written = normalize(&spoken);
     assert_eq!(back_to_written, written);
 }
@@ -1200,7 +1203,7 @@ fn test_boundary_mixed_case() {
 #[test]
 fn test_boundary_leading_trailing_whitespace() {
     assert_eq!(normalize("  twenty one  "), "21");
-    assert_eq!(tn_normalize("  123  "), "one hundred twenty three");
+    assert_eq!(tn_normalize("  123  "), "one hundred and twenty three");
 }
 
 // ════════════════════════════════════════════════════════════════════════
@@ -1237,7 +1240,7 @@ fn test_interference_tn_number_vs_date() {
     // "1980" alone should not be treated as a date by TN
     // It should be treated as a cardinal number
     let result = tn_normalize("1980");
-    assert_eq!(result, "one thousand nine hundred eighty");
+    assert_eq!(result, "one thousand nine hundred and eighty");
 }
 
 #[test]
@@ -1277,7 +1280,7 @@ fn test_itn_decimal_basic() {
 fn test_tts_scenario_address() {
     let result = tn_normalize_sentence("123 Main St");
     assert!(
-        result.contains("one hundred twenty three"),
+        result.contains("one hundred and twenty three"),
         "Address number should be spoken: {}",
         result
     );
@@ -1318,7 +1321,8 @@ fn test_tts_scenario_year_in_sentence() {
     // A year in a sentence should be normalized
     let result = tn_normalize_sentence("Born in 1990");
     assert!(
-        result.contains("one thousand nine hundred ninety") || result.contains("nineteen ninety"),
+        result.contains("one thousand nine hundred and ninety")
+            || result.contains("nineteen ninety"),
         "Year in sentence: {}",
         result
     );

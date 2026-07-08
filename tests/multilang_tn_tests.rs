@@ -204,7 +204,7 @@ fn test_same_input_different_languages() {
         .map(|lang| (*lang, tn_normalize_lang("123", lang)))
         .collect();
 
-    assert_eq!(results[0].1, "one hundred twenty three"); // en
+    assert_eq!(results[0].1, "one hundred and twenty three"); // en
     assert_eq!(results[1].1, "cent vingt-trois"); // fr
     assert_eq!(results[2].1, "ciento veintitres"); // es
     assert_eq!(results[3].1, "einhundertdreiundzwanzig"); // de
@@ -215,8 +215,11 @@ fn test_same_input_different_languages() {
 
 #[test]
 fn test_unknown_lang_falls_back_to_english() {
-    assert_eq!(tn_normalize_lang("123", "xx"), "one hundred twenty three");
-    assert_eq!(tn_normalize_lang("123", ""), "one hundred twenty three");
+    assert_eq!(
+        tn_normalize_lang("123", "xx"),
+        "one hundred and twenty three"
+    );
+    assert_eq!(tn_normalize_lang("123", ""), "one hundred and twenty three");
 }
 
 #[test]

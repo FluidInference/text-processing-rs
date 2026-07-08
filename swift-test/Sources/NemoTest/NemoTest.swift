@@ -233,7 +233,7 @@ let tnCardinalTests: [TC] = [
     ("1", "one"),
     ("21", "twenty one"),
     ("100", "one hundred"),
-    ("123", "one hundred twenty three"),
+    ("123", "one hundred and twenty three"),
     ("1000", "one thousand"),
     ("1,000,000", "one million"),
     ("-42", "minus forty two"),
