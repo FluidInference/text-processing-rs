@@ -1240,6 +1240,9 @@ pub fn tn_normalize(input: &str) -> String {
     if let Some(result) = tn::en::whitelist::parse(input) {
         return result;
     }
+    if let Some(result) = tn::en::math::parse(input) {
+        return result;
+    }
     if let Some(result) = tn::en::money::parse(input) {
         return result;
     }
@@ -1284,6 +1287,9 @@ fn tn_parse_span(span: &str) -> Option<(String, u8)> {
 
     if let Some(result) = tn::en::whitelist::parse(span) {
         return Some((result, 100));
+    }
+    if let Some(result) = tn::en::math::parse(span) {
+        return Some((result, 96));
     }
     if let Some(result) = tn::en::money::parse(span) {
         return Some((result, 95));
