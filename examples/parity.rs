@@ -19,7 +19,7 @@ use std::panic;
 use std::path::Path;
 use std::process::exit;
 
-use text_processing_rs::{normalize_with_lang, tn_normalize_lang};
+use text_processing_rs::{normalize_with_lang, tn_normalize_sentence_lang};
 
 const LANGS: &[&str] = &["en", "de", "es", "fr", "hi", "ja", "zh"];
 const BASELINE_PATH: &str = "tests/parity_baseline.tsv";
@@ -123,7 +123,10 @@ fn score_file(path: &Path, lang: &str, is_tn: bool) -> Stat {
         let lang = lang.to_string();
         let got = panic::catch_unwind(|| {
             if is_tn {
-                tn_normalize_lang(&input, &lang)
+                // NeMo applies TN to the whole input, so compare against
+                // sentence mode (handles multi-span cases single-expression
+                // `tn_normalize` structurally cannot). Strictly ≥ single mode.
+                tn_normalize_sentence_lang(&input, &lang)
             } else {
                 normalize_with_lang(&input, &lang)
             }
