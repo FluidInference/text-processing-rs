@@ -1,9 +1,17 @@
-# English date TN cases (NeMo conventions).
-# Curated to the cases the port passes; omitted upstream cases need
-# formats not yet implemented: British "the Nth of Month", abbreviated/
-# cased months, numeric YYYY-MM-DD / DD.MM.YYYY, quarters, and sentences.
+# English date TN cases (NeMo), single-expression subset for the asserting
+# test. Numeric dates, quarters, 'AD', spaced-decade, and sentence-context
+# cases are omitted (some pass only in sentence mode; see parity baseline).
 july 25 2012~july twenty fifth twenty twelve
+jul 25 2012~july twenty fifth twenty twelve
 1980s~nineteen eighties
+25 july 2012~the twenty fifth of july twenty twelve
+25 jul 2012~the twenty fifth of july twenty twelve
+22 july 2012~the twenty second of july twenty twelve
+25th july 2012~the twenty fifth of july twenty twelve
+25th jul 2012~the twenty fifth of july twenty twelve
+22nd july 2012~the twenty second of july twenty twelve
+15 january~the fifteenth of january
+17 may 2010~the seventeenth of may twenty ten
 january 1~january first
 june 30~june thirtieth
 2012~twenty twelve
@@ -14,10 +22,19 @@ june 20 2014~june twentieth twenty fourteen
 1975~nineteen seventy five
 1155~eleven fifty five
 august 23 2002~august twenty third two thousand two
+16 July 1943~the sixteenth of july nineteen forty three
+20 january~the twentieth of january
 1980s~nineteen eighties
 10/06/2005~october sixth two thousand five
 1910s~nineteen tens
 2000s~two thousands
+25 sept.~the twenty fifth of september
 1000~one thousand
+SEPT. 15~september fifteenth
+JAN. 15 2020~january fifteenth twenty twenty
+Jan. 15 2020~january fifteenth twenty twenty
+Jan 15 2020~january fifteenth twenty twenty
+jan. 15~january fifteenth
+JAN 15 2020~january fifteenth twenty twenty
 01/07/98~january seventh ninety eight
 '80s~eighties

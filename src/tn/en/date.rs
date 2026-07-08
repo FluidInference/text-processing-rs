@@ -8,21 +8,6 @@
 
 use super::number_to_words;
 
-const MONTHS: &[(&str, &str)] = &[
-    ("january", "january"),
-    ("february", "february"),
-    ("march", "march"),
-    ("april", "april"),
-    ("may", "may"),
-    ("june", "june"),
-    ("july", "july"),
-    ("august", "august"),
-    ("september", "september"),
-    ("october", "october"),
-    ("november", "november"),
-    ("december", "december"),
-];
-
 const MONTH_NUMBERS: &[(&str, u32)] = &[
     ("january", 1),
     ("february", 2),
@@ -47,8 +32,9 @@ pub fn parse(input: &str) -> Option<String> {
         return Some(result);
     }
 
-    // Try "Month Day, Year" or "Month Day"
-    if let Some(result) = parse_month_day_year(trimmed) {
+    // Try word dates: "January 5, 2025", "jul 25 2012" (US Month-Day) and
+    // "25 july 2012" (British Day-Month), with abbreviated/cased months.
+    if let Some(result) = parse_word_date(trimmed) {
         return Some(result);
     }
 
@@ -155,81 +141,91 @@ fn parse_decade(input: &str) -> Option<String> {
     }
 }
 
-/// Parse "Month Day, Year" or "Month Day" formats.
-fn parse_month_day_year(input: &str) -> Option<String> {
-    let lower = input.to_lowercase();
-
-    // Find the month
-    let mut month_name = None;
-    let mut rest = "";
-    for &(name, spoken) in MONTHS {
-        if let Some(r) = lower.strip_prefix(name) {
-            if r.is_empty() || r.starts_with(' ') || r.starts_with(',') {
-                month_name = Some(spoken);
-                rest = r.trim_start_matches(|c: char| c == ' ' || c == ',');
-                break;
-            }
-        }
+/// Parse a word date in either order — US `Month Day[, Year]` (`jul 25 2012`
+/// → "july twenty fifth …") or British `Day Month [Year]` (`25 july 2012` →
+/// "the twenty fifth of july …"). Months may be full or 3-letter
+/// abbreviations, any case, with an optional trailing dot.
+fn parse_word_date(input: &str) -> Option<String> {
+    // Commas are separators here; sentence mode re-attaches any real ones.
+    let cleaned = input.replace(',', " ");
+    let tokens: Vec<&str> = cleaned.split_whitespace().collect();
+    if tokens.len() < 2 || tokens.len() > 3 {
+        return None;
     }
-
-    let month = month_name?;
-
-    if rest.is_empty() {
-        return None; // Just a month name alone
-    }
-
-    // Parse day, possibly followed by comma and year
-    let (day_str, year_part) = if let Some(comma_pos) = rest.find(',') {
-        (&rest[..comma_pos], Some(rest[comma_pos + 1..].trim()))
+    let year = if tokens.len() == 3 {
+        Some(parse_year_word(tokens[2])?)
     } else {
-        // Could be "January 5 2025" or "January 5 2025." (space-separated, optional trailing punct)
-        let parts: Vec<&str> = rest.splitn(2, ' ').collect();
-        if parts.len() == 2 && parts[0].chars().all(|c| c.is_ascii_digit()) {
-            let year_clean =
-                parts[1].trim_end_matches(|c: char| c == '.' || c == ',' || c == '!' || c == '?');
-            if year_clean.chars().all(|c| c.is_ascii_digit()) && year_clean.len() == 4 {
-                (parts[0], Some(year_clean))
-            } else {
-                (rest, None)
-            }
-        } else {
-            (rest, None)
-        }
+        None
     };
 
-    let day_str = day_str.trim();
-    // Strip ordinal suffix from day if present (e.g., "5th")
-    let day_digits = day_str
+    // US order: Month Day [Year].
+    if let Some(month) = parse_month(tokens[0]) {
+        let day = parse_day(tokens[1])?;
+        return Some(with_year(format!("{} {}", month, ordinal_word(day)), year));
+    }
+
+    // British order: Day Month [Year].
+    if let Some(day) = parse_day(tokens[0]) {
+        let month = parse_month(tokens[1])?;
+        return Some(with_year(
+            format!("the {} of {}", ordinal_word(day), month),
+            year,
+        ));
+    }
+
+    None
+}
+
+fn with_year(base: String, year: Option<String>) -> String {
+    match year {
+        Some(y) => format!("{} {}", base, y),
+        None => base,
+    }
+}
+
+/// Recognize a month name (full or 3-letter abbreviation, any case, optional
+/// trailing dot) and return its spoken (lower-case) form.
+fn parse_month(token: &str) -> Option<&'static str> {
+    let t = token.trim().trim_end_matches('.').to_lowercase();
+    Some(match t.as_str() {
+        "january" | "jan" => "january",
+        "february" | "feb" => "february",
+        "march" | "mar" => "march",
+        "april" | "apr" => "april",
+        "may" => "may",
+        "june" | "jun" => "june",
+        "july" | "jul" => "july",
+        "august" | "aug" => "august",
+        "september" | "sep" | "sept" => "september",
+        "october" | "oct" => "october",
+        "november" | "nov" => "november",
+        "december" | "dec" => "december",
+        _ => return None,
+    })
+}
+
+/// Parse a day-of-month token, plain or with an ordinal suffix (`25`, `25th`).
+fn parse_day(token: &str) -> Option<u32> {
+    let digits = token
+        .trim()
         .trim_end_matches("st")
         .trim_end_matches("nd")
         .trim_end_matches("rd")
         .trim_end_matches("th");
-
-    if !day_digits.chars().all(|c| c.is_ascii_digit()) || day_digits.is_empty() {
+    if digits.is_empty() || !digits.chars().all(|c| c.is_ascii_digit()) {
         return None;
     }
+    let day: u32 = digits.parse().ok()?;
+    (1..=31).contains(&day).then_some(day)
+}
 
-    let day: u32 = day_digits.parse().ok()?;
-    if day == 0 || day > 31 {
-        return None;
+/// Parse a 4-digit year token (trailing punctuation allowed) year-style.
+fn parse_year_word(token: &str) -> Option<String> {
+    let t = token.trim().trim_end_matches(|c: char| !c.is_ascii_digit());
+    if t.len() == 4 && t.chars().all(|c| c.is_ascii_digit()) {
+        return verbalize_year(t.parse().ok()?);
     }
-
-    let day_ordinal = ordinal_word(day);
-
-    if let Some(year_str) = year_part {
-        // Strip trailing sentence punctuation (e.g. "2026." → "2026") so that
-        // "March 8, 2026." correctly parses the year instead of dropping it.
-        let year_str = year_str
-            .trim()
-            .trim_end_matches(|c: char| c == '.' || c == ',' || c == '!' || c == '?');
-        if !year_str.is_empty() && year_str.chars().all(|c| c.is_ascii_digit()) {
-            let year: u32 = year_str.parse().ok()?;
-            let year_words = verbalize_year(year)?;
-            return Some(format!("{} {} {}", month, day_ordinal, year_words));
-        }
-    }
-
-    Some(format!("{} {}", month, day_ordinal))
+    None
 }
 
 /// Parse numeric date: "1/5/2025" or "01/05/2025" (M/D/Y).
@@ -380,6 +376,39 @@ mod tests {
         assert_eq!(
             parse("December 25"),
             Some("december twenty fifth".to_string())
+        );
+    }
+
+    #[test]
+    fn test_abbreviated_and_cased_months() {
+        assert_eq!(
+            parse("jul 25 2012"),
+            Some("july twenty fifth twenty twelve".to_string())
+        );
+        assert_eq!(parse("SEPT. 15"), Some("september fifteenth".to_string()));
+        assert_eq!(
+            parse("Jan. 15 2020"),
+            Some("january fifteenth twenty twenty".to_string())
+        );
+    }
+
+    #[test]
+    fn test_british_day_month() {
+        assert_eq!(
+            parse("25 july 2012"),
+            Some("the twenty fifth of july twenty twelve".to_string())
+        );
+        assert_eq!(
+            parse("15 january"),
+            Some("the fifteenth of january".to_string())
+        );
+        assert_eq!(
+            parse("16 July 1943"),
+            Some("the sixteenth of july nineteen forty three".to_string())
+        );
+        assert_eq!(
+            parse("25th july 2012"),
+            Some("the twenty fifth of july twenty twelve".to_string())
         );
     }
 
