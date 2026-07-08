@@ -6,6 +6,13 @@ name: XCFramework
 on:
   push:
     tags: ["v*"]
+  # Validate the build itself when the workflow or build inputs change; the
+  # release-upload step is tag-gated so PR runs only produce a CI artifact.
+  pull_request:
+    paths:
+      - ".github/workflows/xcframework.yml"
+      - "build-xcframework.sh"
+      - "swift/**"
   workflow_dispatch:
 
 permissions:
