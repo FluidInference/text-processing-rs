@@ -53,12 +53,12 @@ en	tn	date	19	54
 en	tn	decimal	12	12
 en	tn	electronic	0	45
 en	tn	fraction	16	16
-en	tn	math	0	4
+en	tn	math	4	4
 en	tn	measure	1	21
 en	tn	money	60	71
 en	tn	normalize_with_audio	0	58
 en	tn	ordinal	18	27
-en	tn	punctuation	15	63
+en	tn	punctuation	16	63
 en	tn	punctuation_match_input	1	13
 en	tn	range	0	20
 en	tn	roman	1	4

@@ -10,6 +10,7 @@ pub mod date;
 pub mod decimal;
 pub mod electronic;
 pub mod fraction;
+pub mod math;
 pub mod measure;
 pub mod money;
 pub mod ordinal;

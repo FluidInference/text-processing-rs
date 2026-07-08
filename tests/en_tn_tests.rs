@@ -278,3 +278,20 @@ fn test_tn_fraction() {
         results.failures.len()
     );
 }
+
+#[test]
+fn test_tn_math() {
+    let results = common::run_test_file(Path::new("tests/data/en/tn_math.txt"), tn_normalize);
+    println!(
+        "tn_math: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
+    print_failures(&results);
+    assert!(
+        results.failures.is_empty(),
+        "{} math TN tests failed",
+        results.failures.len()
+    );
+}
