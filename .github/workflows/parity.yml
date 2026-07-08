@@ -1,0 +1,38 @@
+name: NeMo Parity
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+  # Pinned NeMo-text-processing commit so the parity number only moves when
+  # our code changes (bump deliberately, then regenerate the baseline).
+  NEMO_REF: 1f1263579fe57ba7ed783cad3dddee710fcc5064
+
+jobs:
+  parity:
+    name: NeMo Parity (report + regression guard)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: parity
+
+      - name: Fetch NeMo test data (pinned, sparse)
+        run: |
+          git clone --filter=blob:none --no-checkout \
+            https://github.com/NVIDIA/NeMo-text-processing.git nemo
+          cd nemo
+          git sparse-checkout init --cone
+          git sparse-checkout set tests/nemo_text_processing
+          git checkout "$NEMO_REF"
+
+      - name: Run parity check
+        run: |
+          NEMO_DIR="$GITHUB_WORKSPACE/nemo" \
+            cargo run --release --example parity | tee "$GITHUB_STEP_SUMMARY"
