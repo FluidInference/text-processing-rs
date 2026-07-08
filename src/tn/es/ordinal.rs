@@ -87,7 +87,9 @@ pub fn parse(input: &str) -> Option<String> {
             }
         } else {
             let last = trimmed.chars().last()?;
-            let rest = &trimmed[..trimmed.len() - 1];
+            // Trim the last *character*, not the last byte — `trimmed` may end
+            // in a multibyte char (e.g. "1 £"), and slicing mid-char panics.
+            let rest = &trimmed[..trimmed.len() - last.len_utf8()];
             if last == 'a' && rest.chars().all(|c| c.is_ascii_digit()) && !rest.is_empty() {
                 (rest, true)
             } else if last == 'o' && rest.chars().all(|c| c.is_ascii_digit()) && !rest.is_empty() {
@@ -177,5 +179,14 @@ mod tests {
     fn test_non_ordinals() {
         assert_eq!(parse("hello"), None);
         assert_eq!(parse("0.o"), None);
+    }
+
+    #[test]
+    fn test_multibyte_suffix_does_not_panic() {
+        // Trailing multibyte chars must not be sliced mid-char (was a panic).
+        assert_eq!(parse("1 £"), None);
+        assert_eq!(parse("1 000.ª"), None);
+        assert_eq!(parse("5º"), None);
+        assert_eq!(parse("¥"), None);
     }
 }
