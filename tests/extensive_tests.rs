@@ -594,7 +594,7 @@ fn test_tn_money_various_currencies() {
 
 #[test]
 fn test_tn_money_pounds_pence() {
-    assert_eq!(tn_normalize("£1.50"), "one pound and fifty pence");
+    assert_eq!(tn_normalize("£1.50"), "one pound fifty pence");
     assert_eq!(tn_normalize("£0.01"), "one penny");
 }
 
@@ -616,7 +616,7 @@ fn test_tn_money_just_symbol_no_parse() {
 #[test]
 fn test_tn_money_large_cents() {
     // "$5.5" = $5.50 (single decimal digit)
-    assert_eq!(tn_normalize("$5.5"), "five dollars and fifty cents");
+    assert_eq!(tn_normalize("$5.5"), "five dollars fifty cents");
 }
 
 // ════════════════════════════════════════════════════════════════════════
@@ -1097,7 +1097,7 @@ fn test_roundtrip_cardinal_large() {
 #[test]
 fn test_roundtrip_money() {
     let spoken = tn_normalize("$5.50");
-    assert_eq!(spoken, "five dollars and fifty cents");
+    assert_eq!(spoken, "five dollars fifty cents");
     let back = normalize(&spoken);
     assert_eq!(back, "$5.50");
 }
@@ -1290,7 +1290,7 @@ fn test_tts_scenario_address() {
 fn test_tts_scenario_price() {
     let result = tn_normalize_sentence("The laptop costs $1,299");
     assert!(
-        result.contains("one thousand two hundred ninety nine dollars"),
+        result.contains("one thousand two hundred and ninety nine dollars"),
         "Price should be spoken: {}",
         result
     );

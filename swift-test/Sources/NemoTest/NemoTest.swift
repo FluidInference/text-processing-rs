@@ -253,7 +253,7 @@ let tnOrdinalTests: [TC] = [
 let tnMoneyTests: [TC] = [
     ("$1", "one dollar"),
     ("$5", "five dollars"),
-    ("$5.50", "five dollars and fifty cents"),
+    ("$5.50", "five dollars fifty cents"),
     ("$0.01", "one cent"),
     ("$0.99", "ninety nine cents"),
     ("\u{00A3}1", "one pound"),

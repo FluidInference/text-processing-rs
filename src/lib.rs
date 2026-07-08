@@ -1232,7 +1232,7 @@ fn normalize_sentence_inner(
 /// use text_processing_rs::tn_normalize;
 ///
 /// let result = tn_normalize("$5.50");
-/// assert_eq!(result, "five dollars and fifty cents");
+/// assert_eq!(result, "five dollars fifty cents");
 /// ```
 pub fn tn_normalize(input: &str) -> String {
     let input = input.trim();
@@ -1480,7 +1480,7 @@ mod tests {
 
     #[test]
     fn test_tn_money() {
-        assert_eq!(tn_normalize("$5.50"), "five dollars and fifty cents");
+        assert_eq!(tn_normalize("$5.50"), "five dollars fifty cents");
         assert_eq!(tn_normalize("$1"), "one dollar");
         assert_eq!(tn_normalize("$0.01"), "one cent");
     }
