@@ -1237,10 +1237,9 @@ fn test_interference_decimal_vs_money() {
 
 #[test]
 fn test_interference_tn_number_vs_date() {
-    // "1980" alone should not be treated as a date by TN
-    // It should be treated as a cardinal number
+    // A bare 4-digit number in year range reads year-style (NeMo).
     let result = tn_normalize("1980");
-    assert_eq!(result, "one thousand nine hundred and eighty");
+    assert_eq!(result, "nineteen eighty");
 }
 
 #[test]
