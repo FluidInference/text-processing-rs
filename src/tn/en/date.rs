@@ -57,7 +57,28 @@ pub fn parse(input: &str) -> Option<String> {
         return Some(result);
     }
 
+    // Bare 4-digit year → year-style reading ("1994" → "nineteen ninety
+    // four"). Out-of-range values fall through to the cardinal tagger.
+    if let Some(result) = parse_bare_year(trimmed) {
+        return Some(result);
+    }
+
     None
+}
+
+/// A standalone 4-digit number in a plausible year range (1000–2099) reads
+/// year-style. Other 4-digit numbers are left for the cardinal tagger.
+fn parse_bare_year(input: &str) -> Option<String> {
+    if input.len() != 4 || !input.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    let year: u32 = input.parse().ok()?;
+    // Round centuries (1000, 1900, 2000, …) are ambiguous and read better as
+    // cardinals ("one thousand", "two thousand"), so leave them.
+    if !(1000..=2099).contains(&year) || year.is_multiple_of(100) {
+        return None;
+    }
+    verbalize_year(year)
 }
 
 /// Pluralize the final word of a spelled decade into its `-s`/`-ies` form,
@@ -372,6 +393,18 @@ mod tests {
             parse("July 4, 1776"),
             Some("july fourth seventeen seventy six".to_string())
         );
+    }
+
+    #[test]
+    fn test_bare_year() {
+        assert_eq!(parse("1994"), Some("nineteen ninety four".to_string()));
+        assert_eq!(parse("2012"), Some("twenty twelve".to_string()));
+        assert_eq!(parse("1155"), Some("eleven fifty five".to_string()));
+        // Round centuries and out-of-range values fall through to cardinal.
+        assert_eq!(parse("1000"), None);
+        assert_eq!(parse("2000"), None);
+        assert_eq!(parse("9000"), None);
+        assert_eq!(parse("123"), None);
     }
 
     #[test]
