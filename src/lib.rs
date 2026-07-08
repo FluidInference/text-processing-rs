@@ -1508,7 +1508,7 @@ mod tests {
     fn test_tn_time() {
         assert_eq!(tn_normalize("2:30"), "two thirty");
         assert_eq!(tn_normalize("2:05"), "two oh five");
-        assert_eq!(tn_normalize("2:00 PM"), "two p m");
+        assert_eq!(tn_normalize("2:00 PM"), "two PM");
     }
 
     #[test]

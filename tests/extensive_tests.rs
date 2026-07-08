@@ -626,7 +626,7 @@ fn test_tn_money_large_cents() {
 #[test]
 fn test_tn_time_basic() {
     assert_eq!(tn_normalize("2:30"), "two thirty");
-    assert_eq!(tn_normalize("12:00"), "twelve");
+    assert_eq!(tn_normalize("12:00"), "twelve o'clock");
     assert_eq!(tn_normalize("12:15"), "twelve fifteen");
 }
 
@@ -638,19 +638,20 @@ fn test_tn_time_oh_minutes() {
 }
 
 #[test]
-fn test_tn_time_24h_conversion() {
-    assert_eq!(tn_normalize("14:00"), "two p m");
-    assert_eq!(tn_normalize("13:30"), "one thirty p m");
-    assert_eq!(tn_normalize("23:59"), "eleven fifty nine p m");
-    assert_eq!(tn_normalize("0:00"), "twelve a m");
+fn test_tn_time_24h() {
+    // 24-hour clock is kept as-is (NeMo) — no 12h conversion.
+    assert_eq!(tn_normalize("14:00"), "fourteen o'clock");
+    assert_eq!(tn_normalize("13:30"), "thirteen thirty");
+    assert_eq!(tn_normalize("23:59"), "twenty three fifty nine");
+    assert_eq!(tn_normalize("0:00"), "zero o'clock");
 }
 
 #[test]
 fn test_tn_time_with_period() {
-    assert_eq!(tn_normalize("2:30 PM"), "two thirty p m");
-    assert_eq!(tn_normalize("8:15 AM"), "eight fifteen a m");
-    assert_eq!(tn_normalize("2:30 pm"), "two thirty p m");
-    assert_eq!(tn_normalize("2:30 am"), "two thirty a m");
+    assert_eq!(tn_normalize("2:30 PM"), "two thirty PM");
+    assert_eq!(tn_normalize("8:15 AM"), "eight fifteen AM");
+    assert_eq!(tn_normalize("2:30 pm"), "two thirty PM");
+    assert_eq!(tn_normalize("2:30 am"), "two thirty AM");
 }
 
 #[test]
@@ -661,9 +662,8 @@ fn test_tn_time_invalid() {
 
 #[test]
 fn test_tn_time_midnight_noon() {
-    assert_eq!(tn_normalize("12:00"), "twelve");
-    // 0:00 should be midnight (12 AM)
-    assert_eq!(tn_normalize("0:00"), "twelve a m");
+    assert_eq!(tn_normalize("12:00"), "twelve o'clock");
+    assert_eq!(tn_normalize("0:00"), "zero o'clock");
 }
 
 // ════════════════════════════════════════════════════════════════════════
