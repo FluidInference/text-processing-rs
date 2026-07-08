@@ -1336,7 +1336,7 @@ pub fn tn_normalize_sentence(input: &str) -> String {
 /// use text_processing_rs::tn_normalize_lang;
 ///
 /// assert_eq!(tn_normalize_lang("123", "fr"), "cent vingt-trois");
-/// assert_eq!(tn_normalize_lang("123", "en"), "one hundred twenty three");
+/// assert_eq!(tn_normalize_lang("123", "en"), "one hundred and twenty three");
 /// ```
 pub fn tn_normalize_lang(input: &str, lang: &str) -> String {
     tn_normalize_for_lang(input, lang)
@@ -1467,7 +1467,7 @@ mod tests {
 
     #[test]
     fn test_tn_cardinal() {
-        assert_eq!(tn_normalize("123"), "one hundred twenty three");
+        assert_eq!(tn_normalize("123"), "one hundred and twenty three");
         assert_eq!(tn_normalize("0"), "zero");
         assert_eq!(tn_normalize("1000"), "one thousand");
     }

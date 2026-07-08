@@ -146,6 +146,68 @@ fn chunk_to_words(n: u32) -> String {
     parts.join(" ")
 }
 
+/// Cardinal words with the British "and" before the final sub-hundred group
+/// (`123` → "one hundred and twenty three"), matching NeMo. The "and" appears
+/// only in the units group: `123,000` → "one hundred twenty three thousand"
+/// (no "and"), `123,000,012` → "one hundred twenty three million twelve".
+///
+/// Takes `u128` so long comma-formatted integers (up to ~10^21) still spell
+/// out; callers handle the sign.
+pub fn number_to_words_and(n: u128) -> String {
+    if n == 0 {
+        return "zero".to_string();
+    }
+
+    let scales: &[(u128, &str)] = &[
+        (1_000_000_000_000_000_000, "quintillion"),
+        (1_000_000_000_000_000, "quadrillion"),
+        (1_000_000_000_000, "trillion"),
+        (1_000_000_000, "billion"),
+        (1_000_000, "million"),
+        (1_000, "thousand"),
+    ];
+
+    let mut parts: Vec<String> = Vec::new();
+    let mut remaining = n;
+
+    for &(scale_value, scale_name) in scales {
+        if remaining >= scale_value {
+            let chunk = remaining / scale_value;
+            remaining %= scale_value;
+            parts.push(format!("{} {}", chunk_to_words(chunk as u32), scale_name));
+        }
+    }
+
+    // Only the final (units) group carries the "and".
+    if remaining > 0 {
+        parts.push(chunk_to_words_and(remaining as u32));
+    }
+
+    parts.join(" ")
+}
+
+/// Convert 1..999 to words with the British "and" between the hundreds and a
+/// nonzero sub-hundred remainder ("five hundred and fifty three"). Groups
+/// without hundreds ("twelve") or without a remainder ("nine hundred") get
+/// no "and".
+fn chunk_to_words_and(n: u32) -> String {
+    let hundreds = n / 100;
+    let rest = n % 100;
+    if hundreds > 0 {
+        if rest > 0 {
+            format!(
+                "{} hundred and {}",
+                ONES[hundreds as usize],
+                chunk_to_words(rest)
+            )
+        } else {
+            format!("{} hundred", ONES[hundreds as usize])
+        }
+    } else {
+        chunk_to_words(n)
+    }
+}
+
 /// Spell each digit of a string individually.
 ///
 /// "14" → "one four"

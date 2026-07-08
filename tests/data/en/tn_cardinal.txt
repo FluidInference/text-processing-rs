@@ -1,26 +1,20 @@
-# Cardinal TN: written~spoken
-0~zero
+# English cardinal TN cases (NeMo conventions).
+# 978-0 from the upstream file is intentionally omitted: hyphen-joined
+# numbers belong to the range/serial class, not cardinal.
 1~one
-5~five
-10~ten
-11~eleven
-19~nineteen
-20~twenty
-21~twenty one
-42~forty two
-99~ninety nine
-100~one hundred
-101~one hundred one
-123~one hundred twenty three
-999~nine hundred ninety nine
-1000~one thousand
-1001~one thousand one
-1234~one thousand two hundred thirty four
-10000~ten thousand
-100000~one hundred thousand
-1000000~one million
-2000003~two million three
--42~minus forty two
--1000~minus one thousand
-1,000~one thousand
+2~two
+-2~minus two
+3~three
+123~one hundred and twenty three
+13,000~thirteen thousand
+13000~one three zero zero zero
+9000~nine thousand
+9,000~nine thousand
+123,000~one hundred twenty three thousand
+123000~one two three zero zero zero
+123,123,000~one hundred twenty three million one hundred twenty three thousand
+123,000,012~one hundred twenty three million twelve
 1,000,000~one million
+1234567890123124~one two three four five six seven eight nine zero one two three one two four
+004~zero zero four
+124,444,234,854,823,834,553~one hundred twenty four quintillion four hundred forty four quadrillion two hundred thirty four trillion eight hundred fifty four billion eight hundred twenty three million eight hundred thirty four thousand five hundred and fifty three
