@@ -14,6 +14,7 @@ pub mod math;
 pub mod measure;
 pub mod money;
 pub mod ordinal;
+pub mod roman;
 pub mod telephone;
 pub mod time;
 pub mod whitelist;

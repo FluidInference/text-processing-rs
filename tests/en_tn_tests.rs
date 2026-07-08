@@ -295,3 +295,20 @@ fn test_tn_math() {
         results.failures.len()
     );
 }
+
+#[test]
+fn test_tn_roman() {
+    let results = common::run_test_file(Path::new("tests/data/en/tn_roman.txt"), tn_normalize);
+    println!(
+        "tn_roman: {}/{} passed ({} failures)",
+        results.passed,
+        results.total,
+        results.failures.len()
+    );
+    print_failures(&results);
+    assert!(
+        results.failures.is_empty(),
+        "{} roman TN tests failed",
+        results.failures.len()
+    );
+}
