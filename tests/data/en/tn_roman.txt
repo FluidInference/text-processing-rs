@@ -1,0 +1,7 @@
+# English roman-numeral TN cases (NeMo conventions).
+# The name-anchored ordinal form ("Sam II" -> "Sam second") is omitted:
+# it needs NeMo's ~8k-name list, and a bare-capitalized heuristic would
+# over-fire on ordinary words.
+Chapter IV~Chapter four
+PART XL~PART forty
+Sam and I~Sam and I
