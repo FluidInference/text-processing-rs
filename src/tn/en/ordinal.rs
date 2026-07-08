@@ -39,6 +39,12 @@ pub fn parse(input: &str) -> Option<String> {
     Some(cardinal_to_ordinal(&cardinal))
 }
 
+/// Spell an integer as ordinal words (`2640` → "two thousand six hundred
+/// fortieth"). Shared with the fraction tagger for denominators.
+pub(crate) fn number_to_ordinal_words(n: i64) -> String {
+    cardinal_to_ordinal(&number_to_words(n))
+}
+
 /// Convert cardinal words to ordinal words by replacing the last word.
 ///
 /// "twenty one" → "twenty first"
