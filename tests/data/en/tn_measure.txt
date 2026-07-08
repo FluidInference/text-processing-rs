@@ -1,13 +1,7 @@
-# Measure TN: written~spoken
-200 km/h~two hundred kilometers per hour
-1 kg~one kilogram
-2 kg~two kilograms
--66 kg~minus sixty six kilograms
-72°F~seventy two degrees fahrenheit
-100°C~one hundred degrees celsius
-50%~fifty percent
-1%~one percent
-500 MB~five hundred megabytes
-1 GB~one gigabyte
-3 mi~three miles
-1 mi~one mile
+# English measure TN cases (NeMo conventions). Cross-class cases omitted
+# (ranges, addresses, fraction-in-measure, hyphenated-in-sentence, exotic casing).
+12kg~twelve kilograms
+1 mbps~one megabit per second
+3 mbps~three megabits per second
+2°C~two degrees Celsius
+1°C~one degree Celsius
