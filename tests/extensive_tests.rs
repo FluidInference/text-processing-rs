@@ -1453,6 +1453,30 @@ fn test_tn_electronic_url_case_insensitive() {
 }
 
 // ════════════════════════════════════════════════════════════════════════
+// 26b. TN BACKTICK QUOTE UNIFICATION (punctuation)
+// ════════════════════════════════════════════════════════════════════════
+
+#[test]
+fn test_tn_sentence_backtick_quotes() {
+    // NeMo double-backtick quotes fold to straight quotes, and the quoted
+    // content still normalizes.
+    assert_eq!(tn_normalize_sentence("``test``."), "\"test\".");
+    assert_eq!(
+        tn_normalize_sentence("animals: ``cat``, ``dog``"),
+        "animals: \"cat\", \"dog\""
+    );
+    assert_eq!(
+        tn_normalize_sentence("``He's 50 and 2010``."),
+        "\"He's fifty and twenty ten\"."
+    );
+    // Single backticks are split off but preserved; content normalizes.
+    assert_eq!(
+        tn_normalize_sentence("a `25` example"),
+        "a `twenty five` example"
+    );
+}
+
+// ════════════════════════════════════════════════════════════════════════
 // 27. BUG FIX: i64::MIN OVERFLOW IN number_to_words
 // ════════════════════════════════════════════════════════════════════════
 
