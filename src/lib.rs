@@ -21,6 +21,9 @@ pub mod itn;
 pub mod options;
 pub mod tn;
 
+#[cfg(feature = "fst-engine")]
+pub mod fst;
+
 #[cfg(feature = "ffi")]
 pub mod ffi;
 #[cfg(all(target_arch = "wasm32", feature = "wasm"))]
