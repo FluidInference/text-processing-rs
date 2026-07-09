@@ -43,6 +43,16 @@ pub fn parse(input: &str) -> Option<String> {
         return Some(result);
     }
 
+    // Fiscal quarter: "2Q22" → "the second quarter of twenty two".
+    if let Some(result) = parse_quarter(trimmed) {
+        return Some(result);
+    }
+
+    // Era: "340 A.D" → "three forty AD".
+    if let Some(result) = parse_era(trimmed) {
+        return Some(result);
+    }
+
     // Bare 4-digit year → year-style reading ("1994" → "nineteen ninety
     // four"). Out-of-range values fall through to the cardinal tagger.
     if let Some(result) = parse_bare_year(trimmed) {
@@ -94,6 +104,16 @@ fn pluralize_decade_word(word: &str) -> Option<&'static str> {
 /// accepted; two-digit forms read as the century-less tens word, which the
 /// spoken form drops anyway ("'90s" and "1990s" are both "nineties").
 fn parse_decade(input: &str) -> Option<String> {
+    // NeMo's tokenizer emits spaced decades ("1980 s"); fold the space so the
+    // rest of the logic sees the compact "1980s" form.
+    let owned;
+    let input = if let Some(pre) = input.strip_suffix(" s") {
+        owned = format!("{}s", pre);
+        owned.as_str()
+    } else {
+        input
+    };
+
     // Strip the trailing plural `s`, then an optional leading apostrophe.
     // `is_split_punct` keeps `'` attached to the token, so we handle it here.
     let s = input.strip_suffix('s')?;
@@ -146,8 +166,9 @@ fn parse_decade(input: &str) -> Option<String> {
 /// "the twenty fifth of july …"). Months may be full or 3-letter
 /// abbreviations, any case, with an optional trailing dot.
 fn parse_word_date(input: &str) -> Option<String> {
-    // Commas are separators here; sentence mode re-attaches any real ones.
-    let cleaned = input.replace(',', " ");
+    // Commas separate here, and a hyphen joins month-name forms ("Jan-15",
+    // "Jan-15-2020"); sentence mode re-attaches any real commas.
+    let cleaned = input.replace([',', '-'], " ");
     let tokens: Vec<&str> = cleaned.split_whitespace().collect();
     if tokens.len() < 2 || tokens.len() > 3 {
         return None;
@@ -228,44 +249,119 @@ fn parse_year_word(token: &str) -> Option<String> {
     None
 }
 
-/// Parse numeric date: "1/5/2025" or "01/05/2025" (M/D/Y).
+/// Parse a numeric (or month-name) three-field date with `/`, `-`, or `.`
+/// separators. Recognizes ISO `YYYY-MM-DD`, US `MM/DD/YYYY` and `MM/DD/YY`,
+/// British `DD.MM.YYYY`, and `Mon-DD-YYYY`.
 fn parse_numeric_date(input: &str) -> Option<String> {
-    // Support both / and - separators
-    let sep = if input.contains('/') {
-        '/'
-    } else if input.contains('-') && input.chars().filter(|c| *c == '-').count() == 2 {
-        '-'
-    } else {
-        return None;
-    };
-
-    let parts: Vec<&str> = input.splitn(3, sep).collect();
+    let sep = ['/', '-', '.']
+        .into_iter()
+        .find(|&s| input.matches(s).count() == 2)?;
+    let parts: Vec<&str> = input.split(sep).map(|p| p.trim()).collect();
     if parts.len() != 3 {
         return None;
     }
+    let (p0, p1, p2) = (parts[0], parts[1], parts[2]);
 
-    // All parts must be digits
-    if !parts
+    // Month name first: "Jan-15-2020" → "january fifteenth twenty twenty".
+    if let Some(month) = parse_month(p0) {
+        let day = parse_day(p1)?;
+        let year = parse_year_field(p2)?;
+        return Some(format!("{} {} {}", month, ordinal_word(day), year));
+    }
+
+    // ISO year-first: "2006-08-05" → "august fifth two thousand six".
+    if p0.len() == 4 {
+        let year = p0.parse::<u32>().ok()?;
+        let (month, day) = (parse_month_num(p1)?, parse_day(p2)?);
+        return Some(format!(
+            "{} {} {}",
+            month,
+            ordinal_word(day),
+            verbalize_year(year)?
+        ));
+    }
+
+    // Otherwise the last field is the year; disambiguate day-first vs
+    // month-first by whether the first field can be a month.
+    let year = parse_year_field(p2)?;
+    let n0: u32 = p0.parse().ok()?;
+    let n1: u32 = p1.parse().ok()?;
+    if n0 > 12 && (1..=12).contains(&n1) && n0 <= 31 {
+        // British "DD-MM-YYYY".
+        return Some(format!(
+            "the {} of {} {}",
+            ordinal_word(n0),
+            month_num_name(n1)?,
+            year
+        ));
+    }
+    if (1..=12).contains(&n0) && (1..=31).contains(&n1) {
+        // US "MM-DD-YYYY".
+        return Some(format!(
+            "{} {} {}",
+            month_num_name(n0)?,
+            ordinal_word(n1),
+            year
+        ));
+    }
+    None
+}
+
+/// Fiscal quarter: "2Q22" / "2q2022" → "the second quarter of <year>".
+fn parse_quarter(input: &str) -> Option<String> {
+    let (q, rest) = input.split_once(['Q', 'q'])?;
+    let quarter: u32 = q.trim().parse().ok()?;
+    if !(1..=4).contains(&quarter) {
+        return None;
+    }
+    let rest = rest.trim();
+    if !rest.chars().all(|c| c.is_ascii_digit()) || !matches!(rest.len(), 2 | 4) {
+        return None;
+    }
+    let year = verbalize_year(rest.parse().ok()?)?;
+    Some(format!("the {} quarter of {}", ordinal_word(quarter), year))
+}
+
+/// Era: "340 A.D" / "1200 BC" → "<year-style> AD"/"BC".
+fn parse_era(input: &str) -> Option<String> {
+    let (num, era) = input.rsplit_once(' ')?;
+    let spoken = match era.trim().to_uppercase().replace('.', "").as_str() {
+        "AD" => "AD",
+        "BC" => "BC",
+        _ => return None,
+    };
+    let num = num.trim();
+    if num.is_empty() || !num.chars().all(|c| c.is_ascii_digit()) {
+        return None;
+    }
+    Some(format!("{} {}", verbalize_year(num.parse().ok()?)?, spoken))
+}
+
+/// Recognize a numeric month field (1–12) and return its spoken name.
+fn parse_month_num(field: &str) -> Option<&'static str> {
+    month_num_name(field.parse().ok()?)
+}
+
+fn month_num_name(n: u32) -> Option<&'static str> {
+    MONTH_NUMBERS
         .iter()
-        .all(|p| !p.is_empty() && p.chars().all(|c| c.is_ascii_digit()))
-    {
+        .find(|(_, num)| *num == n)
+        .map(|(name, _)| *name)
+}
+
+/// Year field: 4 digits read year-style; a 2-digit field reads digit-by-digit
+/// when it has a leading zero ("05" → "zero five") and cardinal-style otherwise
+/// ("98" → "ninety eight").
+fn parse_year_field(field: &str) -> Option<String> {
+    if !field.chars().all(|c| c.is_ascii_digit()) {
         return None;
     }
-
-    let month_num: u32 = parts[0].parse().ok()?;
-    let day: u32 = parts[1].parse().ok()?;
-    let year: u32 = parts[2].parse().ok()?;
-
-    if month_num == 0 || month_num > 12 || day == 0 || day > 31 {
-        return None;
+    match field.len() {
+        4 => verbalize_year(field.parse().ok()?),
+        2 if field.starts_with('0') => Some(super::spell_digits(field)),
+        2 => Some(number_to_words(field.parse::<i64>().ok()?)),
+        _ => None,
     }
-
-    let month_name = MONTH_NUMBERS.iter().find(|(_, n)| *n == month_num)?.0;
-
-    let day_ordinal = ordinal_word(day);
-    let year_words = verbalize_year(year)?;
-
-    Some(format!("{} {} {}", month_name, day_ordinal, year_words))
 }
 
 /// Verbalize a year.
@@ -285,9 +381,21 @@ pub fn verbalize_year(year: u32) -> Option<String> {
         return Some(number_to_words(year as i64));
     }
 
-    // Years 100-999
+    // Years 100-999 read year-style: round hundreds as "N hundred", otherwise
+    // split into hundreds + remainder ("340" → "three forty", "105" → "one oh
+    // five").
     if year < 1000 {
-        return Some(number_to_words(year as i64));
+        let hundreds = year / 100;
+        let remainder = year % 100;
+        if remainder == 0 {
+            return Some(format!("{} hundred", number_to_words(hundreds as i64)));
+        }
+        let second = if remainder < 10 {
+            format!("oh {}", number_to_words(remainder as i64))
+        } else {
+            number_to_words(remainder as i64)
+        };
+        return Some(format!("{} {}", number_to_words(hundreds as i64), second));
     }
 
     let century = year / 100;
