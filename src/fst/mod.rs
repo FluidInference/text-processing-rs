@@ -17,4 +17,5 @@
 mod driver;
 mod engine;
 
+pub mod fr;
 pub mod zh;

@@ -125,41 +125,40 @@ The rustfst route is warranted only when byte-exact NeMo output is a hard
 product requirement — and even then the ceiling is ~95% on these mixed-mode
 test files, because (as shown above) NeMo itself cannot reach 100% on them.
 
-## Mandarin (zh): the FST route, shipped
+## The FST route, shipped (`fst-engine` feature)
 
 The FST engine is **language-agnostic** — the driver above is unchanged per
-language; only the compiled grammars swap. Pointing it at NeMo's zh grammars
-(with one adjustment: join verbalized tokens with `""` not `" "`, since Chinese
-has no word spaces) scores a clean:
+language; only the compiled grammars swap, and each language picks a single
+token-join separator. Shipped behind the **`fst-engine`** cargo feature (off by
+default; the rule-based path stays the default and carries no new weight):
 
-```
-zh TN: 353/353 (100%)
-```
+| lang | parity | separator | grammars | rule-based baseline |
+|------|--------|-----------|----------|---------------------|
+| zh (Mandarin) | **353/353 (100%)** | `""` (no word spaces) | 1.2 MB | ~7% |
+| fr (French) | **117/117 (100%)** | `" "` | 1.9 MB | ~60% |
 
-vs. ~7% for a rule-based port. zh reaches a *full* 100% where English capped at
-96% for a structural reason: NeMo's zh `test_cases_*.txt` come from a single
-`deterministic=True` mode — no `punctuation_match_input`, no
-`normalize_with_audio`, no contradictory multi-candidate rows — so the grammar
-is fully self-consistent with its own fixtures.
-
-This is shipped behind the **`fst-engine`** cargo feature (off by default):
+Both reach a *full* 100% where English capped at 96% for a structural reason:
+their `test_cases_*.txt` come from a single `deterministic=True` mode — no
+`punctuation_match_input`, no `normalize_with_audio`, no contradictory
+multi-candidate rows — so the grammar is self-consistent with its own fixtures.
+(We confirmed NeMo's *own* normalizer also scores 353/353 and 117/117 here, and
+that the engine matches NeMo byte-for-byte on fresh non-fixture inputs.)
 
 ```rust
 // cargo build --features fst-engine
-use text_processing_rs::fst::zh;
+use text_processing_rs::fst::{zh, fr};
 assert_eq!(zh::normalize("2024年"), "二零二四年");
-assert_eq!(zh::normalize("$123"), "一百二十三美元");
+assert_eq!(fr::normalize("83"), "quatre-vingt-trois");
 ```
 
-- Grammars: `grammars/zh/` (0.8 MB classify + 0.4 MB verbalize; no
-  post-processor needed for zh).
+- Grammars: `grammars/<lang>/` (classify + verbalize; no post-processor needed
+  for zh or fr).
 - Engine: `src/fst/` — `engine.rs` (the two fidelity fixes above), `driver.rs`
-  (classify → parse → permute → verbalize → join), `zh.rs` (bundled grammars).
-- Parity test: `tests/fst_zh_parity.rs` runs the bundled NeMo fixtures
-  (`tests/fixtures/zh/`) and asserts 353/353, so CI verifies it without a NeMo
-  checkout.
+  (classify → parse → permute → verbalize → join), one small `<lang>.rs` per
+  language (bundled grammars + separator).
+- Parity test: `tests/fst_parity.rs` runs the bundled NeMo fixtures
+  (`tests/fixtures/<lang>/`) and asserts 100% per language, so CI verifies it
+  without a NeMo checkout.
 
-The rule-based path remains the default; enabling `fst-engine` adds the
-`rustfst` dependency and the per-language grammars. Other languages (fr, de, es,
-hi, ja) drop in the same way — export their grammars, add a `src/fst/<lang>.rs`,
-pick the token separator.
+Remaining languages (de, es, hi, ja) drop in the same way — export their
+grammars, add a `src/fst/<lang>.rs`, pick the token separator.
