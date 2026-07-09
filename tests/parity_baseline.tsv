@@ -58,8 +58,8 @@ en	tn	measure	14	21
 en	tn	money	71	71
 en	tn	normalize_with_audio	40	58
 en	tn	ordinal	27	27
-en	tn	punctuation	39	63
-en	tn	punctuation_match_input	4	13
+en	tn	punctuation	41	63
+en	tn	punctuation_match_input	5	13
 en	tn	range	20	20
 en	tn	roman	4	4
 en	tn	serial	29	32
@@ -67,7 +67,7 @@ en	tn	special_text	9	10
 en	tn	telephone	20	20
 en	tn	time	21	21
 en	tn	whitelist	7	7
-en	tn	word	38	39
+en	tn	word	39	39
 es	itn	cardinal	51	51
 es	itn	cardinal_cased	27	30
 es	itn	date	8	8

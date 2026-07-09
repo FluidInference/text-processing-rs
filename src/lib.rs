@@ -1058,6 +1058,13 @@ fn is_split_punct(c: char) -> bool {
     )
 }
 
+/// "Hard" punctuation split even in the interior of a word ("1!hello"). These
+/// never occur inside glued numeric/semiotic forms (unlike `.`/`:`/`,`), so
+/// splitting them cannot break decimals, times, or IPs.
+fn is_interior_hard(c: char) -> bool {
+    matches!(c, '!' | '?' | '(' | ')' | '[' | ']' | '{' | '}')
+}
+
 /// Fold NeMo's double-backtick quotes to a straight double quote so the
 /// pretokenizer splits them off and the quoted content still normalizes
 /// (`` ``cat`` `` → `"cat"`). TN sentence mode only.
@@ -1103,19 +1110,43 @@ fn pretokenize(input: &str) -> Vec<Pretoken> {
             next_sep = "";
         }
 
-        // Core text (may be empty if the whole word was punctuation).
+        // Core text, further split on interior "hard" punctuation ("1!hello"
+        // → "1", "!", "hello") so the pieces normalize. Pieces stay glued
+        // (sep = "") so the sliding window still reconstructs whole tokens like
+        // "401(k)" and lets a tagger match them first.
         if start < end {
-            let core_start = chars[start].0;
-            let core_end = if end < chars.len() {
-                chars[end].0
-            } else {
-                word.len()
-            };
-            out.push(Pretoken {
-                text: word[core_start..core_end].to_string(),
-                sep: next_sep,
-            });
-            next_sep = "";
+            let core = &chars[start..end];
+            let mut run_start = 0usize;
+            let mut flush_run =
+                |from: usize, to: usize, sep: &mut &'static str, out: &mut Vec<Pretoken>| {
+                    if from < to {
+                        let s = core[from].0;
+                        let e = if to < core.len() {
+                            core[to].0
+                        } else if end < chars.len() {
+                            chars[end].0
+                        } else {
+                            word.len()
+                        };
+                        out.push(Pretoken {
+                            text: word[s..e].to_string(),
+                            sep: *sep,
+                        });
+                        *sep = "";
+                    }
+                };
+            for i in 0..core.len() {
+                if is_interior_hard(core[i].1) {
+                    flush_run(run_start, i, &mut next_sep, &mut out);
+                    out.push(Pretoken {
+                        text: core[i].1.to_string(),
+                        sep: next_sep,
+                    });
+                    next_sep = "";
+                    run_start = i + 1;
+                }
+            }
+            flush_run(run_start, core.len(), &mut next_sep, &mut out);
         }
 
         // Trailing punctuation.
@@ -1195,17 +1226,33 @@ where
         }
 
         if let Some((end, replacement, _)) = best {
-            out.push_str(pretokens[i].sep);
-            out.push_str(&replacement);
+            push_detokenized(&mut out, pretokens[i].sep, &replacement);
             i = end;
         } else {
-            out.push_str(pretokens[i].sep);
-            out.push_str(&pretokens[i].text);
+            push_detokenized(&mut out, pretokens[i].sep, &pretokens[i].text);
             i += 1;
         }
     }
 
     out
+}
+
+/// Append `text` to `out`, inserting a detokenization space after a closing
+/// hard-punctuation mark that would otherwise glue to the next word ("one!" +
+/// "hello" → "one! hello"), matching NeMo's punctuation post-processing.
+fn push_detokenized(out: &mut String, sep: &str, text: &str) {
+    let glue_after_close = sep.is_empty()
+        && matches!(out.chars().last(), Some('!' | '?' | ')' | ']' | '}'))
+        && text
+            .chars()
+            .next()
+            .is_some_and(|c| c.is_ascii_alphanumeric());
+    if glue_after_close {
+        out.push(' ');
+    } else {
+        out.push_str(sep);
+    }
+    out.push_str(text);
 }
 
 /// Sentence-mode dispatch loop. The `concat_compound` and
