@@ -84,17 +84,19 @@ pub fn parse(input: &str) -> Option<String> {
     None
 }
 
-/// Collapse a run of dotted single upper-case initials ("C. S.", "U. S. A.")
-/// into a bare acronym ("CS", "USA").
+/// Collapse a run of dotted single upper-case initials into a bare acronym,
+/// whether space- or dot-separated ("C. S." → "CS", "U.S.A." → "USA").
 fn merge_initials(s: &str) -> Option<String> {
-    let parts: Vec<&str> = s.split_whitespace().collect();
+    if !s.contains('.') {
+        return None;
+    }
+    let parts: Vec<&str> = s.split(['.', ' ']).filter(|p| !p.is_empty()).collect();
     if parts.len() < 2 {
         return None;
     }
     let mut letters = String::new();
     for part in &parts {
-        let letter = part.strip_suffix('.')?;
-        let mut chars = letter.chars();
+        let mut chars = part.chars();
         let c = chars.next()?;
         if chars.next().is_some() || !c.is_ascii_uppercase() {
             return None;
