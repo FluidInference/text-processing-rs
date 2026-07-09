@@ -32,12 +32,11 @@ pub fn parse(input: &str) -> Option<String> {
         }
     }
 
-    // Hyphen or en-dash range.
-    for sep in ['-', '\u{2013}'] {
-        if let Some((a, b)) = split_binary(t, sep) {
-            if let Some(result) = range_words(a, b) {
-                return Some(result);
-            }
+    // Hyphen range ("1980-1986" → "… to …"). An en-dash is kept literal by the
+    // tokenizer/detokenizer, so it is not treated as a range here.
+    if let Some((a, b)) = split_binary(t, '-') {
+        if let Some(result) = range_words(a, b) {
+            return Some(result);
         }
     }
 

@@ -1062,7 +1062,10 @@ fn is_split_punct(c: char) -> bool {
 /// never occur inside glued numeric/semiotic forms (unlike `.`/`:`/`,`), so
 /// splitting them cannot break decimals, times, or IPs.
 fn is_interior_hard(c: char) -> bool {
-    matches!(c, '!' | '?' | '(' | ')' | '[' | ']' | '{' | '}' | '\'')
+    matches!(
+        c,
+        '!' | '?' | '(' | ')' | '[' | ']' | '{' | '}' | '\'' | '\u{2013}'
+    )
 }
 
 /// Fold NeMo's double-backtick quotes to a straight double quote so the
@@ -1242,7 +1245,10 @@ where
 /// "hello" → "one! hello"), matching NeMo's punctuation post-processing.
 fn push_detokenized(out: &mut String, sep: &str, text: &str) {
     let glue_after_close = sep.is_empty()
-        && matches!(out.chars().last(), Some('!' | '?' | ')' | ']' | '}'))
+        && matches!(
+            out.chars().last(),
+            Some('!' | '?' | ')' | ']' | '}' | '\u{2013}')
+        )
         && text
             .chars()
             .next()
