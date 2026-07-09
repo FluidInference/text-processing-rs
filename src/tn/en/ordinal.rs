@@ -13,7 +13,7 @@ pub fn parse(input: &str) -> Option<String> {
     let trimmed = input.trim();
 
     // Detect suffix: st, nd, rd, th
-    let (num_str, _suffix) = if let Some(s) = trimmed.strip_suffix("st") {
+    let (num_str, suffix) = if let Some(s) = trimmed.strip_suffix("st") {
         (s, "st")
     } else if let Some(s) = trimmed.strip_suffix("nd") {
         (s, "nd")
@@ -37,9 +37,34 @@ pub fn parse(input: &str) -> Option<String> {
         return None;
     }
 
+    // Malformed ordinal — the written suffix does not match the number's true
+    // ordinal suffix ("1th", "111st"). NeMo reads the number (cardinal below
+    // 100, digit-by-digit at 100+) and appends the literal suffix as a word.
+    if suffix != correct_suffix(n) {
+        let number = if n < 100 {
+            number_to_words(n)
+        } else {
+            super::spell_digits(&digits)
+        };
+        return Some(format!("{} {}", number, suffix));
+    }
+
     // "0th" → "zeroth" (cardinal_to_ordinal maps the "zero" tail to "zeroth").
     let cardinal = number_to_words(n);
     Some(cardinal_to_ordinal(&cardinal))
+}
+
+/// The correct ordinal suffix for `n` (11–13 are always "th").
+fn correct_suffix(n: i64) -> &'static str {
+    if (11..=13).contains(&(n % 100)) {
+        return "th";
+    }
+    match n % 10 {
+        1 => "st",
+        2 => "nd",
+        3 => "rd",
+        _ => "th",
+    }
 }
 
 /// Spell an integer as ordinal words (`2640` → "two thousand six hundred
