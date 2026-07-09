@@ -5,6 +5,8 @@
 //! - "+1-234-567-8901" → "plus one, two three four, five six seven, eight nine zero one"
 //! - "(555) 123-4567" → "five five five, one two three, four five six seven"
 
+use super::number_to_words;
+
 /// Parse a written phone number to spoken form.
 pub fn parse(input: &str) -> Option<String> {
     let trimmed = input.trim();
@@ -12,6 +14,12 @@ pub fn parse(input: &str) -> Option<String> {
         return None;
     }
 
+    // Vanity numbers mix digit and letter groups ("1-800-GO-U-HAUL").
+    if let Some(vanity) = parse_vanity(trimmed) {
+        return Some(vanity);
+    }
+
+    // (vanity handled above)
     // Phone numbers contain digits and separators (-, ., space, parens)
     // Must have mostly digits
     let digit_count = trimmed.chars().filter(|c| c.is_ascii_digit()).count();
@@ -124,6 +132,50 @@ fn spell_digit_group(group: &str) -> String {
         })
         .collect::<Vec<_>>()
         .join(" ")
+}
+
+/// Read a vanity number that mixes digit and letter groups
+/// ("1-800-GO-U-HAUL" → "one, eight hundred, GO U HAUL"). Digit groups read as
+/// cardinals followed by ", "; letter groups are kept and space-separated.
+fn parse_vanity(input: &str) -> Option<String> {
+    if !input.contains('-') {
+        return None;
+    }
+    let groups: Vec<&str> = input.split('-').collect();
+    if groups.len() < 2 {
+        return None;
+    }
+    let mut has_digit = false;
+    let mut has_letter = false;
+    for g in &groups {
+        if g.is_empty() {
+            return None;
+        }
+        if g.chars().all(|c| c.is_ascii_digit()) {
+            has_digit = true;
+        } else if g.chars().all(|c| c.is_ascii_alphabetic()) {
+            has_letter = true;
+        } else {
+            return None; // mixed-content group is not a vanity number
+        }
+    }
+    if !(has_digit && has_letter) {
+        return None;
+    }
+
+    let mut out = String::new();
+    for (i, g) in groups.iter().enumerate() {
+        let is_digit = g.chars().all(|c| c.is_ascii_digit());
+        if is_digit {
+            out.push_str(&number_to_words(g.parse().ok()?));
+        } else {
+            out.push_str(g);
+        }
+        if i + 1 < groups.len() {
+            out.push_str(if is_digit { ", " } else { " " });
+        }
+    }
+    Some(out)
 }
 
 #[cfg(test)]
