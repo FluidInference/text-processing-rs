@@ -56,6 +56,21 @@ pub fn parse(input: &str) -> Option<String> {
         return None;
     }
 
+    // Rate notation: "<digits>/<single letter>" → "<cardinal> per <LETTER>".
+    if let Some((num, unit)) = token.split_once('/') {
+        if !num.is_empty()
+            && num.chars().all(|c| c.is_ascii_digit())
+            && unit.len() == 1
+            && unit.chars().all(|c| c.is_ascii_alphabetic())
+        {
+            return Some(format!(
+                "{} per {}",
+                number_to_words(num.parse().ok()?),
+                unit.to_ascii_uppercase()
+            ));
+        }
+    }
+
     let mut out = String::new();
     let mut chars = token.chars().peekable();
     while let Some(&c) = chars.peek() {

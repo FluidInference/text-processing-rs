@@ -145,6 +145,12 @@ pub fn parse(input: &str) -> Option<String> {
             continue;
         }
 
+        // A spaced 4-digit decade ("1980 s") is not "1980 seconds" — leave it
+        // to the date tagger, which reads it as "nineteen eighties".
+        if unit_str == "s" && is_spaced_decade(num_part) {
+            continue;
+        }
+
         // Scale word between the number and unit ("100 million kg").
         if let Some(scaled) = parse_scaled(num_part) {
             return Some(format!("{} {}", scaled, unit_info.plural));
@@ -211,6 +217,13 @@ pub fn parse(input: &str) -> Option<String> {
     // "value/unit" reads the slash as "per": "12/kg" → "twelve per kilogram",
     // "12kg/kg" → "twelve kilograms per kilogram".
     parse_per(trimmed)
+}
+
+/// A 4-digit multiple of ten ("1980") — a decade written before a spaced "s".
+fn is_spaced_decade(num: &str) -> bool {
+    num.len() == 4
+        && num.chars().all(|c| c.is_ascii_digit())
+        && num.parse::<u32>().map(|n| n % 10 == 0).unwrap_or(false)
 }
 
 /// Read a "value/unit" form where the right side is a bare unit.
