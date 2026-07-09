@@ -1,0 +1,22 @@
+# NeMo deterministic TN output (lang=de), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: input~expected.
+
+100. Geburtstag~ein hundertste Geburtstag
+25111.~fünf und zwanzig tausend ein hundert elfte
+2.~zweite
+0.~nullte
+1.~erste
+2.~zweite
+3.~dritte
+4.~vierte
+11.~elfte
+13.~dreizehnte
+21.~ein und zwanzigste
+23.~drei und zwanzigste
+111.~ein hundert elfte
+1000.~ein tausendste
+dem 1000.~dem ein tausendste
+101.~ein hundert erste
+1000000.~eine millionste
+121.~ein hundert ein und zwanzigste
+121tem~ein hundert ein und zwanzigste

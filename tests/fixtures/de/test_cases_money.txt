@@ -1,0 +1,24 @@
+# NeMo deterministic TN output (lang=de), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: input~expected.
+
+$2~zwei dollar
+$2,000~zwei dollar
+$2,0~zwei dollar
+$2,00~zwei dollar
+$2,0001~zwei komma null null null eins dollar
+€1 million~eins million euro
+€0,01~ein cent
+€0,02~zwei cent
+€0,20~zwanzig cent
+$2,20~zwei dollar zwanzig cent
+$2,20000~zwei dollar zwanzig cent
+$2,200~zwei dollar zwanzig cent
+$2,2010~zwei komma zwei null eins dollar
+$2,201~zwei komma zwei null eins dollar
+€2,20~zwei euro zwanzig cent
+€2,200~zwei euro zwanzig cent
+€2,200 millionen~zwei komma zwei null null millionen euro
+€2,201 millionen~zwei komma zwei null eins millionen euro
+€2,21 millionen~zwei komma zwei eins millionen euro
+£2,01~zwei pfund ein penny
+£2,20~zwei pfund zwanzig pence

@@ -1,0 +1,7 @@
+# NeMo deterministic TN output (lang=en), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: input~expected.
+
+Sam II~Sam II
+Chapter IV~Chapter IV
+PART XL~PART XL
+Sam and I~Sam and I

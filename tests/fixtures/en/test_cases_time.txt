@@ -1,0 +1,24 @@
+# NeMo deterministic TN output (lang=en), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: input~expected.
+
+01:00~one o'clock
+01:00 am~one AM
+01:00 a.m.~one AM
+01:00 a.m~one AM
+1 a.m.~one AM
+23:00~twenty three o'clock
+1:00 a.m.~one AM
+1:00a.m.~one AM
+1.59 p.m.~one fifty nine PM
+01:59 p.m.~one fifty nine PM
+1:59 p.m.~one fifty nine PM
+1:59 p.m. est~one fifty nine PM EST
+1:59 p.m.est~one fifty nine PM EST
+1:59 p.m. e.s.t~one fifty nine PM EST
+10:00:00 p.m. e.s.t~ten hours zero minutes and zero seconds PM EST
+1:01:01~one hour one minute and one second
+14:10:30~fourteen hours ten minutes and thirty seconds
+2pm-5pm~two PM to five PM
+5pm~five PM
+21:51:31~twenty one hours fifty one minutes and thirty one seconds
+01:01:01~one hour one minute and one second

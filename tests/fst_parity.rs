@@ -46,3 +46,28 @@ fn zh_tn_matches_nemo() {
 fn fr_tn_matches_nemo() {
     assert_lang_parity("fr", 100, fst::fr::normalize);
 }
+
+#[test]
+fn ja_tn_matches_nemo() {
+    assert_lang_parity("ja", 500, fst::ja::normalize);
+}
+
+#[test]
+fn hi_tn_matches_nemo() {
+    assert_lang_parity("hi", 600, fst::hi::normalize);
+}
+
+#[test]
+fn es_tn_matches_nemo() {
+    assert_lang_parity("es", 500, fst::es::normalize);
+}
+
+#[test]
+fn en_tn_matches_nemo() {
+    assert_lang_parity("en", 500, fst::en::normalize);
+}
+
+#[test]
+fn de_tn_matches_nemo() {
+    assert_lang_parity("de", 300, fst::de::normalize);
+}

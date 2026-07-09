@@ -181,14 +181,18 @@ fn permute(pairs: &[(String, Val)]) -> Vec<String> {
     out
 }
 
-/// Run the full classify → verbalize pipeline.
+/// Run the full classify → verbalize → post-process pipeline, reproducing
+/// NeMo's `normalize(..., punct_post_process=True)` end to end.
 ///
-/// `sep` joins verbalized tokens: `" "` for space-delimited languages (English),
-/// `""` for scriptio-continua languages (Chinese). Returns the input unchanged
-/// if classification fails (matching NeMo's passthrough for out-of-domain text).
+/// `sep` joins verbalized tokens: `" "` for space-delimited languages (English,
+/// French, …), `""` for scriptio-continua languages (Chinese, Japanese).
+/// `post` is the optional post-processing FST (English/Hindi have one; others
+/// pass `None`). Returns the input unchanged if classification fails (matching
+/// NeMo's passthrough for out-of-domain text).
 pub fn normalize(
     classify: &VectorFst<TropicalWeight>,
     verbalize: &VectorFst<TropicalWeight>,
+    post: Option<&VectorFst<TropicalWeight>>,
     input: &str,
     sep: &str,
 ) -> String {
@@ -209,5 +213,122 @@ pub fn normalize(
         }
         parts.push(verbalized.unwrap_or_default());
     }
-    parts.join(sep)
+
+    // NeMo's post-verbalization steps (normalize.py): collapse spaces, apply the
+    // post-processing FST, Moses-detokenize, then re-align punctuation spacing to
+    // the original input.
+    let joined = collapse_spaces(parts.join(sep));
+    let processed = match post {
+        Some(pp) => apply(pp, &joined).unwrap_or(joined),
+        None => joined,
+    };
+    post_process_punct(input, &moses_despace(&processed))
+}
+
+/// Collapse runs of spaces to one and trim (NeMo's `SPACE_DUP` + strip).
+fn collapse_spaces(s: String) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut prev_space = false;
+    for c in s.chars() {
+        if c == ' ' {
+            if !prev_space {
+                out.push(' ');
+            }
+            prev_space = true;
+        } else {
+            out.push(c);
+            prev_space = false;
+        }
+    }
+    out.trim().to_string()
+}
+
+/// The one Moses-detokenizer behavior NeMo's outputs depend on: drop a space
+/// before sentence/clause punctuation. `post_process_punct` then restores any
+/// spacing the original input actually had.
+fn moses_despace(s: &str) -> String {
+    let mut out = s.to_string();
+    for p in [" .", " ,", " !", " ?", " ;", " :"] {
+        out = out.replace(p, &p[1..]);
+    }
+    out
+}
+
+/// Port of NeMo's `data_loader_utils.post_process_punct`: for each punctuation
+/// mark present in `input`, align the spacing around that mark in `normalized`
+/// to match the input. This is what makes `978-0` read `…eight-zero` (no spaces)
+/// while `9 - 0` keeps them.
+fn post_process_punct(input: &str, normalized: &str) -> String {
+    // NeMo replaces `` with " in the input before aligning (the post-processing
+    // WFST emits " for `` quotes).
+    let rewritten;
+    let input: &str = if input.contains("``") && !normalized.contains("``") {
+        rewritten = input.replace("``", "\"");
+        &rewritten
+    } else {
+        input
+    };
+    let inp: Vec<char> = input.chars().collect();
+    // Each cell starts as one char and may grow a trailing space or empty out.
+    let mut nt: Vec<String> = normalized.chars().map(|c| c.to_string()).collect();
+    let punctuation = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
+    let space = " ".to_string();
+
+    for p in punctuation.chars().filter(|c| inp.contains(c)) {
+        let ps = p.to_string();
+        let equal =
+            inp.iter().filter(|&&c| c == p).count() == nt.iter().filter(|s| **s == ps).count();
+        let (mut idx_in, mut idx_out) = (0usize, 0usize);
+        while inp[idx_in..].contains(&p) {
+            let Some(io) = (idx_out..nt.len()).find(|&i| nt[i] == ps) else {
+                break;
+            };
+            let Some(ii) = (idx_in..inp.len()).find(|&i| inp[i] == p) else {
+                break;
+            };
+            idx_out = io;
+            idx_in = ii;
+            let is_valid =
+                (idx_out > 0 && idx_in > 0 && nt[idx_out - 1] == inp[idx_in - 1].to_string())
+                    || (idx_out < nt.len() - 1
+                        && idx_in < inp.len() - 1
+                        && nt[idx_out + 1] == inp[idx_in + 1].to_string());
+            if !equal && !is_valid {
+                idx_in += 1;
+                continue;
+            }
+            if idx_in > 0 && idx_out > 0 {
+                if nt[idx_out - 1] == space && inp[idx_in - 1] != ' ' {
+                    nt[idx_out - 1] = String::new();
+                } else if nt[idx_out - 1] != space && inp[idx_in - 1] == ' ' {
+                    nt[idx_out - 1].push(' ');
+                }
+            }
+            if idx_in < inp.len() - 1 && idx_out < nt.len() - 1 {
+                if nt[idx_out + 1] == space && inp[idx_in + 1] != ' ' {
+                    nt[idx_out + 1] = String::new();
+                } else if nt[idx_out + 1] != space && inp[idx_in + 1] == ' ' {
+                    nt[idx_out].push(' ');
+                }
+            }
+            idx_out += 1;
+            idx_in += 1;
+        }
+    }
+    // NeMo ends with `re.sub(' +', ' ')` — collapse runs but do NOT trim.
+    let joined = nt.concat();
+    let mut out = String::with_capacity(joined.len());
+    let mut prev_space = false;
+    for c in joined.chars() {
+        if c == ' ' {
+            if !prev_space {
+                out.push(' ');
+            }
+            prev_space = true;
+        } else {
+            out.push(c);
+            prev_space = false;
+        }
+    }
+    out
 }

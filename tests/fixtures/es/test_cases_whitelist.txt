@@ -1,0 +1,10 @@
+# NeMo deterministic TN output (lang=es), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: input~expected.
+
+el dr.~el doctor
+sr. rodriguez~señor rodriguez
+182 esq. toledo~ciento ochenta y dos esquina toledo
+da. ana pérez~doña ana pérez
+pza.~plaza
+c.º b.~camino bajo
+ee. uu.~estados unidos

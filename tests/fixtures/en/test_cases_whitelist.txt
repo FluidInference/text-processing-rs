@@ -1,0 +1,10 @@
+# NeMo deterministic TN output (lang=en), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: input~expected.
+
+Dr. Evil~doctor Evil
+Mrs. Norris~misses Norris
+DNA is~DNA is
+C. S. Lewis~CS Lewis
+tv~TV
+and/or~and/or
+Our company offers a 401(k) retirement savings plan~Our company offers a four oh one k retirement savings plan

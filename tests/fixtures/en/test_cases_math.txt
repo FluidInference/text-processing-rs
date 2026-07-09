@@ -1,0 +1,7 @@
+# NeMo deterministic TN output (lang=en), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: input~expected.
+
+1-2=5~one minus two equals five
+1- 2 = 5~one minus two equals five
+y=x +1~y equals x plus one
+x +1 = y~x plus one equals y

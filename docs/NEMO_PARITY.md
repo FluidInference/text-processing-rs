@@ -11,10 +11,11 @@ TL;DR:
 - **NeMo's own normalizer scores 480/508 (94.5%) on its own test files** — so
   **100% on these files is impossible for any single implementation**, NeMo
   included (the files aggregate several NeMo modes/configs).
-- A prototype that runs NeMo's *actual* compiled grammars in Rust via
-  [`rustfst`](https://crates.io/crates/rustfst) reaches **488/508 (96.1%)** —
-  i.e. genuine NeMo parity — at the cost of ~10 MB of grammar binaries and the
-  `rustfst` dependency.
+- The optional **`fst-engine`** feature runs NeMo's *actual* compiled grammars
+  via [`rustfst`](https://crates.io/crates/rustfst) and reaches **byte-exact
+  NeMo parity for all seven languages** (zh, ja, fr, es, de, en, hi — 100% each
+  vs NeMo's own deterministic output). Cost: the `rustfst`/`flate2` deps and
+  ~7 MB of gzipped grammars. See "The FST route, shipped" below.
 
 ## How parity is measured
 
@@ -127,38 +128,60 @@ test files, because (as shown above) NeMo itself cannot reach 100% on them.
 
 ## The FST route, shipped (`fst-engine` feature)
 
-The FST engine is **language-agnostic** — the driver above is unchanged per
-language; only the compiled grammars swap, and each language picks a single
-token-join separator. Shipped behind the **`fst-engine`** cargo feature (off by
-default; the rule-based path stays the default and carries no new weight):
+The FST engine is **language-agnostic** — the driver is unchanged per language;
+only the compiled grammars swap, and each language sets a token-join separator
+and whether it has a post-processing FST. Shipped behind the **`fst-engine`**
+cargo feature (off by default; the rule-based path stays the default and carries
+no new weight). **All seven languages reach byte-exact parity with NeMo:**
 
-| lang | parity | separator | grammars | rule-based baseline |
-|------|--------|-----------|----------|---------------------|
-| zh (Mandarin) | **353/353 (100%)** | `""` (no word spaces) | 1.2 MB | ~7% |
-| fr (French) | **117/117 (100%)** | `" "` | 1.9 MB | ~60% |
+| lang | parity vs NeMo | separator | post-proc FST | rule-based baseline |
+|------|----------------|-----------|---------------|---------------------|
+| zh (Mandarin) | **367/367 (100%)** | `""` | — | ~7% |
+| ja (Japanese) | **542/542 (100%)** | `""` | — | ~0% |
+| fr (French) | **116/116 (100%)** | `" "` | — | ~60% |
+| es (Spanish) | **536/536 (100%)** | `" "` | — | ~23% |
+| de (German) | **314/314 (100%)** | `" "` | — | ~15% |
+| en (English) | **506/506 (100%)** | `" "` | ✓ | ~89% |
+| hi (Hindi) | **677/677 (100%)** | `" "` | ✓ | ~2% |
 
-Both reach a *full* 100% where English capped at 96% for a structural reason:
-their `test_cases_*.txt` come from a single `deterministic=True` mode — no
-`punctuation_match_input`, no `normalize_with_audio`, no contradictory
-multi-candidate rows — so the grammar is self-consistent with its own fixtures.
-(We confirmed NeMo's *own* normalizer also scores 353/353 and 117/117 here, and
-that the engine matches NeMo byte-for-byte on fresh non-fixture inputs.)
+"Parity vs NeMo" means the engine reproduces `Normalizer(lang=…,
+deterministic=True)` **byte-for-byte** — verified against NeMo's own output, not
+just the published fixtures. This distinction matters: for zh/ja/fr/hi NeMo's own
+normalizer reproduces its published fixtures exactly, but for en/es/de the
+fixtures aggregate contradictory modes (see above), so the test oracle is NeMo's
+*actual* deterministic output (`tests/fixtures/<lang>/` are regenerated from
+NeMo; de's fixtures are also column-reversed spoken~written upstream).
 
 ```rust
 // cargo build --features fst-engine
-use text_processing_rs::fst::{zh, fr};
+use text_processing_rs::fst::{zh, en, hi};
 assert_eq!(zh::normalize("2024年"), "二零二四年");
-assert_eq!(fr::normalize("83"), "quatre-vingt-trois");
+assert_eq!(en::normalize("$2"), "two dollars");
 ```
 
-- Grammars: `grammars/<lang>/` (classify + verbalize; no post-processor needed
-  for zh or fr).
-- Engine: `src/fst/` — `engine.rs` (the two fidelity fixes above), `driver.rs`
-  (classify → parse → permute → verbalize → join), one small `<lang>.rs` per
-  language (bundled grammars + separator).
-- Parity test: `tests/fst_parity.rs` runs the bundled NeMo fixtures
-  (`tests/fixtures/<lang>/`) and asserts 100% per language, so CI verifies it
-  without a NeMo checkout.
+### Reproducing NeMo's post-processing
 
-Remaining languages (de, es, hi, ja) drop in the same way — export their
-grammars, add a `src/fst/<lang>.rs`, pick the token separator.
+The FST output is only half of NeMo's `normalize()`. After verbalizing and
+joining tokens, NeMo runs a Python post-processing chain that the engine ports in
+`driver.rs`:
+
+1. **Collapse spaces + strip** (`SPACE_DUP`).
+2. **Post-processing FST** — English/Hindi only (spacing/quote normalization
+   baked into a grammar).
+3. **Moses detokenization** — the engine reproduces the one behavior its outputs
+   depend on: drop a space before `.,!?;:`.
+4. **`post_process_punct`** — re-align punctuation spacing to the *original*
+   input, so `978-0` reads `…eight-zero` (no spaces) while `9 - 0` keeps them.
+
+Skipping steps 3–4 costs ~9% (en 91% → 100%); every one of those misses was a
+whitespace difference, not a grammar difference.
+
+- Grammars: `grammars/<lang>/*.fst.gz` — bundled **gzipped** (~7 MB for all seven
+  languages combined; raw they are ~90 MB) and decompressed once at first use via
+  `flate2`.
+- Engine: `src/fst/` — `engine.rs` (the two fidelity fixes above), `driver.rs`
+  (classify → parse → permute → verbalize → join → post-process), one small
+  `<lang>.rs` per language (bundled grammars + separator + optional post-proc).
+- Parity test: `tests/fst_parity.rs` runs the bundled NeMo goldens
+  (`tests/fixtures/<lang>/`) and asserts 100% per language; the `fst-engine` CI
+  job guards all seven without a NeMo checkout.

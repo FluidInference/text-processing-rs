@@ -1,0 +1,32 @@
+# NeMo deterministic TN output (lang=de), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: input~expected.
+
+200 m~zwei hundert meter
+56,3 /km²~sechs und fünfzig komma drei pro quadrat kilometer
+200 km/h~zwei hundert kilometer pro stunde
+42259 /m²~zwei und vierzig tausend zwei hundert neun und fünfzig pro quadrat meter
+42259/m²~zwei und vierzig tausend zwei hundert neun und fünfzig pro quadrat meter
+-66 kg~minus sechs und sechzig kilogramm
+2 kwh~zwei kilowattstunden
+1,000028 cm³~eins komma null null null null zwei acht kubik zentimeter
+1,1 cm~eins komma eins zentimeter
+3 h~drei stunden
+1 h~ein stunde
+1 mv~ein millivolt
+1 million mv~eins million millivolt
+2 m³~zwei kubik meter
+90 g~neunzig gramm
+90 millionen g~neunzig millionen gramm
+90,4 millionen g~neunzig komma vier millionen gramm
+440 ml~vier hundert vierzig milliliter
+300 μm~drei hundert mikrometer
+65000 km²~fünf und sechzig tausend quadrat kilometer
+2 km/h~zwei kilometer pro stunde
+2km/h~zwei kilometer pro stunde
+2 millionen km/h~zwei millionen kilometer pro stunde
+2,2 millionen km/h~zwei komma zwei millionen kilometer pro stunde
+60,2400 kg~sechzig komma zwei vier null null kilogramm
+0 ft~null fuß
+1/2 ft~ein halb fuß
+1 1/2 ft~ein ein halb fuß
+-1 1/2 ft~minus ein ein halb fuß

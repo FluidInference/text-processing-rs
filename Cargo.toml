@@ -18,6 +18,7 @@ console_error_panic_hook = { version = "0.1", optional = true }
 # Optional: byte-exact NeMo parity via compiled weighted FST grammars.
 # Off by default — the pure-Rust rule path carries no rustfst/OpenFST weight.
 rustfst = { version = "1.3.1", optional = true }
+flate2 = { version = "1", optional = true }
 
 [dev-dependencies]
 proptest = "1"
@@ -27,8 +28,8 @@ default = []
 ffi = []  # Enable C FFI bindings
 wasm = ["dep:wasm-bindgen", "dep:console_error_panic_hook"]
 # Byte-exact NeMo parity engine (runs NeMo's compiled grammars via rustfst).
-# Adds the rustfst dependency and ~1.2 MB of bundled grammars per language.
-fst-engine = ["dep:rustfst"]
+# Adds rustfst + flate2 and ~7 MB of gzipped grammars (all languages combined).
+fst-engine = ["dep:rustfst", "dep:flate2"]
 
 # Skip wasm-opt: wasm-pack's binaryen download is a recurring CI flake, and the
 # published bundle does not need the size optimization for our use.
