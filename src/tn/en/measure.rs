@@ -116,6 +116,12 @@ pub fn parse(input: &str) -> Option<String> {
         return None;
     }
 
+    // Decimal attached to a unit word by a hyphen ("7.2-millimeter") or the "x"
+    // multiplier ("4.4x"), per NeMo's decimal_dash_alpha / decimal_times.
+    if let Some(result) = parse_decimal_unit(trimmed) {
+        return Some(result);
+    }
+
     // Try to find a unit suffix (longest match first)
     // Sort by length descending to match "km/h" before "h"
     let mut unit_matches: Vec<(&str, &UnitInfo)> = UNITS
@@ -224,6 +230,36 @@ fn is_spaced_decade(num: &str) -> bool {
     num.len() == 4
         && num.chars().all(|c| c.is_ascii_digit())
         && num.parse::<u32>().map(|n| n % 10 == 0).unwrap_or(false)
+}
+
+/// Read a decimal glued to a unit word by "-" ("7.2-millimeter" → "seven point
+/// two millimeter") or by the "x" multiplier ("4.4x" → "four point four x").
+/// The trailing word is a spelled-out unit and is kept verbatim.
+fn parse_decimal_unit(input: &str) -> Option<String> {
+    let (num, unit) = if let Some((n, u)) = input.split_once('-') {
+        (n, u.to_string())
+    } else if let Some(n) = input.strip_suffix(['x', 'X']) {
+        (n, "x".to_string())
+    } else {
+        return None;
+    };
+    if unit.is_empty() || !unit.chars().all(|c| c.is_ascii_alphabetic()) {
+        return None;
+    }
+    let (int_str, frac_str) = num.split_once('.')?;
+    if frac_str.is_empty() || !frac_str.chars().all(|c| c.is_ascii_digit()) {
+        return None;
+    }
+    let clean: String = int_str.chars().filter(|c| *c != ',').collect();
+    if clean.is_empty() || !clean.chars().all(|c| c.is_ascii_digit()) {
+        return None;
+    }
+    Some(format!(
+        "{} point {} {}",
+        number_to_words_and(clean.parse().ok()?),
+        super::spell_digits(frac_str),
+        unit
+    ))
 }
 
 /// Read a "value/unit" form where the right side is a bare unit.

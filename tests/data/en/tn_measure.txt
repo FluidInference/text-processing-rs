@@ -14,3 +14,5 @@
 1°C~one degree Celsius
 1234-123kg~one thousand two hundred and thirty four to one hundred and twenty three kilograms
 41,459.00 km³~forty one thousand four hundred and fifty nine point zero zero cubic kilometers
+7.2-millimeter~seven point two millimeter
+4.4x~four point four x
