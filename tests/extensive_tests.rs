@@ -338,21 +338,22 @@ fn test_tn_date_month_day() {
 
 #[test]
 fn test_tn_date_month_day_year() {
+    // A written comma before the year is kept (NeMo).
     assert_eq!(
         tn_normalize("January 5, 2025"),
-        "january fifth twenty twenty five"
+        "january fifth, twenty twenty five"
     );
     assert_eq!(
         tn_normalize("July 4, 1776"),
-        "july fourth seventeen seventy six"
+        "july fourth, seventeen seventy six"
     );
     assert_eq!(
         tn_normalize("December 31, 1999"),
-        "december thirty first nineteen ninety nine"
+        "december thirty first, nineteen ninety nine"
     );
     assert_eq!(
         tn_normalize("January 1, 2000"),
-        "january first two thousand"
+        "january first, two thousand"
     );
 }
 
@@ -361,12 +362,15 @@ fn test_tn_date_month_day_year_2001_to_2009() {
     // Years 2001-2009 should use "two thousand X" form
     assert_eq!(
         tn_normalize("March 15, 2001"),
-        "march fifteenth two thousand one"
+        "march fifteenth, two thousand one"
     );
-    assert_eq!(tn_normalize("June 1, 2005"), "june first two thousand five");
+    assert_eq!(
+        tn_normalize("June 1, 2005"),
+        "june first, two thousand five"
+    );
     assert_eq!(
         tn_normalize("August 20, 2009"),
-        "august twentieth two thousand nine"
+        "august twentieth, two thousand nine"
     );
 }
 
@@ -504,23 +508,23 @@ fn test_tn_date_numeric_invalid_day() {
 fn test_tn_date_year_verbalization() {
     assert_eq!(
         tn_normalize("January 1, 2025"),
-        "january first twenty twenty five"
+        "january first, twenty twenty five"
     );
     assert_eq!(
         tn_normalize("January 1, 2000"),
-        "january first two thousand"
+        "january first, two thousand"
     );
     assert_eq!(
         tn_normalize("January 1, 2001"),
-        "january first two thousand one"
+        "january first, two thousand one"
     );
     assert_eq!(
         tn_normalize("January 1, 1900"),
-        "january first nineteen hundred"
+        "january first, nineteen hundred"
     );
     assert_eq!(
         tn_normalize("January 1, 1776"),
-        "january first seventeen seventy six"
+        "january first, seventeen seventy six"
     );
 }
 
@@ -535,10 +539,10 @@ fn test_tn_date_with_ordinal_suffix_in_day() {
 
 #[test]
 fn test_tn_date_trailing_punctuation() {
-    // Date with trailing period (common in sentences)
+    // Date with trailing period (common in sentences); the comma is kept.
     assert_eq!(
         tn_normalize("March 8, 2026."),
-        "march eighth twenty twenty six"
+        "march eighth, twenty twenty six"
     );
 }
 
@@ -1396,24 +1400,30 @@ fn test_tn_date_year_oh_pattern() {
     // e.g. 1901 → "nineteen oh one", not "nineteen one"
     assert_eq!(
         tn_normalize("January 1, 1901"),
-        "january first nineteen oh one"
+        "january first, nineteen oh one"
     );
-    assert_eq!(tn_normalize("July 4, 1805"), "july fourth eighteen oh five");
+    assert_eq!(
+        tn_normalize("July 4, 1805"),
+        "july fourth, eighteen oh five"
+    );
     assert_eq!(
         tn_normalize("March 15, 1709"),
-        "march fifteenth seventeen oh nine"
+        "march fifteenth, seventeen oh nine"
     );
     // 2001-2009 should still use "two thousand X" form (special case)
-    assert_eq!(tn_normalize("June 1, 2001"), "june first two thousand one");
-    assert_eq!(tn_normalize("June 1, 2009"), "june first two thousand nine");
+    assert_eq!(tn_normalize("June 1, 2001"), "june first, two thousand one");
+    assert_eq!(
+        tn_normalize("June 1, 2009"),
+        "june first, two thousand nine"
+    );
     // Years with remainder >= 10 should NOT have "oh"
     assert_eq!(
         tn_normalize("January 1, 1910"),
-        "january first nineteen ten"
+        "january first, nineteen ten"
     );
     assert_eq!(
         tn_normalize("January 1, 1776"),
-        "january first seventeen seventy six"
+        "january first, seventeen seventy six"
     );
 }
 

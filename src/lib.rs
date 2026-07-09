@@ -1541,7 +1541,7 @@ mod tests {
     fn test_tn_date() {
         assert_eq!(
             tn_normalize("January 5, 2025"),
-            "january fifth twenty twenty five"
+            "january fifth, twenty twenty five"
         );
         assert_eq!(tn_normalize("1980s"), "nineteen eighties");
     }

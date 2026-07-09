@@ -178,11 +178,18 @@ fn parse_word_date(input: &str) -> Option<String> {
     } else {
         None
     };
+    // NeMo keeps a comma written before the year ("august 23, 2002" → "august
+    // twenty third, two thousand two").
+    let comma = year.is_some() && input.contains(',');
 
     // US order: Month Day [Year].
     if let Some(month) = parse_month(tokens[0]) {
         let day = parse_day(tokens[1])?;
-        return Some(with_year(format!("{} {}", month, ordinal_word(day)), year));
+        return Some(with_year(
+            format!("{} {}", month, ordinal_word(day)),
+            year,
+            comma,
+        ));
     }
 
     // British order: Day Month [Year].
@@ -191,14 +198,16 @@ fn parse_word_date(input: &str) -> Option<String> {
         return Some(with_year(
             format!("the {} of {}", ordinal_word(day), month),
             year,
+            comma,
         ));
     }
 
     None
 }
 
-fn with_year(base: String, year: Option<String>) -> String {
+fn with_year(base: String, year: Option<String>, comma: bool) -> String {
     match year {
+        Some(y) if comma => format!("{}, {}", base, y),
         Some(y) => format!("{} {}", base, y),
         None => base,
     }
@@ -526,13 +535,18 @@ mod tests {
 
     #[test]
     fn test_month_day_year() {
+        // A written comma before the year is kept (NeMo).
         assert_eq!(
             parse("January 5, 2025"),
-            Some("january fifth twenty twenty five".to_string())
+            Some("january fifth, twenty twenty five".to_string())
         );
         assert_eq!(
             parse("July 4, 1776"),
-            Some("july fourth seventeen seventy six".to_string())
+            Some("july fourth, seventeen seventy six".to_string())
+        );
+        assert_eq!(
+            parse("January 5 2025"),
+            Some("january fifth twenty twenty five".to_string())
         );
     }
 

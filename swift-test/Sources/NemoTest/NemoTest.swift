@@ -273,7 +273,7 @@ let tnTimeTests: [TC] = [
 let tnDateTests: [TC] = [
     ("January 5", "january fifth"),
     ("December 25", "december twenty fifth"),
-    ("January 5, 2025", "january fifth twenty twenty five"),
+    ("January 5, 2025", "january fifth, twenty twenty five"),
     ("1980s", "nineteen eighties"),
     ("1990s", "nineteen nineties"),
 ]
