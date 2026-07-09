@@ -1062,7 +1062,7 @@ fn is_split_punct(c: char) -> bool {
 /// never occur inside glued numeric/semiotic forms (unlike `.`/`:`/`,`), so
 /// splitting them cannot break decimals, times, or IPs.
 fn is_interior_hard(c: char) -> bool {
-    matches!(c, '!' | '?' | '(' | ')' | '[' | ']' | '{' | '}')
+    matches!(c, '!' | '?' | '(' | ')' | '[' | ']' | '{' | '}' | '\'')
 }
 
 /// Fold NeMo's double-backtick quotes to a straight double quote so the
