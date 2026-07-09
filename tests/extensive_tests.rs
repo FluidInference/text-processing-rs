@@ -781,13 +781,10 @@ fn test_tn_measure_decimal() {
 
 #[test]
 fn test_tn_electronic_email() {
-    assert_eq!(
-        tn_normalize("test@gmail.com"),
-        "t e s t at g m a i l dot c o m"
-    );
+    assert_eq!(tn_normalize("test@gmail.com"), "test at gmail dot com");
     assert_eq!(
         tn_normalize("john.doe@example.com"),
-        "j o h n dot d o e at e x a m p l e dot c o m"
+        "john dot doe at example dot com"
     );
 }
 
@@ -795,27 +792,24 @@ fn test_tn_electronic_email() {
 fn test_tn_electronic_url() {
     assert_eq!(
         tn_normalize("http://www.example.com"),
-        "h t t p colon slash slash w w w dot e x a m p l e dot c o m"
+        "HTTP colon slash slash WWW dot example dot com"
     );
     assert_eq!(
         tn_normalize("https://google.com"),
-        "h t t p s colon slash slash g o o g l e dot c o m"
+        "HTTPS colon slash slash google dot com"
     );
 }
 
 #[test]
 fn test_tn_electronic_www() {
-    assert_eq!(
-        tn_normalize("www.example.com"),
-        "w w w dot e x a m p l e dot c o m"
-    );
+    assert_eq!(tn_normalize("www.example.com"), "WWW dot example dot com");
 }
 
 #[test]
 fn test_tn_electronic_email_with_numbers() {
     assert_eq!(
         tn_normalize("user123@mail.com"),
-        "u s e r one two three at m a i l dot c o m"
+        "user one two three at mail dot com"
     );
 }
 
@@ -823,11 +817,11 @@ fn test_tn_electronic_email_with_numbers() {
 fn test_tn_electronic_email_with_special_chars() {
     assert_eq!(
         tn_normalize("user-name@mail.com"),
-        "u s e r dash n a m e at m a i l dot c o m"
+        "user dash name at mail dot com"
     );
     assert_eq!(
         tn_normalize("user_name@mail.com"),
-        "u s e r underscore n a m e at m a i l dot c o m"
+        "user underscore name at mail dot com"
     );
 }
 
@@ -1441,20 +1435,20 @@ fn test_tn_electronic_url_case_insensitive() {
     // Uppercase protocol should parse correctly
     assert_eq!(
         tn_normalize("HTTP://example.com"),
-        "h t t p colon slash slash e x a m p l e dot c o m"
+        "HTTP colon slash slash example dot com"
     );
     assert_eq!(
         tn_normalize("HTTPS://example.com"),
-        "h t t p s colon slash slash e x a m p l e dot c o m"
+        "HTTPS colon slash slash example dot com"
     );
     // Mixed case
     assert_eq!(
         tn_normalize("Http://Example.com"),
-        "h t t p colon slash slash e x a m p l e dot c o m"
+        "HTTP colon slash slash example dot com"
     );
     assert_eq!(
         tn_normalize("Https://Google.com"),
-        "h t t p s colon slash slash g o o g l e dot c o m"
+        "HTTPS colon slash slash google dot com"
     );
 }
 
