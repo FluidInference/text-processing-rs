@@ -1,0 +1,31 @@
+# NeMo deterministic TN output (lang=de), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: input~expected.
+
+08:00 Uhr~acht uhr
+08:00 Uhr~acht uhr
+00:00 Uhr~null uhr
+00:15 Uhr~null uhr fünfzehn
+08:00 Uhr~acht uhr
+20:00 Uhr~zwanzig uhr
+24:00 Uhr~vier und zwanzig uhr
+14:00 Uhr~vierzehn uhr
+12:00 Uhr~zwölf uhr
+11:30 Uhr~elf uhr dreißig
+18:00 Uhr~achtzehn uhr
+08:07 Uhr~acht uhr sieben
+00:17 Uhr~null uhr siebzehn
+12:00 Uhr~zwölf uhr
+11:45 Uhr~elf uhr fünf und vierzig
+11:57 Uhr~elf uhr sieben und fünfzig
+12:03 Uhr~zwölf uhr drei
+12:10 Uhr~zwölf uhr zehn
+11:50 Uhr~elf uhr fünfzig
+23:30 Uhr~drei und zwanzig uhr dreißig
+23:15 Uhr~drei und zwanzig uhr fünfzehn
+24:45 Uhr~vier und zwanzig uhr fünf und vierzig
+24:15 Uhr~vier und zwanzig uhr fünfzehn
+00:00:00 Uhr~null uhr null minuten null sekunden
+01:01:01 Uhr est~ein uhr eine minute eine sekunde e s t
+02:02:23 Uhr~zwei uhr zwei minuten drei und zwanzig sekunden
+2.30 Uhr~zwei uhr dreißig
+02.30 Uhr~zwei uhr dreißig

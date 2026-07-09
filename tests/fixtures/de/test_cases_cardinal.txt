@@ -1,0 +1,53 @@
+# NeMo deterministic TN output (lang=de), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: input~expected.
+
+0~null
+1~eins
+2~zwei
+3~drei
+4~vier
+6~sechs
+10~zehn
+11~elf
+12~zwölf
+13~dreizehn
+14~vierzehn
+15~fünfzehn
+16~sechzehn
+17~siebzehn
+18~achtzehn
+20~zwanzig
+30~dreißig
+40~vierzig
+50~fünfzig
+60~sechzig
+70~siebzig
+80~achtzig
+90~neunzig
+23~drei und zwanzig
+100~ein hundert
+123~ein hundert drei und zwanzig
+101~ein hundert eins
+1000~ein tausend
+100000~ein hundert tausend
+1000000~eine million
+10000000~zehn millionen
+100000000~ein hundert millionen
+9789382536130~neun billionen sieben hundert neun und achtzig milliarden drei hundert zwei und achtzig millionen fünf hundert sechs und dreißig tausend ein hundert dreißig
+147451~ein hundert sieben und vierzig tausend vier hundert ein und fünfzig
+1156173~eine million ein hundert sechs und fünfzig tausend ein hundert drei und siebzig
+1593072961~eine milliarde fünf hundert drei und neunzig millionen zwei und siebzig tausend neun hundert ein und sechzig
+97808264772792005~sieben und neunzig billiarden acht hundert acht billionen zwei hundert vier und sechzig milliarden sieben hundert zwei und siebzig millionen sieben hundert zwei und neunzig tausend fünf
+10010000010100010~zehn billiarden zehn billionen zehn millionen ein hundert tausend zehn
+-25037~minus fünf und zwanzig tausend sieben und dreißig
+-25037~minus fünf und zwanzig tausend sieben und dreißig
+1264301000000000~eine billiarde zwei hundert vier und sechzig billionen drei hundert eins milliarden
+-60~minus sechzig
+46664~sechs und vierzig tausend sechs hundert vier und sechzig
+2000003~zwei millionen drei
+1026~ein tausend sechs und zwanzig
+1126~ein tausend ein hundert sechs und zwanzig
+18450990~achtzehn millionen vier hundert fünfzig tausend neun hundert neunzig
+18940722~achtzehn millionen neun hundert vierzig tausend sieben hundert zwei und zwanzig
+18690916~achtzehn millionen sechs hundert neunzig tausend neun hundert sechzehn
+18880~achtzehn tausend acht hundert achtzig

@@ -1,0 +1,24 @@
+# NeMo deterministic TN output (lang=en), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: input~expected.
+
+12kg~twelve kilograms
+12KG~twelve kilograms
+12/kg~twelve per kilogram
+12kg/kg~twelve kilograms per kilogram
+1 mbps~one megabit per second
+3 mbps~three megabits per second
+3 cc/s~three CC per S
+100 million kg~one hundred million kilograms
+a 123.2-millimeters long~a one hundred and twenty three point two millimeters long
+covid-19.5~covid-nineteen point five
+7.2-millimeter bullet~seven point two millimeter bullet
+4 1/2 lbs~four and a half pounds
+4.4x~four point four x
+80 s~eighty S
+2°C~two degrees Celsius
+1°C~one degree Celsius
+1234-123kg~one thousand two hundred and thirty four to one hundred and twenty three kilograms
+45º&C~forty five degree and C
+41,459.00 km³~forty one thousand four hundred and fifty nine point zero zero cubic kilometers
+Nancy lived on 1428 Elm St.~Nancy lived on fourteen twenty eight Elm Street
+Nancy lived on 1428 Elm St. It was a strange place.~Nancy lived on fourteen twenty eight Elm Street. It was a strange place.

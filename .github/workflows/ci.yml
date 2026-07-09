@@ -77,3 +77,18 @@ jobs:
           key: wasm
       - uses: jetli/wasm-pack-action@v0.4.0
       - run: npm run wasm:ci
+
+  fst-engine:
+    name: FST Engine Parity (7 langs vs NeMo)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: fst-engine
+      # Runs the bundled NeMo-golden fixtures through the FST engine and asserts
+      # byte-exact parity for zh, fr, ja, en, hi, es, de. Release mode keeps the
+      # big-grammar languages (hi, es) fast.
+      - name: Run FST-engine parity tests
+        run: cargo test --release --features fst-engine --test fst_parity -- --nocapture

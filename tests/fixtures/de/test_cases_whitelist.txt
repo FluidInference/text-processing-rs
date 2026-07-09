@@ -1,0 +1,9 @@
+# NeMo deterministic TN output (lang=de), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: input~expected.
+
+Dr. dao~doktor dao
+Ms. smith~miss smith
+Mrs. smith~misses smith
+Mr. dao~mister dao
+ich mag essen z.B. eis~ich mag essen zum beispiel eis
+Chanel Nr. 5~Chanel nummer fünf

@@ -1,0 +1,22 @@
+# NeMo deterministic TN output (lang=de), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: input~expected.
+
+cdf@abc.edu~c d f at a b c punkt edu
+abc@gmail.abc~a b c at g mail punkt a b c
+abc@abc.com~a b c at a b c punkt com
+asdf123@abc.com~a s d f eins zwei drei at a b c punkt com
+a1b2@abc.com~a eins b zwei at a b c punkt com
+ab3-sdd-3@gmail.com~a b drei bindestrich s d d bindestrich drei at g mail punkt com
+https://www.abc.com~h t t p s doppelpunkt slash slash w w w punkt a b c punkt com
+www.abc.com~w w w punkt a b c punkt com
+brettspielversand.de.~brettspielversand punkt de.
+www.enveedya.net.~w w w punkt e n v e e d y a punkt net.
+www.amazon.com.de.~w w w punkt amazon punkt com punkt de.
+https://www.abc.com/ab?=3-/abs/1~h t t p s doppelpunkt slash slash w w w punkt a b c punkt com slash a b fragezeichen gleichheitszeichen drei bindestrich slash a b s slash eins
+@jensen~at j e n s e n
+@jensen.me~at j e n s e n punkt m e
+@wezyr1986~at w e z y r eins neun acht sechs
+2D-Mammogram~zwei-D-Mammogram
+2-D-Mammogram~zwei-D-Mammogram
+3D-Drucker~drei-D-Drucker
+3-D-Drucker~drei-D-Drucker
