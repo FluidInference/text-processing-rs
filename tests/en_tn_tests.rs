@@ -312,3 +312,11 @@ fn test_tn_roman() {
         results.failures.len()
     );
 }
+
+#[test]
+fn test_tn_range() {
+    let results = common::run_test_file(Path::new("tests/data/en/tn_range.txt"), tn_normalize);
+    println!("tn_range: {}/{} passed ({} failures)", results.passed, results.total, results.failures.len());
+    print_failures(&results);
+    assert!(results.failures.is_empty(), "{} range TN tests failed", results.failures.len());
+}

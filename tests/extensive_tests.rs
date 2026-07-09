@@ -863,8 +863,11 @@ fn test_tn_telephone_dots() {
 
 #[test]
 fn test_tn_telephone_too_few_digits() {
-    // Less than 7 digits should not parse as phone
-    assert_eq!(tn_normalize("123-456"), "123-456");
+    // Too few digits for a phone number → read as a bare cardinal range (NeMo).
+    assert_eq!(
+        tn_normalize("123-456"),
+        "one hundred and twenty three - four hundred and fifty six"
+    );
 }
 
 // ════════════════════════════════════════════════════════════════════════

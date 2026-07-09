@@ -1,0 +1,18 @@
+# English range TN (NeMo). Cross-class cases omitted: m2/m³ dimension
+# units, and measure-ranges needing British 'and' in the measure tagger.
+1980-1986~nineteen eighty to nineteen eighty six
+2-5lb~two to five pounds
+2-5~two - five
+2x8~two x eight
+2+3~two plus three
+170 - 45190~one hundred and seventy - four five one nine zero
+5pm-7 pm~five PM to seven PM
+4:00 am - 8:12 pm~four AM to eight twelve PM
+978-0~nine hundred and seventy eight - zero
+1960s-80s~nineteen sixties to eighties
+1960s-1980s~nineteen sixties to nineteen eighties
+1960-80~nineteen sixty to eighty
+mid-1980s~mid nineteen eighties
+mid-80s~mid eighties
+$250-$300~two hundred and fifty dollars to three hundred dollars
+$150.25-$250.67~one hundred and fifty dollars twenty five cents to two hundred and fifty dollars sixty seven cents
