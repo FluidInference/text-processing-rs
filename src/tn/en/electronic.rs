@@ -57,6 +57,11 @@ pub fn parse(input: &str) -> Option<String> {
         return None;
     }
 
+    // IPv4 address: four numeric groups read digit-by-digit, joined by "dot".
+    if let Some(ip) = parse_ipv4(trimmed) {
+        return Some(ip);
+    }
+
     if trimmed.contains('@') {
         return parse_email(trimmed);
     }
@@ -112,6 +117,29 @@ fn parse_slash_words(input: &str) -> Option<String> {
             .map(|s| s.to_ascii_lowercase())
             .collect::<Vec<_>>()
             .join(" slash "),
+    )
+}
+
+/// Read a dotted IPv4 address ("123.123.0.40") as four digit-by-digit groups
+/// joined by "dot". Requires exactly four numeric groups so decimals ("5.4")
+/// and version strings are left to other taggers.
+fn parse_ipv4(s: &str) -> Option<String> {
+    let groups: Vec<&str> = s.split('.').collect();
+    if groups.len() != 4 {
+        return None;
+    }
+    if !groups
+        .iter()
+        .all(|g| (1..=3).contains(&g.len()) && g.chars().all(|c| c.is_ascii_digit()))
+    {
+        return None;
+    }
+    Some(
+        groups
+            .iter()
+            .map(|g| g.chars().map(digit_word).collect::<Vec<_>>().join(" "))
+            .collect::<Vec<_>>()
+            .join(" dot "),
     )
 }
 
@@ -348,6 +376,16 @@ mod tests {
             parse("ourdailynews.com/12-sm"),
             Some("ourdailynews dot com slash one two dash sm".to_string())
         );
+    }
+
+    #[test]
+    fn test_ipv4() {
+        assert_eq!(
+            parse("123.123.0.40"),
+            Some("one two three dot one two three dot zero dot four zero".to_string())
+        );
+        // Two-group decimals are not IPs.
+        assert_eq!(parse("5.4"), None);
     }
 
     #[test]

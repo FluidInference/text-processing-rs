@@ -3,3 +3,6 @@
 +1-234-567-8901~plus one, two three four, five six seven, eight nine zero one
 (555) 123-4567~five five five, one two three, four five six seven
 555.123.4567~five five five, one two three, four five six seven
+# IPv4 (four numeric groups) reads digit-by-digit joined by "dot".
+987.987.0.40~nine eight seven dot nine eight seven dot zero dot four zero
+123.123.0.40~one two three dot one two three dot zero dot four zero
