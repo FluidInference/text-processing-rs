@@ -1284,11 +1284,10 @@ fn test_itn_decimal_basic() {
 
 #[test]
 fn test_tts_scenario_address() {
-    let result = tn_normalize_sentence("123 Main St");
-    assert!(
-        result.contains("one hundred and twenty three"),
-        "Address number should be spoken: {}",
-        result
+    // House numbers read address year-style, and "St" expands to "Street".
+    assert_eq!(
+        tn_normalize_sentence("123 Main St"),
+        "one twenty three Main Street"
     );
 }
 

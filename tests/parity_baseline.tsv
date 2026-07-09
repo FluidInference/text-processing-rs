@@ -47,14 +47,14 @@ en	itn	whitelist	12	12
 en	itn	whitelist_cased	9	9
 en	itn	word	55	55
 en	itn	word_cased	49	49
-en	tn	address	1	11
+en	tn	address	8	11
 en	tn	cardinal	18	18
 en	tn	date	52	54
 en	tn	decimal	12	12
 en	tn	electronic	40	45
 en	tn	fraction	16	16
 en	tn	math	4	4
-en	tn	measure	10	21
+en	tn	measure	11	21
 en	tn	money	71	71
 en	tn	normalize_with_audio	39	58
 en	tn	ordinal	27	27

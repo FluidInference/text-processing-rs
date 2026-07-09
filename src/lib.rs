@@ -1315,6 +1315,11 @@ fn tn_parse_span(span: &str) -> Option<(String, u8)> {
     if let Some(result) = tn::en::measure::parse(span) {
         return Some((result, 90));
     }
+    // Street addresses (multi-token; before date so the house number reads
+    // address-style).
+    if let Some(result) = tn::en::address::parse(span) {
+        return Some((result, 89));
+    }
     if let Some(result) = tn::en::date::parse(span) {
         return Some((result, 88));
     }

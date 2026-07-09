@@ -5,6 +5,7 @@
 //! - "$5.50" → "five dollars and fifty cents"
 //! - "January 5, 2025" → "january fifth twenty twenty five"
 
+pub mod address;
 pub mod cardinal;
 pub mod date;
 pub mod decimal;
