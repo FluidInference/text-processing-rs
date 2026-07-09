@@ -60,6 +60,7 @@ lazy_static! {
 
         // Misc special terms
         m.insert("tv", "TV");
+        m.insert("ssn", "SSN");
         m.insert("401(k)", "four oh one k");
 
         m
