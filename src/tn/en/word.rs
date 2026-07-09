@@ -10,7 +10,7 @@
 
 use super::spell_digits;
 
-/// Spoken name for a standalone symbol.
+/// Spoken name for a standalone symbol (NeMo whitelist/symbol.tsv).
 fn symbol_word(c: char) -> Option<&'static str> {
     Some(match c {
         '$' => "dollar",
@@ -23,8 +23,18 @@ fn symbol_word(c: char) -> Option<&'static str> {
         '/' => "slash",
         '&' => "and",
         '+' => "plus",
-        '=' => "equals",
+        '=' => "equal sign",
         '@' => "at",
+        '_' => "underscore",
+        '*' => "asterisk",
+        '~' => "tilde",
+        '^' => "circumflex",
+        '|' => "vertical bar",
+        '§' => "section",
+        '™' => "trademark",
+        '®' => "registered trademark",
+        '©' => "copyright",
+        '°' | 'º' => "degree",
         _ => return None,
     })
 }
