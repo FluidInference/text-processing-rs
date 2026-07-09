@@ -26,11 +26,35 @@ const KEYWORDS: &[&str] = &[
 pub fn parse(input: &str) -> Option<String> {
     let trimmed = input.trim();
     let (prefix, roman) = trimmed.split_once(' ')?;
-    if !KEYWORDS.contains(&prefix.to_lowercase().as_str()) {
-        return None;
+    let roman = roman.trim();
+    let value = roman_to_int(roman)?;
+
+    // Section keyword → cardinal ("Chapter IV" → "Chapter four").
+    if KEYWORDS.contains(&prefix.to_lowercase().as_str()) {
+        return Some(format!("{} {}", prefix, number_to_words(value)));
     }
-    let value = roman_to_int(roman.trim())?;
-    Some(format!("{} {}", prefix, number_to_words(value)))
+
+    // A capitalized name followed by a multi-character numeral → ordinal
+    // ("Sam II" → "Sam second"). Requiring two or more numeral characters
+    // avoids grabbing a stray "I"/"V" after an ordinary capitalized word.
+    if roman.len() >= 2 && is_name(prefix) {
+        return Some(format!(
+            "{} {}",
+            prefix,
+            super::ordinal::number_to_ordinal_words(value)
+        ));
+    }
+
+    None
+}
+
+/// A plausible personal name: an initial capital followed by lower-case
+/// letters ("Sam", "Henry").
+fn is_name(word: &str) -> bool {
+    let mut chars = word.chars();
+    word.len() >= 2
+        && matches!(chars.next(), Some(c) if c.is_ascii_uppercase())
+        && chars.all(|c| c.is_ascii_lowercase())
 }
 
 /// Convert a roman numeral to its value, or `None` if it is not a valid
@@ -77,7 +101,7 @@ mod tests {
     #[test]
     fn test_not_roman() {
         assert_eq!(parse("Chapter Five"), None); // not a numeral
-        assert_eq!(parse("Sam II"), None); // name path not handled
+        assert_eq!(parse("Sam II"), Some("Sam second".to_string())); // name → ordinal
         assert_eq!(parse("hello world"), None);
         assert_eq!(parse("Chapter"), None);
     }
