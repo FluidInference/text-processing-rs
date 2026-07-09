@@ -58,6 +58,10 @@ lazy_static! {
         m.insert("No.", "number");
         m.insert("approx.", "approximately");
 
+        // Misc special terms
+        m.insert("tv", "TV");
+        m.insert("401(k)", "four oh one k");
+
         m
     };
 }
@@ -71,7 +75,32 @@ pub fn parse(input: &str) -> Option<String> {
         return Some(spoken.to_string());
     }
 
+    // Dotted initials collapse to an acronym: "C. S." → "CS".
+    if let Some(acronym) = merge_initials(trimmed) {
+        return Some(acronym);
+    }
+
     None
+}
+
+/// Collapse a run of dotted single upper-case initials ("C. S.", "U. S. A.")
+/// into a bare acronym ("CS", "USA").
+fn merge_initials(s: &str) -> Option<String> {
+    let parts: Vec<&str> = s.split_whitespace().collect();
+    if parts.len() < 2 {
+        return None;
+    }
+    let mut letters = String::new();
+    for part in &parts {
+        let letter = part.strip_suffix('.')?;
+        let mut chars = letter.chars();
+        let c = chars.next()?;
+        if chars.next().is_some() || !c.is_ascii_uppercase() {
+            return None;
+        }
+        letters.push(c);
+    }
+    Some(letters)
 }
 
 #[cfg(test)]

@@ -66,7 +66,7 @@ en	tn	serial	8	32
 en	tn	special_text	9	10
 en	tn	telephone	17	20
 en	tn	time	21	21
-en	tn	whitelist	4	7
+en	tn	whitelist	7	7
 en	tn	word	38	39
 es	itn	cardinal	51	51
 es	itn	cardinal_cased	27	30

@@ -23,3 +23,8 @@ proptest = "1"
 default = []
 ffi = []  # Enable C FFI bindings
 wasm = ["dep:wasm-bindgen", "dep:console_error_panic_hook"]
+
+# Skip wasm-opt: wasm-pack's binaryen download is a recurring CI flake, and the
+# published bundle does not need the size optimization for our use.
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false

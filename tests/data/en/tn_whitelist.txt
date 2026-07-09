@@ -7,3 +7,5 @@ e.g.~for example
 i.e.~that is
 etc.~et cetera
 vs.~versus
+tv~TV
+401(k)~four oh one k
