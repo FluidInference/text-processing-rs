@@ -19,7 +19,7 @@ de	tn	electronic	0	19
 de	tn	fraction	0	34
 de	tn	measure	0	29
 de	tn	money	0	21
-de	tn	normalize_with_audio	0	31
+de	tn	normalize_with_audio	15	31
 de	tn	ordinal	0	19
 de	tn	telephone	0	4
 de	tn	time	0	28
@@ -56,7 +56,7 @@ en	tn	fraction	16	16
 en	tn	math	4	4
 en	tn	measure	10	21
 en	tn	money	71	71
-en	tn	normalize_with_audio	0	58
+en	tn	normalize_with_audio	29	58
 en	tn	ordinal	27	27
 en	tn	punctuation	34	63
 en	tn	punctuation_match_input	4	13
@@ -97,7 +97,7 @@ es	tn	electronic	4	22
 es	tn	fraction	0	75
 es	tn	measure	5	32
 es	tn	money	9	69
-es	tn	normalize_with_audio	0	29
+es	tn	normalize_with_audio	18	29
 es	tn	ordinal	3	120
 es	tn	telephone	0	15
 es	tn	time	1	35
