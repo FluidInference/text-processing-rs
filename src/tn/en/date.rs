@@ -32,6 +32,16 @@ pub fn parse(input: &str) -> Option<String> {
         return Some(result);
     }
 
+    // "the 26th May" → "the twenty sixth of may": a British day-month preceded
+    // by "the" consumes that "the" so the reading is not doubled in a sentence.
+    if let Some(rest) = trimmed.strip_prefix("the ") {
+        if let Some(result) = parse_word_date(rest) {
+            if result.starts_with("the ") {
+                return Some(result);
+            }
+        }
+    }
+
     // Try word dates: "January 5, 2025", "jul 25 2012" (US Month-Day) and
     // "25 july 2012" (British Day-Month), with abbreviated/cased months.
     if let Some(result) = parse_word_date(trimmed) {
