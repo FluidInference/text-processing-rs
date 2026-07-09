@@ -1054,8 +1054,15 @@ struct Pretoken {
 fn is_split_punct(c: char) -> bool {
     matches!(
         c,
-        ',' | '.' | ';' | ':' | '!' | '?' | '(' | ')' | '[' | ']' | '{' | '}' | '"'
+        ',' | '.' | ';' | ':' | '!' | '?' | '(' | ')' | '[' | ']' | '{' | '}' | '"' | '`'
     )
+}
+
+/// Fold NeMo's double-backtick quotes to a straight double quote so the
+/// pretokenizer splits them off and the quoted content still normalizes
+/// (`` ``cat`` `` → `"cat"`). TN sentence mode only.
+fn unify_tn_quotes(input: &str) -> String {
+    input.replace("``", "\"")
 }
 
 /// Split each whitespace-separated word into leading punctuation, core, and
@@ -1391,7 +1398,8 @@ pub fn tn_normalize_sentence_with_max_span_lang(
                 return trimmed.to_string();
             }
 
-            let pretokens = pretokenize(trimmed);
+            let unified = unify_tn_quotes(trimmed);
+            let pretokens = pretokenize(&unified);
             sentence_loop(&pretokens, max_span_tokens, |span| {
                 tn_parse_span_lang(span, lang)
             })
@@ -1406,7 +1414,8 @@ pub fn tn_normalize_sentence_with_max_span(input: &str, max_span_tokens: usize) 
         return trimmed.to_string();
     }
 
-    let pretokens = pretokenize(trimmed);
+    let unified = unify_tn_quotes(trimmed);
+    let pretokens = pretokenize(&unified);
     sentence_loop(&pretokens, max_span_tokens, tn_parse_span)
 }
 
