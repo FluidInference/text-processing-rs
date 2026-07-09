@@ -41,6 +41,31 @@ lazy_static! {
     /// File-extension acronyms upper-cased when they are the final ".ext".
     static ref EXT_UPPER: HashSet<&'static str> =
         ["html", "htm", "xml", "css", "json", "php", "asp", "sql"].into_iter().collect();
+
+    /// Known segments for splitting run-together tokens (NeMo
+    /// electronic/words.tsv).
+    static ref WORDS: HashSet<&'static str> = [
+        "drive", "sim", "early", "access", "program", "rtx", "developer",
+        "basepod", "cuda", "cv", "enterprise", "services", "nvidia", "dgx",
+        "pro", "help",
+    ]
+    .into_iter()
+    .collect();
+}
+
+/// Greedily split `word` into a sequence of two or more known segments, longest
+/// prefix first; returns `None` if it cannot be fully segmented.
+fn segment_words(word: &str) -> Option<Vec<String>> {
+    let mut parts = Vec::new();
+    let mut rest = word;
+    while !rest.is_empty() {
+        let len = (1..=rest.len())
+            .rev()
+            .find(|&len| WORDS.contains(&rest[..len]))?;
+        parts.push(rest[..len].to_string());
+        rest = &rest[len..];
+    }
+    (parts.len() >= 2).then_some(parts)
 }
 
 /// Parse an email or URL to spoken form.
@@ -276,6 +301,24 @@ fn render_label(label: &str, context: bool, is_final_tld: bool) -> String {
 /// Case a pure-alpha token by role.
 fn case_word(word: &str, context: bool, is_final_tld: bool) -> String {
     let lw = word.to_ascii_lowercase();
+
+    // Segment a run-together token into known words ("rtxprohelp" → "RTX pro
+    // help", "enterpriseservices" → "enterprise services").
+    if context && !is_final_tld {
+        if let Some(parts) = segment_words(&lw) {
+            return parts
+                .iter()
+                .map(|p| {
+                    if BRAND.contains(p.as_str()) {
+                        p.to_ascii_uppercase()
+                    } else {
+                        p.clone()
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join(" ");
+        }
+    }
 
     // Common file-extension expansion (lower case).
     if lw == "jpg" {
