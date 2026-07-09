@@ -1264,6 +1264,11 @@ pub fn tn_normalize(input: &str) -> String {
     if let Some(result) = tn::en::electronic::parse(input) {
         return result;
     }
+    // Range before telephone: a typed range ("1980-1986") must not be read as
+    // a phone-style digit group. Phone numbers fall through (range returns None).
+    if let Some(result) = tn::en::range::parse(input) {
+        return result;
+    }
     if let Some(result) = tn::en::telephone::parse(input) {
         return result;
     }
@@ -1314,6 +1319,10 @@ fn tn_parse_span(span: &str) -> Option<(String, u8)> {
     }
     if let Some(result) = tn::en::electronic::parse(span) {
         return Some((result, 82));
+    }
+    // Range above telephone: a typed range must win over phone-style grouping.
+    if let Some(result) = tn::en::range::parse(span) {
+        return Some((result, 79));
     }
     if let Some(result) = tn::en::telephone::parse(span) {
         return Some((result, 78));
