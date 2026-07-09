@@ -12,16 +12,16 @@ rm -rf "$BUILD_DIR" "$OUTPUT_DIR"
 mkdir -p "$BUILD_DIR" "$OUTPUT_DIR"
 
 echo "Building for macOS (arm64)..."
-cargo build --release --features ffi --target aarch64-apple-darwin
+cargo build --release --features "ffi,fst-engine" --target aarch64-apple-darwin
 
 echo "Building for macOS (x86_64)..."
-cargo build --release --features ffi --target x86_64-apple-darwin
+cargo build --release --features "ffi,fst-engine" --target x86_64-apple-darwin
 
 echo "Building for iOS (arm64)..."
-cargo build --release --features ffi --target aarch64-apple-ios
+cargo build --release --features "ffi,fst-engine" --target aarch64-apple-ios
 
 echo "Building for iOS Simulator (arm64)..."
-cargo build --release --features ffi --target aarch64-apple-ios-sim
+cargo build --release --features "ffi,fst-engine" --target aarch64-apple-ios-sim
 
 echo "Creating universal macOS library..."
 mkdir -p "$BUILD_DIR/macos"

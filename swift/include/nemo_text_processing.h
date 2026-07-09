@@ -162,6 +162,19 @@ char* nemo_tn_normalize_sentence_lang(const char* input, const char* lang);
 char* nemo_tn_normalize_sentence_with_max_span_lang(const char* input, const char* lang, uint32_t max_span_tokens);
 
 /**
+ * Text Normalization via the compiled-FST engine — byte-exact NeMo parity.
+ *
+ * Supported langs: "en", "zh", "ja", "fr", "es", "de", "hi".
+ * Returns NULL if the library was built without the fst-engine feature or the
+ * language is unsupported, so callers can fall back to nemo_tn_normalize_lang.
+ *
+ * @param input Null-terminated UTF-8 string
+ * @param lang Null-terminated language code
+ * @return Newly allocated string (free with nemo_free_string), or NULL.
+ */
+char* nemo_tn_fst(const char* input, const char* lang);
+
+/**
  * Free a string allocated by nemo_normalize or nemo_normalize_sentence.
  *
  * @param s Pointer returned by nemo_normalize, or NULL (no-op)

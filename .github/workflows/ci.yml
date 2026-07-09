@@ -56,7 +56,7 @@ jobs:
         with:
           key: swift-ffi
       - name: Build static library for Swift
-        run: cargo build --release --features ffi --target aarch64-apple-darwin
+        run: cargo build --release --features "ffi,fst-engine" --target aarch64-apple-darwin
       - name: Run Swift FFI smoke test
         working-directory: swift-test
         run: swift run NemoTest
