@@ -1477,6 +1477,28 @@ fn test_tn_sentence_backtick_quotes() {
 }
 
 // ════════════════════════════════════════════════════════════════════════
+// 26c. TN TRAILING-PUNCTUATION PRESERVATION
+// ════════════════════════════════════════════════════════════════════════
+
+#[test]
+fn test_tn_trailing_punctuation_preserved() {
+    // Taggers must not silently swallow trailing sentence punctuation: the
+    // shorter, punctuation-free span wins and the punctuation emits separately.
+    assert_eq!(
+        tn_normalize_sentence("email me@gmail.com!"),
+        "email me at gmail dot com!"
+    );
+    assert_eq!(
+        tn_normalize_sentence("here (4 June 2014). and"),
+        "here (the fourth of june twenty fourteen). and"
+    );
+    assert_eq!(
+        tn_normalize_sentence("visit test.com, please"),
+        "visit test dot com, please"
+    );
+}
+
+// ════════════════════════════════════════════════════════════════════════
 // 27. BUG FIX: i64::MIN OVERFLOW IN number_to_words
 // ════════════════════════════════════════════════════════════════════════
 

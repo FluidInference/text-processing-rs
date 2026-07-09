@@ -46,6 +46,16 @@ pub fn parse(input: &str) -> Option<String> {
         return None;
     }
 
+    // Reject spans padded with sentence punctuation the entity cannot hold
+    // (e.g. a trailing "!" or ")", a leading "("), so the sliding window emits
+    // that punctuation as its own token instead of the tagger silently
+    // dropping it. A trailing "/" is a legitimate URL path separator and kept.
+    let first = trimmed.chars().next().unwrap();
+    let last = trimmed.chars().last().unwrap();
+    if !first.is_ascii_alphanumeric() || (!last.is_ascii_alphanumeric() && last != '/') {
+        return None;
+    }
+
     // "word / word" (spaces optional) reads the slash literally. Handled first
     // so the whitespace guard below can reject spaces in the URL/email forms.
     if let Some(result) = parse_slash_words(trimmed) {
@@ -376,6 +386,17 @@ mod tests {
             parse("ourdailynews.com/12-sm"),
             Some("ourdailynews dot com slash one two dash sm".to_string())
         );
+    }
+
+    #[test]
+    fn test_rejects_trailing_punctuation() {
+        // Sentence punctuation the entity cannot hold is rejected so the
+        // sliding window keeps it as its own token.
+        assert_eq!(parse("test.com!"), None);
+        assert_eq!(parse("me@gmail.com)"), None);
+        assert_eq!(parse("(test.com"), None);
+        // A trailing slash is a legitimate URL path separator.
+        assert!(parse("www.x.com/y/").is_some());
     }
 
     #[test]
