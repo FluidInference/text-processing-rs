@@ -240,9 +240,13 @@ fn parse_day(token: &str) -> Option<u32> {
     (1..=31).contains(&day).then_some(day)
 }
 
-/// Parse a 4-digit year token (trailing punctuation allowed) year-style.
+/// Parse a bare 4-digit year token year-style. Only a trailing period is
+/// tolerated (single-expression input like `"March 8, 2026."` has no
+/// pretokenizer to strip it); other trailing punctuation is rejected so a
+/// sentence-mode date span cannot silently swallow a following ")" or "]"
+/// (the shorter, punctuation-free span wins instead).
 fn parse_year_word(token: &str) -> Option<String> {
-    let t = token.trim().trim_end_matches(|c: char| !c.is_ascii_digit());
+    let t = token.trim().trim_end_matches('.');
     if t.len() == 4 && t.chars().all(|c| c.is_ascii_digit()) {
         return verbalize_year(t.parse().ok()?);
     }
