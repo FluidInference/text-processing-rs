@@ -71,7 +71,7 @@ fn main() {
                     .and_then(|s| s.to_str())
                     .map(|s| s.trim_start_matches("test_cases_").to_string())
                     .unwrap_or_default();
-                let stat = score_file(&path, lang, is_tn);
+                let stat = score_file(&path, lang, is_tn, &class);
                 if stat.total > 0 {
                     stats.insert(format!("{}\t{}\t{}", lang, dir, class), stat);
                 }
@@ -107,8 +107,16 @@ fn main() {
 /// Run every `input~expected` line through the port, counting matches. Each
 /// call is isolated with `catch_unwind` so a panicking input is counted as a
 /// failure instead of aborting the run.
-fn score_file(path: &Path, lang: &str, is_tn: bool) -> Stat {
+fn score_file(path: &Path, lang: &str, is_tn: bool, class: &str) -> Stat {
     let content = fs::read_to_string(path).unwrap_or_default();
+
+    // `normalize_with_audio` uses a multi-candidate format: a `~input` line
+    // followed by one or more acceptable spoken variants. The output passes if
+    // it matches any variant.
+    if class == "normalize_with_audio" {
+        return score_multi_candidate(&content, lang);
+    }
+
     let mut stat = Stat::default();
     for line in content.lines() {
         if line.is_empty() || line.starts_with('#') {
@@ -133,6 +141,37 @@ fn score_file(path: &Path, lang: &str, is_tn: bool) -> Stat {
         });
         match got {
             Ok(g) if g == expected => stat.pass += 1,
+            Ok(_) => {}
+            Err(_) => stat.panics += 1,
+        }
+    }
+    stat
+}
+
+/// Score NeMo's multi-candidate `normalize_with_audio` format: blocks of a
+/// `~input` line plus one or more acceptable variants; pass if the port's
+/// output matches any variant.
+fn score_multi_candidate(content: &str, lang: &str) -> Stat {
+    let mut stat = Stat::default();
+    let mut blocks: Vec<(String, Vec<String>)> = Vec::new();
+    for line in content.lines() {
+        if let Some(rest) = line.strip_prefix('~') {
+            blocks.push((rest.to_string(), Vec::new()));
+        } else if !line.is_empty() {
+            if let Some(last) = blocks.last_mut() {
+                last.1.push(line.to_string());
+            }
+        }
+    }
+    for (input, candidates) in blocks {
+        if candidates.is_empty() {
+            continue;
+        }
+        stat.total += 1;
+        let lang = lang.to_string();
+        let got = panic::catch_unwind(move || tn_normalize_sentence_lang(&input, &lang));
+        match got {
+            Ok(g) if candidates.iter().any(|c| *c == g) => stat.pass += 1,
             Ok(_) => {}
             Err(_) => stat.panics += 1,
         }
