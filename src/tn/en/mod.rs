@@ -19,6 +19,7 @@ pub mod roman;
 pub mod telephone;
 pub mod time;
 pub mod whitelist;
+pub mod word;
 
 /// Ones words indexed by value (0..20).
 const ONES: [&str; 20] = [
