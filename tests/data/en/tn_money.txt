@@ -63,3 +63,9 @@ $18129~eighteen thousand one hundred and twenty nine dollars
 £2.01~two pounds one penny
 $1,925.21~one thousand nine hundred and twenty five dollars twenty one cents
 $1,234.123~one thousand two hundred and thirty four point one two three dollars
+US$76.3 trillion~seventy six point three trillion us dollars
+$20/mo~twenty dollars per month
+$350/yr~three hundred and fifty dollars per year
+£10/wk~ten pounds per week
+$1/d~one dollar per day
+$0.5/hr~fifty cents per hour
