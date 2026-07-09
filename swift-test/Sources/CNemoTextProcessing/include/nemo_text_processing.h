@@ -32,6 +32,9 @@ char* nemo_tn_normalize(const char* input);
 char* nemo_tn_normalize_sentence(const char* input);
 char* nemo_tn_normalize_sentence_with_max_span(const char* input, uint32_t max_span_tokens);
 
+/* Byte-exact NeMo TN via the compiled-FST engine (NULL if unavailable) */
+char* nemo_tn_fst(const char* input, const char* lang);
+
 #ifdef __cplusplus
 }
 #endif

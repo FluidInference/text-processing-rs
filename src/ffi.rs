@@ -427,6 +427,58 @@ pub unsafe extern "C" fn nemo_tn_normalize_sentence_with_max_span_lang(
     }
 }
 
+/// Byte-exact NeMo TN via the compiled-FST engine, for `lang` in
+/// {en, zh, ja, fr, es, de, hi}.
+///
+/// Returns `NULL` when the crate was built without the `fst-engine` feature or
+/// the language is unsupported, so callers can fall back to the rule-based
+/// `nemo_tn_normalize_lang`. The ABI is stable regardless of the feature.
+///
+/// # Safety
+/// - `input` and `lang` must be valid null-terminated UTF-8 strings
+/// - Returns a newly allocated string that must be freed with `nemo_free_string`
+#[no_mangle]
+pub unsafe extern "C" fn nemo_tn_fst(input: *const c_char, lang: *const c_char) -> *mut c_char {
+    if input.is_null() || lang.is_null() {
+        return ptr::null_mut();
+    }
+    let input_str = match CStr::from_ptr(input).to_str() {
+        Ok(s) => s,
+        Err(_) => return ptr::null_mut(),
+    };
+    let lang_str = match CStr::from_ptr(lang).to_str() {
+        Ok(s) => s,
+        Err(_) => return ptr::null_mut(),
+    };
+    match fst_normalize(input_str, lang_str) {
+        Some(result) => match CString::new(result) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut(),
+        },
+        None => ptr::null_mut(),
+    }
+}
+
+#[cfg(feature = "fst-engine")]
+fn fst_normalize(input: &str, lang: &str) -> Option<String> {
+    use crate::fst;
+    Some(match lang {
+        "en" => fst::en::normalize(input),
+        "zh" => fst::zh::normalize(input),
+        "ja" => fst::ja::normalize(input),
+        "fr" => fst::fr::normalize(input),
+        "es" => fst::es::normalize(input),
+        "de" => fst::de::normalize(input),
+        "hi" => fst::hi::normalize(input),
+        _ => return None,
+    })
+}
+
+#[cfg(not(feature = "fst-engine"))]
+fn fst_normalize(_input: &str, _lang: &str) -> Option<String> {
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -440,6 +492,23 @@ mod tests {
             let result_str = CStr::from_ptr(result).to_str().unwrap();
             assert_eq!(result_str, "200");
             nemo_free_string(result);
+        }
+    }
+
+    #[cfg(feature = "fst-engine")]
+    #[test]
+    fn test_ffi_tn_fst() {
+        unsafe {
+            let input = CString::new("$2").unwrap();
+            let en = CString::new("en").unwrap();
+            let result = nemo_tn_fst(input.as_ptr(), en.as_ptr());
+            assert!(!result.is_null());
+            assert_eq!(CStr::from_ptr(result).to_str().unwrap(), "two dollars");
+            nemo_free_string(result);
+
+            // Unsupported language → NULL (caller falls back to rule-based).
+            let bad = CString::new("xx").unwrap();
+            assert!(nemo_tn_fst(input.as_ptr(), bad.as_ptr()).is_null());
         }
     }
 

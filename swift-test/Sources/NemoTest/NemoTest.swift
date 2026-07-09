@@ -59,6 +59,14 @@ enum NemoTextProcessing {
         return String(cString: resultPtr)
     }
 
+    /// Byte-exact NeMo TN via the FST engine. Returns nil when the library was
+    /// built without the fst-engine feature or the language is unsupported.
+    static func tnFst(_ input: String, _ lang: String) -> String? {
+        guard let resultPtr = nemo_tn_fst(input, lang) else { return nil }
+        defer { nemo_free_string(resultPtr) }
+        return String(cString: resultPtr)
+    }
+
     static func tnNormalizeSentence(_ input: String, maxSpanTokens: UInt32) -> String {
         guard let resultPtr = nemo_tn_normalize_sentence_with_max_span(input, maxSpanTokens) else { return input }
         defer { nemo_free_string(resultPtr) }
@@ -418,6 +426,41 @@ struct NemoTest {
             overall.passed += cr.passed
             overall.failed += cr.failed
             overall.failures += cr.failures
+        }
+
+        // FST engine (byte-exact NeMo parity), if built with --features fst-engine
+        if filterCategory == nil || "fst".hasPrefix(filterCategory!.lowercased()) {
+            if NemoTextProcessing.tnFst("$2", "en") == nil {
+                print("  FST Engine")
+                print("    SKIP (built without fst-engine feature)")
+                print()
+            } else {
+                print("  FST Engine")
+                var fr = TestResults()
+                let fstCases: [(String, String, String)] = [
+                    ("en", "$2", "two dollars"),
+                    ("zh", "2024年", "二零二四年"),
+                    ("ja", "1", "一"),
+                    ("fr", "83", "quatre-vingt-trois"),
+                    ("de", "1", "eins"),
+                ]
+                for (lang, input, expected) in fstCases {
+                    let got = NemoTextProcessing.tnFst(input, lang) ?? "<nil>"
+                    if got == expected {
+                        fr.passed += 1
+                    } else {
+                        fr.failed += 1
+                        fr.failures.append(("FST Engine", "\(lang):\(input)", expected, got))
+                        print("    FAIL \(lang) \"\(input)\" -> \"\(got)\" (expected \"\(expected)\")")
+                    }
+                }
+                let mark = fr.failed == 0 ? "PASS" : "FAIL"
+                print("    \(mark) \(fr.passed)/\(fr.total)")
+                print()
+                overall.passed += fr.passed
+                overall.failed += fr.failed
+                overall.failures += fr.failures
+            }
         }
 
         // Summary
