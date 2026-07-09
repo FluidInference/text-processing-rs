@@ -6,7 +6,7 @@
 //! - "2 kg" → "two kilograms"
 //! - "72°F" → "seventy two degrees Fahrenheit"
 
-use super::number_to_words;
+use super::number_to_words_and;
 
 use lazy_static::lazy_static;
 use std::collections::HashMap;
@@ -86,6 +86,12 @@ lazy_static! {
         m.insert("sq m", UnitInfo { singular: "square meter", plural: "square meters" });
         m.insert("sq km", UnitInfo { singular: "square kilometer", plural: "square kilometers" });
 
+        // Volume (cubic)
+        m.insert("mm³", UnitInfo { singular: "cubic millimeter", plural: "cubic millimeters" });
+        m.insert("cm³", UnitInfo { singular: "cubic centimeter", plural: "cubic centimeters" });
+        m.insert("m³", UnitInfo { singular: "cubic meter", plural: "cubic meters" });
+        m.insert("km³", UnitInfo { singular: "cubic kilometer", plural: "cubic kilometers" });
+
         // Frequency
         m.insert("Hz", UnitInfo { singular: "hertz", plural: "hertz" });
         m.insert("kHz", UnitInfo { singular: "kilohertz", plural: "kilohertz" });
@@ -139,6 +145,11 @@ pub fn parse(input: &str) -> Option<String> {
             continue;
         }
 
+        // Scale word between the number and unit ("100 million kg").
+        if let Some(scaled) = parse_scaled(num_part) {
+            return Some(format!("{} {}", scaled, unit_info.plural));
+        }
+
         // Handle negative
         let (is_negative, digits) = if let Some(rest) = num_part.strip_prefix('-') {
             (true, rest.trim())
@@ -166,7 +177,7 @@ pub fn parse(input: &str) -> Option<String> {
                     };
                     v
                 };
-                let int_words = number_to_words(int_val);
+                let int_words = number_to_words_and(int_val as u128);
                 let frac_words = super::spell_digits(parts[1]);
                 let unit_word = unit_info.plural; // decimals are usually plural
                 let num_words = if is_negative {
@@ -179,17 +190,16 @@ pub fn parse(input: &str) -> Option<String> {
             continue;
         }
 
-        let Ok(n) = clean.parse::<i64>() else {
+        let Ok(n) = clean.parse::<u128>() else {
             continue;
         };
         let num_words = if is_negative {
-            format!("minus {}", number_to_words(n))
+            format!("minus {}", number_to_words_and(n))
         } else {
-            number_to_words(n)
+            number_to_words_and(n)
         };
 
-        let abs_n = n.unsigned_abs();
-        let unit_word = if abs_n == 1 {
+        let unit_word = if n == 1 {
             unit_info.singular
         } else {
             unit_info.plural
@@ -198,7 +208,45 @@ pub fn parse(input: &str) -> Option<String> {
         return Some(format!("{} {}", num_words, unit_word));
     }
 
-    None
+    // "value/unit" reads the slash as "per": "12/kg" → "twelve per kilogram",
+    // "12kg/kg" → "twelve kilograms per kilogram".
+    parse_per(trimmed)
+}
+
+/// Read a "value/unit" form where the right side is a bare unit.
+fn parse_per(input: &str) -> Option<String> {
+    let (left, right) = input.split_once('/')?;
+    let (left, right) = (left.trim(), right.trim());
+    let runit = UNITS.get(right)?;
+    let left_spoken = parse(left).or_else(|| {
+        let clean: String = left.chars().filter(|c| *c != ',').collect();
+        if clean.is_empty() || !clean.chars().all(|c| c.is_ascii_digit()) {
+            return None;
+        }
+        Some(number_to_words_and(clean.parse().ok()?))
+    })?;
+    Some(format!("{} per {}", left_spoken, runit.singular))
+}
+
+/// Read a "<number> <scale>" magnitude ("100 million" → "one hundred million").
+fn parse_scaled(s: &str) -> Option<String> {
+    let (num, scale) = s.trim().rsplit_once(char::is_whitespace)?;
+    let scale = match scale.to_ascii_lowercase().as_str() {
+        "thousand" => "thousand",
+        "million" => "million",
+        "billion" => "billion",
+        "trillion" => "trillion",
+        _ => return None,
+    };
+    let clean: String = num.chars().filter(|c| *c != ',').collect();
+    if clean.is_empty() || !clean.chars().all(|c| c.is_ascii_digit()) {
+        return None;
+    }
+    Some(format!(
+        "{} {}",
+        number_to_words_and(clean.parse().ok()?),
+        scale
+    ))
 }
 
 #[cfg(test)]

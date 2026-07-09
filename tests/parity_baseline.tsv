@@ -54,13 +54,13 @@ en	tn	decimal	12	12
 en	tn	electronic	40	45
 en	tn	fraction	16	16
 en	tn	math	4	4
-en	tn	measure	5	21
+en	tn	measure	10	21
 en	tn	money	65	71
 en	tn	normalize_with_audio	0	58
 en	tn	ordinal	18	27
 en	tn	punctuation	25	63
 en	tn	punctuation_match_input	3	13
-en	tn	range	17	20
+en	tn	range	18	20
 en	tn	roman	3	4
 en	tn	serial	0	32
 en	tn	special_text	9	10
