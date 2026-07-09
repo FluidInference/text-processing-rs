@@ -483,9 +483,15 @@ fn test_tn_date_numeric_dash() {
 
 #[test]
 fn test_tn_date_numeric_invalid_month() {
-    // Month 0 and month 13 should not parse as dates
+    // Field 0 is not a valid month or day in either orientation.
     assert_eq!(tn_normalize("0/5/2025"), "0/5/2025");
-    assert_eq!(tn_normalize("13/5/2025"), "13/5/2025");
+    // Both fields exceed 12: neither US (MM/DD) nor British (DD/MM) applies.
+    assert_eq!(tn_normalize("13/13/2025"), "13/13/2025");
+    // First field > 12 reads British (day-first): 13 May 2025.
+    assert_eq!(
+        tn_normalize("13/5/2025"),
+        "the thirteenth of may twenty twenty five"
+    );
 }
 
 #[test]

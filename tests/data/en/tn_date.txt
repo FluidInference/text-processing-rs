@@ -1,6 +1,7 @@
 # English date TN cases (NeMo), single-expression subset for the asserting
-# test. Numeric dates, quarters, 'AD', spaced-decade, and sentence-context
-# cases are omitted (some pass only in sentence mode; see parity baseline).
+# test. Spaced-decade ("1980 s", read as seconds by measure at higher span
+# priority) and sentence-context cases (the "26th May" double-"the") are
+# omitted; see the parity baseline for the full sentence-mode tally.
 july 25 2012~july twenty fifth twenty twelve
 jul 25 2012~july twenty fifth twenty twelve
 1980s~nineteen eighties
@@ -38,3 +39,15 @@ jan. 15~january fifteenth
 JAN 15 2020~january fifteenth twenty twenty
 01/07/98~january seventh ninety eight
 '80s~eighties
+2006-08-05~august fifth two thousand six
+2016-11-03~november third twenty sixteen
+2016/07/03~july third twenty sixteen
+01.10.2010~january tenth twenty ten
+11/17/05~november seventeenth zero five
+1998/2/30~february thirtieth nineteen ninety eight
+Jan-15-2020~january fifteenth twenty twenty
+Jan-15~january fifteenth
+15-01-2020~the fifteenth of january twenty twenty
+15.01.2020~the fifteenth of january twenty twenty
+340 A.D~three forty AD
+2Q22~the second quarter of twenty two
