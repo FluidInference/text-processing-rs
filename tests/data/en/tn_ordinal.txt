@@ -21,3 +21,10 @@
 21st~twenty first
 121st~one hundred twenty first
 111th~one hundred eleventh
+# Malformed suffixes read the number + literal suffix (NeMo).
+1th~one th
+4rd~four rd
+11st~eleven st
+13rd~thirteen rd
+21th~twenty one th
+111st~one one one st
