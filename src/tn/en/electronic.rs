@@ -37,6 +37,10 @@ lazy_static! {
     /// Product acronyms upper-cased in email/URL context.
     static ref BRAND: HashSet<&'static str> =
         ["nvidia", "cuda", "dgx", "rtx", "basepod"].into_iter().collect();
+
+    /// File-extension acronyms upper-cased when they are the final ".ext".
+    static ref EXT_UPPER: HashSet<&'static str> =
+        ["html", "htm", "xml", "css", "json", "php", "asp", "sql"].into_iter().collect();
 }
 
 /// Parse an email or URL to spoken form.
@@ -221,6 +225,18 @@ fn render_remainder(s: &str, context: bool) -> String {
         }
     }
     flush(&mut buf, &mut out);
+
+    // Upper-case a known acronym file extension in the final ".ext" label
+    // ("intro.html" → "… dot HTML"), leaving an identically-named directory
+    // ("…/html/…") lower case.
+    let n = out.len();
+    if n >= 2 && out[n - 2] == "dot" {
+        let lower = out[n - 1].to_ascii_lowercase();
+        if EXT_UPPER.contains(lower.as_str()) {
+            out[n - 1] = lower.to_ascii_uppercase();
+        }
+    }
+
     out.join(" ")
 }
 
