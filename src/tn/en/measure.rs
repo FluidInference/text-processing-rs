@@ -122,6 +122,12 @@ pub fn parse(input: &str) -> Option<String> {
         return Some(result);
     }
 
+    // Dimensions with an area/volume unit: "2x8 m2" → "two by eight square
+    // meters" (the "x" reads "by" only when an area unit follows).
+    if let Some(result) = parse_dimension(trimmed) {
+        return Some(result);
+    }
+
     // Try to find a unit suffix (longest match first)
     // Sort by length descending to match "km/h" before "h"
     let mut unit_matches: Vec<(&str, &UnitInfo)> = UNITS
@@ -230,6 +236,32 @@ fn is_spaced_decade(num: &str) -> bool {
     num.len() == 4
         && num.chars().all(|c| c.is_ascii_digit())
         && num.parse::<u32>().map(|n| n % 10 == 0).unwrap_or(false)
+}
+
+/// Read a dimension with an area/volume unit: "2x8 m2" → "two by eight square
+/// meters".
+fn parse_dimension(input: &str) -> Option<String> {
+    let (dims, unit) = input.split_once(' ')?;
+    let unit_word = match unit {
+        "m2" | "m²" => "square meters",
+        "km2" | "km²" => "square kilometers",
+        "cm2" | "cm²" => "square centimeters",
+        "mm2" | "mm²" => "square millimeters",
+        "ft2" => "square feet",
+        "m3" | "m³" => "cubic meters",
+        "km3" | "km³" => "cubic kilometers",
+        _ => return None,
+    };
+    let (a, b) = dims.split_once(['x', 'X'])?;
+    if a.is_empty() || b.is_empty() || !a.chars().chain(b.chars()).all(|c| c.is_ascii_digit()) {
+        return None;
+    }
+    Some(format!(
+        "{} by {} {}",
+        number_to_words_and(a.parse().ok()?),
+        number_to_words_and(b.parse().ok()?),
+        unit_word
+    ))
 }
 
 /// Read a decimal glued to a unit word by "-" ("7.2-millimeter" → "seven point
