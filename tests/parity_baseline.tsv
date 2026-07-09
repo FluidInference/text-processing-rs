@@ -56,13 +56,13 @@ en	tn	fraction	16	16
 en	tn	math	4	4
 en	tn	measure	10	21
 en	tn	money	71	71
-en	tn	normalize_with_audio	31	58
+en	tn	normalize_with_audio	39	58
 en	tn	ordinal	27	27
-en	tn	punctuation	34	63
+en	tn	punctuation	35	63
 en	tn	punctuation_match_input	4	13
 en	tn	range	19	20
 en	tn	roman	4	4
-en	tn	serial	8	32
+en	tn	serial	27	32
 en	tn	special_text	9	10
 en	tn	telephone	20	20
 en	tn	time	21	21
