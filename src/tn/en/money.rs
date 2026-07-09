@@ -56,6 +56,13 @@ const DOLLAR: Currency = Currency {
     cent_plural: "cents",
 };
 
+const US_DOLLAR: Currency = Currency {
+    singular: "us dollar",
+    plural: "us dollars",
+    cent_singular: "cent",
+    cent_plural: "cents",
+};
+
 const EURO: Currency = Currency {
     singular: "euro",
     plural: "euros",
@@ -94,8 +101,15 @@ pub fn parse(input: &str) -> Option<String> {
         return None;
     }
 
-    // Detect currency symbol
-    let (currency, rest) = if let Some(r) = trimmed.strip_prefix('$') {
+    // Money per period: "$20/mo" → "twenty dollars per month".
+    if let Some(result) = parse_per_period(trimmed) {
+        return Some(result);
+    }
+
+    // Detect currency symbol ("US$" before the bare "$").
+    let (currency, rest) = if let Some(r) = trimmed.strip_prefix("US$") {
+        (&US_DOLLAR, r)
+    } else if let Some(r) = trimmed.strip_prefix('$') {
         (&DOLLAR, r)
     } else if let Some(r) = trimmed.strip_prefix('€') {
         (&EURO, r)
@@ -170,6 +184,23 @@ pub fn parse(input: &str) -> Option<String> {
         };
         Some(format!("{} {}", amount_words(n), unit))
     }
+}
+
+/// Money over a period abbreviation: `$20/mo` → "twenty dollars per month".
+fn parse_per_period(input: &str) -> Option<String> {
+    let (money_part, period) = input.split_once('/')?;
+    let period_word = match period.trim() {
+        "mo" => "month",
+        "yr" => "year",
+        "wk" => "week",
+        "d" => "day",
+        "hr" => "hour",
+        "sec" => "second",
+        "min" => "minute",
+        _ => return None,
+    };
+    let money = parse(money_part.trim())?;
+    Some(format!("{} per {}", money, period_word))
 }
 
 /// Parse `$X.Y`. A fractional part that is a whole number of cents (≤ 2
