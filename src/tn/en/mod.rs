@@ -16,6 +16,7 @@ pub mod money;
 pub mod ordinal;
 pub mod range;
 pub mod roman;
+pub mod serial;
 pub mod telephone;
 pub mod time;
 pub mod whitelist;

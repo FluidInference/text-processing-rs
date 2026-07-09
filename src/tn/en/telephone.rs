@@ -142,7 +142,10 @@ fn parse_vanity(input: &str) -> Option<String> {
         return None;
     }
     let groups: Vec<&str> = input.split('-').collect();
-    if groups.len() < 2 {
+    // Real vanity numbers have three or more groups and an upper-case mnemonic
+    // ("1-800-GO-U-HAUL"); this keeps short mixed serials ("133-ABC") and
+    // lower-case codes ("1-413-te-b") out of the phone path.
+    if groups.len() < 3 || input.chars().any(|c| c.is_ascii_lowercase()) {
         return None;
     }
     let mut has_digit = false;
