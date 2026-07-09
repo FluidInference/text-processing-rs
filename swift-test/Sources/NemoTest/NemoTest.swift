@@ -293,9 +293,9 @@ let tnMeasureTests: [TC] = [
 ]
 
 let tnElectronicTests: [TC] = [
-    ("test@gmail.com", "t e s t at g m a i l dot c o m"),
-    ("http://www.example.com", "h t t p colon slash slash w w w dot e x a m p l e dot c o m"),
-    ("www.example.com", "w w w dot e x a m p l e dot c o m"),
+    ("test@gmail.com", "test at gmail dot com"),
+    ("http://www.example.com", "HTTP colon slash slash WWW dot example dot com"),
+    ("www.example.com", "WWW dot example dot com"),
 ]
 
 let tnTelephoneTests: [TC] = [

@@ -1,5 +1,48 @@
-# Electronic TN: written~spoken
-test@gmail.com~t e s t at g m a i l dot c o m
-http://www.example.com~h t t p colon slash slash w w w dot e x a m p l e dot c o m
-https://google.com~h t t p s colon slash slash g o o g l e dot c o m
-www.example.com~w w w dot e x a m p l e dot c o m
+# English electronic TN cases (NeMo), single-expression subset for the
+# asserting test. Emails and URLs render pronounceable labels as words with
+# NeMo's casing (ccTLDs/brands/protocol keywords upper-cased in email/URL
+# context; bare domains stay lower case).
+#
+# Omitted (need NeMo's full data lists / cross-class handling; see the parity
+# baseline for the sentence-mode tally):
+#   - word segmentation:   "rtxprohelp" -> "RTX pro help"
+#   - cardinal in path:    "rtx-6000"   -> "RTX dash six thousand"
+#   - extension vs dir:    ".html" ext upper-cased but "html" dir lower-cased
+#   - serial digit runs:   bare "8876"  -> "eight eight seven six"
+#   - sentence-only spans: "email is abc1@gmail.com", "... test.com and test2.uk"
+a.bc@gmail.com~a dot bc at gmail dot com
+a@hotmail.de~a at hotmail dot DE
+a@hotmail.fr~a at hotmail dot FR
+a@hotmail.it~a at hotmail dot IT
+a@aol.it~a at aol dot IT
+a@msn.it~a at msn dot IT
+cdf@abc.edu~cdf at abc dot edu
+abc@gmail.abc~abc at gmail dot ABC
+abc@abc.com~abc at abc dot com
+asdf123@abc.com~asdf one two three at abc dot com
+a1b2@abc.com~a one b two at abc dot com
+ab3.sdd.3@gmail.com~ab three dot sdd dot three at gmail dot com
+abs@nvidia.com~abs at NVIDIA dot com
+nvidia.com~nvidia dot com
+test.com~test dot com
+test.abc~test dot abc
+http://www.ourdailynews.com.sm~HTTP colon slash slash WWW dot ourdailynews dot com dot SM
+https://www.ourdailynews.com.sm~HTTPS colon slash slash WWW dot ourdailynews dot com dot SM
+www.ourdailynews.com.sm~WWW dot ourdailynews dot com dot SM
+www.ourdailynews.com/123-sm~WWW dot ourdailynews dot com slash one two three dash SM
+sdf@gmail.com.sm~sdf at gmail dot com dot SM
+sdf@gmail.com/123-sm~sdf at gmail dot com slash one two three dash SM
+sdf@gmail.abc/123-sm~sdf at gmail dot ABC slash one two three dash SM
+sdf@gmail.abc/123456-sm~sdf at gmail dot ABC slash one two three four five six dash SM
+ourdailynews.com/12-sm~ourdailynews dot com slash one two dash sm
+ourdailynews.abc~ourdailynews dot abc
+file:///photos/image.jpg~file colon slash slash slash photos slash image dot jpeg
+https://developer.nvidia.com/drive-sim-early-access-program~HTTPS colon slash slash developer dot NVIDIA dot com slash drive dash sim dash early dash access dash program
+https://developer.nvidia.com/cv-cuda/early-access~HTTPS colon slash slash developer dot NVIDIA dot com slash cv dash CUDA slash early dash access
+https://www.nvidia.com/dgx-basepod~HTTPS colon slash slash WWW dot NVIDIA dot com slash DGX dash BASEPOD
+https://www.nvidia.com/dgx-basepod.sm/3~HTTPS colon slash slash WWW dot NVIDIA dot com slash DGX dash BASEPOD dot SM slash three
+enterprise-services@nvidia.com~enterprise dash services at NVIDIA dot com
+https://www.nvidia.com/dgx-basepod/~HTTPS colon slash slash WWW dot NVIDIA dot com slash DGX dash BASEPOD slash
+upgrade/update~upgrade slash update
+upgrade / update~upgrade slash update
+upgrade/update/downgrade~upgrade slash update slash downgrade
