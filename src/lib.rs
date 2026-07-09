@@ -1343,6 +1343,10 @@ fn tn_parse_span(span: &str) -> Option<(String, u8)> {
     if let Some(result) = tn::en::cardinal::parse(span) {
         return Some((result, 70));
     }
+    // Last-resort spell-out for leftover symbol / alphanumeric tokens.
+    if let Some(result) = tn::en::word::parse(span) {
+        return Some((result, 60));
+    }
 
     None
 }
