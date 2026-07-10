@@ -7,3 +7,18 @@ under the Apache License, Version 2.0.
 
    Copyright (c) NVIDIA CORPORATION & AFFILIATES.
    Licensed under the Apache License, Version 2.0.
+
+In addition, when built with the optional `fst-engine` feature, this
+product includes and redistributes artifacts derived from NVIDIA NeMo
+Text Processing (Apache-2.0, pinned commit
+1f1263579fe57ba7ed783cad3dddee710fcc5064):
+
+   * the compiled weighted-FST grammars under `grammars/` (exported from
+     NeMo's Pynini source), and
+   * the text-normalization test fixtures under `tests/fixtures/`
+     (copied from, or regenerated as the deterministic output of, NeMo's
+     `data_text_normalization` test cases).
+
+This product's binary distributions (e.g. the published xcframework) also
+statically link third-party libraries. See THIRD-PARTY-LICENSES.md for the
+full list and their licenses.
