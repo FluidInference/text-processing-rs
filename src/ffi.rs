@@ -4,9 +4,9 @@ use std::ffi::{c_char, CStr, CString};
 use std::ptr;
 
 use crate::{
-    custom_rules, normalize, normalize_sentence, normalize_sentence_with_options,
-    normalize_with_options, tn_normalize, tn_normalize_lang, tn_normalize_sentence,
-    tn_normalize_sentence_lang, tn_normalize_sentence_with_max_span,
+    custom_rules, normalize, normalize_sentence, normalize_sentence_lang,
+    normalize_sentence_with_options, normalize_with_options, tn_normalize, tn_normalize_lang,
+    tn_normalize_sentence, tn_normalize_sentence_lang, tn_normalize_sentence_with_max_span,
     tn_normalize_sentence_with_max_span_lang, NormalizeOptions,
 };
 
@@ -161,6 +161,41 @@ pub unsafe extern "C" fn nemo_normalize_sentence_with_options(
         disable_bare_second,
     );
     let result = normalize_sentence_with_options(c_str, options);
+
+    match CString::new(result) {
+        Ok(c_string) => c_string.into_raw(),
+        Err(_) => ptr::null_mut(),
+    }
+}
+
+/// Normalize a full sentence (ITN, spoken → written) for a specific language.
+///
+/// Supported language codes: "en", "fr", "es", "de", "zh", "hi", "ja".
+/// Falls back to English for unrecognized codes. The ITN counterpart of
+/// [`nemo_tn_normalize_sentence_lang`].
+///
+/// # Safety
+/// - `input` and `lang` must be valid null-terminated UTF-8 strings
+/// - Returns a newly allocated string that must be freed with `nemo_free_string`
+#[no_mangle]
+pub unsafe extern "C" fn nemo_normalize_sentence_lang(
+    input: *const c_char,
+    lang: *const c_char,
+) -> *mut c_char {
+    if input.is_null() || lang.is_null() {
+        return ptr::null_mut();
+    }
+
+    let input_str = match CStr::from_ptr(input).to_str() {
+        Ok(s) => s,
+        Err(_) => return ptr::null_mut(),
+    };
+    let lang_str = match CStr::from_ptr(lang).to_str() {
+        Ok(s) => s,
+        Err(_) => return ptr::null_mut(),
+    };
+
+    let result = normalize_sentence_lang(input_str, lang_str);
 
     match CString::new(result) {
         Ok(c_string) => c_string.into_raw(),
@@ -562,6 +597,36 @@ mod tests {
                 "Give me a second to check."
             );
             nemo_free_string(opted_in);
+        }
+    }
+
+    #[test]
+    fn test_ffi_normalize_sentence_lang() {
+        unsafe {
+            // Sliding-window language (fr): span within a larger sentence.
+            let input = CString::new("j'ai vingt et un ans").unwrap();
+            let lang = CString::new("fr").unwrap();
+            let result = nemo_normalize_sentence_lang(input.as_ptr(), lang.as_ptr());
+            assert!(!result.is_null());
+            assert_eq!(CStr::from_ptr(result).to_str().unwrap(), "j'ai 21 ans");
+            nemo_free_string(result);
+
+            // Scanning language (zh): whole-sentence in-place replacement.
+            let zh_input = CString::new("我有二十一个苹果").unwrap();
+            let zh_lang = CString::new("zh").unwrap();
+            let zh_result = nemo_normalize_sentence_lang(zh_input.as_ptr(), zh_lang.as_ptr());
+            assert_eq!(CStr::from_ptr(zh_result).to_str().unwrap(), "我有21个苹果");
+            nemo_free_string(zh_result);
+        }
+    }
+
+    #[test]
+    fn test_ffi_normalize_sentence_lang_null() {
+        unsafe {
+            let lang = CString::new("fr").unwrap();
+            assert!(nemo_normalize_sentence_lang(ptr::null(), lang.as_ptr()).is_null());
+            let input = CString::new("vingt et un").unwrap();
+            assert!(nemo_normalize_sentence_lang(input.as_ptr(), ptr::null()).is_null());
         }
     }
 }

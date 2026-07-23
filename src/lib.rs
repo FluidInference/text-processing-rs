@@ -1042,6 +1042,83 @@ pub fn normalize_sentence_with_options(input: &str, options: NormalizeOptions) -
     )
 }
 
+/// Normalize a full sentence (ITN, spoken → written) for a specific language.
+///
+/// Supported language codes: "en", "fr", "es", "de", "zh", "hi", "ja".
+/// Falls back to English for unrecognized codes.
+///
+/// Unlike [`normalize_with_lang`], which treats the whole input as a single
+/// expression, this scans for normalizable spans within a larger sentence —
+/// the ITN counterpart of [`tn_normalize_sentence_lang`].
+///
+/// ```
+/// use text_processing_rs::normalize_sentence_lang;
+///
+/// assert_eq!(
+///     normalize_sentence_lang("j'ai vingt et un ans", "fr"),
+///     "j'ai 21 ans"
+/// );
+/// ```
+pub fn normalize_sentence_lang(input: &str, lang: &str) -> String {
+    normalize_sentence_with_max_span_lang(input, lang, DEFAULT_MAX_SPAN_TOKENS)
+}
+
+/// Normalize a full sentence (ITN) for a specific language with a configurable
+/// max span size.
+///
+/// Two tagger architectures are dispatched here:
+/// - `en`/`fr`/`de`/`es` use expression-level taggers, so the input is scanned
+///   with the shared sliding-window [`sentence_loop`].
+/// - `hi`/`ja`/`zh` taggers already scan the whole sentence in place, so
+///   [`normalize_with_lang`] is the sentence-level entry point for them and
+///   `max_span_tokens` does not apply.
+///
+/// Unrecognized codes fall back to English sentence normalization.
+pub fn normalize_sentence_with_max_span_lang(
+    input: &str,
+    lang: &str,
+    max_span_tokens: usize,
+) -> String {
+    match lang {
+        // Scanning-based ITN: processors already replace spans across the whole
+        // sentence in place, so the sliding window is unnecessary.
+        "hi" | "ja" | "zh" => normalize_with_lang(input, lang),
+        // Expression-level taggers: scan the sentence span by span.
+        "fr" | "de" | "es" => {
+            let trimmed = input.trim();
+            if trimmed.is_empty() {
+                return trimmed.to_string();
+            }
+            let pretokens = pretokenize(trimmed);
+            sentence_loop(&pretokens, max_span_tokens, |span| {
+                parse_span_lang(span, lang)
+            })
+        }
+        // "en", "", and any unrecognized code use English sentence mode.
+        _ => normalize_sentence_inner(input, max_span_tokens, false, false),
+    }
+}
+
+/// Span-level ITN dispatch for expression-tagger languages (`fr`/`de`/`es`).
+///
+/// Each `try_*_taggers` helper already tries its language's taggers in priority
+/// order and returns the first match, so a single constant priority is
+/// sufficient here: [`sentence_loop`] only consults the score to break ties
+/// between equal-length spans, and this path yields at most one candidate per
+/// span. Returns `None` for languages without expression taggers.
+fn parse_span_lang(span: &str, lang: &str) -> Option<(String, u8)> {
+    if span.split_whitespace().count() == 0 {
+        return None;
+    }
+    let result = match lang {
+        "fr" => try_fr_taggers(span),
+        "de" => try_de_taggers(span),
+        "es" => try_es_taggers(span),
+        _ => None,
+    }?;
+    Some((result, 70))
+}
+
 /// Per-pretoken record: the token text plus the original separator that
 /// preceded it (`" "` for whitespace, `""` if the token came from a
 /// punctuation split or starts the input).
