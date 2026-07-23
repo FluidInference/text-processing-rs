@@ -1285,3 +1285,52 @@ fn test_issue_21_other_punctuation() {
         "don't eat 21 apples"
     );
 }
+
+/// Issue #82: fraction denominators must not be misread as compound ordinals.
+/// "one third" was becoming "4th" (1 + 3) via the ordinal tagger.
+#[test]
+fn test_issue_82_fraction_not_ordinal() {
+    // The reported case.
+    assert_eq!(
+        normalize_sentence("use one third of a cup"),
+        "use 1/3 of a cup"
+    );
+    // Other singular denominators (numerator one).
+    assert_eq!(normalize_sentence("one half of a cup"), "1/2 of a cup");
+    assert_eq!(
+        normalize_sentence("one quarter of the time"),
+        "1/4 of the time"
+    );
+    assert_eq!(normalize("one fifth"), "1/5");
+    assert_eq!(normalize("one tenth"), "1/10");
+    // Plural denominators carry an arbitrary numerator.
+    assert_eq!(normalize_sentence("two thirds of a cup"), "2/3 of a cup");
+    assert_eq!(
+        normalize_sentence("three quarters of the way"),
+        "3/4 of the way"
+    );
+    assert_eq!(normalize("twenty two thirds"), "22/3");
+}
+
+/// Issue #82 regression guard: genuine compound ordinals still convert, and
+/// the compound-addition path no longer fabricates ordinals for "one <word>".
+#[test]
+fn test_issue_82_ordinals_still_work() {
+    assert_eq!(normalize("twenty third"), "23rd");
+    assert_eq!(normalize("thirty first"), "31st");
+    assert_eq!(normalize("forty second"), "42nd");
+    assert_eq!(normalize("one hundred third"), "103rd");
+    assert_eq!(normalize("one hundred tenth"), "110th");
+    // Singular scale words stay ordinals, not fractions.
+    assert_eq!(normalize("one hundredth"), "100th");
+    // "a quarter" is not a fraction (article is not a numerator) — unchanged.
+    assert_eq!(
+        normalize_sentence("we had a quarter of the pizza left"),
+        "we had a quarter of the pizza left"
+    );
+    // No fabricated ordinal from cardinal-one + ones-ordinal ("one" + "second").
+    assert_ne!(
+        normalize_sentence("one second of silence"),
+        "3rd of silence"
+    );
+}
