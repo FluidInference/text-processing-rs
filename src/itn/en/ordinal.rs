@@ -98,7 +98,15 @@ pub fn parse(input: &str) -> Option<String> {
         return Some(format_ordinal(prefix_value * scale));
     }
 
-    // Regular ordinal: add prefix + ordinal value
+    // Regular compound ordinal: the ordinal suffix fills the low-order digits,
+    // so the cardinal prefix must be a round multiple of the next power of ten
+    // ("twenty first" = 20 + 1, "one hundred tenth" = 100 + 10). A non-round
+    // prefix means this is not a compound ordinal at all ("one second",
+    // "one third") — decline so cardinal/fraction handle it. See issue #82.
+    let modulus = if ordinal_value < 10 { 10 } else { 100 };
+    if prefix_value % modulus != 0 {
+        return None;
+    }
     Some(format_ordinal(prefix_value + ordinal_value))
 }
 

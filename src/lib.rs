@@ -32,8 +32,8 @@ pub mod wasm;
 pub use options::{NormalizeOptions, DEFAULT_MAX_SPAN_TOKENS};
 
 use itn::en::{
-    cardinal, date, decimal, electronic, measure, money, ordinal, punctuation, telephone, time,
-    whitelist, word,
+    cardinal, date, decimal, electronic, fraction, measure, money, ordinal, punctuation, telephone,
+    time, whitelist, word,
 };
 
 /// Normalize spoken-form text to written form.
@@ -107,6 +107,13 @@ fn normalize_inner(input: &str, disable_bare_second: bool) -> String {
 
     // Try decimal numbers
     if let Some(result) = decimal::parse(input) {
+        return result;
+    }
+
+    // Fraction before ordinal: "one third" is 1/3, not the compound-ordinal
+    // reading (1 + 3 → "4th"). Compound ordinals ("twenty third") and bare
+    // ordinals ("third") return None here and fall through. See issue #82.
+    if let Some(result) = fraction::parse(input) {
         return result;
     }
 
@@ -973,6 +980,12 @@ fn parse_span(
     // `"give me a second"` stay literal. Compound ordinals
     // (`"twenty second"`) still flow through this branch because they
     // span 2+ tokens.
+    // Fraction (priority 78, above ordinal). "one third" → "1/3", while
+    // "twenty third" defers to the ordinal tagger below (23rd). See issue #82.
+    if let Some(result) = fraction::parse(span) {
+        return Some((result, 78));
+    }
+
     let skip_ordinal =
         disable_bare_second && token_count == 1 && span.trim().eq_ignore_ascii_case("second");
     if !skip_ordinal {
