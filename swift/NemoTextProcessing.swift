@@ -95,6 +95,29 @@ public enum NemoTextProcessing {
         return String(cString: resultPtr)
     }
 
+    /// Normalize a full sentence (ITN) for a specific language, replacing
+    /// spoken-form spans with written form.
+    ///
+    /// Supported language codes: `"en"`, `"fr"`, `"es"`, `"de"`, `"zh"`,
+    /// `"hi"`, `"ja"`. Falls back to English for unrecognized codes. The ITN
+    /// counterpart of `tnNormalizeSentence(_:language:)`.
+    ///
+    /// - Parameters:
+    ///   - input: Sentence containing spoken-form spans
+    ///   - language: ISO 639-1 language code
+    /// - Returns: Sentence with spoken-form spans replaced with written form
+    public static func normalizeSentence(_ input: String, language: String) -> String {
+        guard let inputC = input.cString(using: .utf8),
+              let langC = language.cString(using: .utf8) else {
+            return input
+        }
+        guard let resultPtr = nemo_normalize_sentence_lang(inputC, langC) else {
+            return input
+        }
+        defer { nemo_free_string(resultPtr) }
+        return String(cString: resultPtr)
+    }
+
     /// Normalize a single spoken-form expression with caller-specified options.
     ///
     /// - Parameters:

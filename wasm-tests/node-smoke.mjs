@@ -23,6 +23,11 @@ assertEqual(
   'I have 21 apples',
   'normalizeSentence should convert spans'
 );
+assertEqual(
+  wasm.normalizeSentenceLang("j'ai vingt et un ans", 'fr'),
+  "j'ai 21 ans",
+  'normalizeSentenceLang should convert spans per language'
+);
 assertEqual(wasm.tnNormalize('$5.50'), 'five dollars fifty cents', 'tnNormalize should work');
 assertEqual(
   wasm.tnNormalizeSentence('I paid $5 for 23 items'),

@@ -70,6 +70,19 @@ char* nemo_normalize_sentence_with_options(
 );
 
 /**
+ * Normalize a full sentence (ITN, spoken -> written) for a specific language.
+ *
+ * Supported language codes: "en", "fr", "es", "de", "zh", "hi", "ja".
+ * Falls back to English for unrecognized codes. The ITN counterpart of
+ * nemo_tn_normalize_sentence_lang.
+ *
+ * @param input Null-terminated UTF-8 string
+ * @param lang  Null-terminated language code (e.g. "de", "fr")
+ * @return Newly allocated string, must be freed with nemo_free_string().
+ */
+char* nemo_normalize_sentence_lang(const char* input, const char* lang);
+
+/**
  * Add a custom spoken-to-written normalization rule.
  * Custom rules have the highest priority, checked before all built-in taggers.
  * If a rule with the same spoken form exists, it is replaced.

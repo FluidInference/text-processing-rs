@@ -3,10 +3,11 @@
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    custom_rules, normalize, normalize_sentence, normalize_sentence_with_options,
-    normalize_with_lang, normalize_with_options, tn_normalize, tn_normalize_lang,
-    tn_normalize_sentence, tn_normalize_sentence_lang, tn_normalize_sentence_with_max_span,
-    tn_normalize_sentence_with_max_span_lang, NormalizeOptions,
+    custom_rules, normalize, normalize_sentence, normalize_sentence_lang,
+    normalize_sentence_with_options, normalize_with_lang, normalize_with_options, tn_normalize,
+    tn_normalize_lang, tn_normalize_sentence, tn_normalize_sentence_lang,
+    tn_normalize_sentence_with_max_span, tn_normalize_sentence_with_max_span_lang,
+    NormalizeOptions,
 };
 
 /// Build [`NormalizeOptions`] from JS-friendly primitives.
@@ -48,6 +49,11 @@ pub fn normalize_with_lang_js(input: &str, lang: &str) -> String {
 #[wasm_bindgen(js_name = normalizeSentence)]
 pub fn normalize_sentence_js(input: &str) -> String {
     normalize_sentence(input)
+}
+
+#[wasm_bindgen(js_name = normalizeSentenceLang)]
+pub fn normalize_sentence_lang_js(input: &str, lang: &str) -> String {
+    normalize_sentence_lang(input, lang)
 }
 
 /// Unified single-expression normalize. `concatCompoundNumbers=true` reads

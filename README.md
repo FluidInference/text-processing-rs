@@ -111,11 +111,15 @@ await init();
 Sentence-level normalization scans for normalizable spans within a larger sentence:
 
 ```rust
-use text_processing_rs::{normalize_sentence, tn_normalize_sentence};
+use text_processing_rs::{normalize_sentence, normalize_sentence_lang, tn_normalize_sentence};
 
 // ITN sentence mode
 let result = normalize_sentence("I have twenty one apples");
 assert_eq!(result, "I have 21 apples");
+
+// ITN sentence mode, language-aware ("en", "fr", "es", "de", "zh", "hi", "ja")
+let result = normalize_sentence_lang("j'ai vingt et un ans", "fr");
+assert_eq!(result, "j'ai 21 ans");
 
 // TN sentence mode
 let result = tn_normalize_sentence("I paid $5 for 23 items");
@@ -138,6 +142,10 @@ let spoken = NemoTextProcessing.tnNormalize("$5.50")
 // Sentence modes
 let itn = NemoTextProcessing.normalizeSentence("I have twenty one apples")
 // "I have 21 apples"
+
+// Language-aware ITN sentence mode ("en", "fr", "es", "de", "zh", "hi", "ja")
+let itnFr = NemoTextProcessing.normalizeSentence("j'ai vingt et un ans", language: "fr")
+// "j'ai 21 ans"
 
 let tn = NemoTextProcessing.tnNormalizeSentence("I paid $5 for 23 items")
 // "I paid five dollars for twenty three items"
