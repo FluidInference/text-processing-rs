@@ -1,0 +1,10 @@
+# Korean ordinal ITN test cases
+# 제X (the Nth) and X번째 (Nth one)
+제일~제1
+제이~제2
+제삼~제3
+제이십삼~제23
+제오백~제500
+일번째~1번째
+이십번째~20번째
+제이차 세계대전~제2차 세계대전

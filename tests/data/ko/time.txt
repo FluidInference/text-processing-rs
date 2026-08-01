@@ -1,0 +1,10 @@
+# Korean time ITN test cases
+# Hours use native numerals (한/두/세 ...); minutes and seconds use
+# Sino-Korean numerals.
+세시~3시
+열두시~12시
+열한시~11시
+영시~0시
+세시 삼십분~3시 30분
+열두시 십오분 삼십초~12시 15분 30초
+회의는 두시 십분에 시작한다~회의는 2시 10분에 시작한다

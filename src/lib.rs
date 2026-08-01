@@ -191,7 +191,8 @@ pub fn normalize_with_options(input: &str, options: NormalizeOptions) -> String 
 /// ASR output to written form in different languages.
 ///
 /// Supported languages: "en" (default), "fr" (French), "de" (German),
-/// "es" (Spanish), "hi" (Hindi), "ja" (Japanese), "zh" (Chinese).
+/// "es" (Spanish), "hi" (Hindi), "ja" (Japanese), "ko" (Korean),
+/// "zh" (Chinese).
 pub fn normalize_with_lang(input: &str, lang: &str) -> String {
     let input = input.trim();
 
@@ -202,6 +203,7 @@ pub fn normalize_with_lang(input: &str, lang: &str) -> String {
         "es" => normalize_lang_es(input),
         "hi" => normalize_lang_hi(input),
         "ja" => normalize_lang_ja(input),
+        "ko" => normalize_lang_ko(input),
         "zh" => normalize_lang_zh(input),
         _ => normalize(input), // Default to English
     }
@@ -613,6 +615,41 @@ fn normalize_lang_zh(input: &str) -> String {
 
     // 8. Cardinal — catch remaining standalone Chinese number spans
     result = itn::zh::cardinal::replace_zh_numbers(&result);
+
+    result
+}
+
+// ── Korean ITN ─────────────────────────────────────────────────────────
+
+/// ITN for Korean.
+///
+/// Sentence-scanning pipeline mirroring the Japanese / Chinese taggers.
+/// Each processor scans the full input for its patterns and replaces
+/// number spans in-place.
+///
+/// Order matters: fractions run before time (both use 분), and the
+/// conservative cardinal catch-all runs last so suffix-anchored taggers
+/// (date / time / ordinal) get first claim on digit-only spans.
+fn normalize_lang_ko(input: &str) -> String {
+    let mut result = input.to_string();
+
+    // 1. Fractions (X분의 Y) — before time which also uses 분
+    result = itn::ko::fraction::process(&result);
+
+    // 2. Decimals (X점Y)
+    result = itn::ko::decimal::process(&result);
+
+    // 3. Dates (년월일, weekdays, 세기, 년대, ranges)
+    result = itn::ko::date::process(&result);
+
+    // 4. Time (시/분/초)
+    result = itn::ko::time::process(&result);
+
+    // 5. Ordinals (제X, X번째)
+    result = itn::ko::ordinal::process(&result);
+
+    // 6. Cardinal — catch remaining Sino-Korean number spans (conservative)
+    result = itn::ko::cardinal::replace_sino_korean_numbers(&result);
 
     result
 }

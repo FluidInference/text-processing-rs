@@ -1,0 +1,18 @@
+# Korean cardinal number ITN test cases
+# Sino-Korean numerals -> Arabic. The cardinal catch-all only rewrites
+# runs that carry a scale unit (십/백/천/만/억/조); digit-only runs are
+# left verbatim so common homographs survive.
+일만~10,000
+이만~20,000
+삼천오백~3,500
+십오만~150,000
+이천이십육~2,026
+오천억~500,000,000,000
+삼억오천만~350,000,000
+십오만 원~150,000 원
+예산은 오천억이 되었다~예산은 500,000,000,000이 되었다
+# homograph guard: digit-only runs are NOT rewritten
+이것은 책이다~이것은 책이다
+이 사람~이 사람
+# trailing digit after a big unit is treated as a particle
+오천억이~500,000,000,000이

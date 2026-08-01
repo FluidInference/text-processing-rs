@@ -1,0 +1,12 @@
+# Korean date ITN test cases
+# 년/월/일, weekday abbreviation, 세기 (century), 년대 (decade)
+일월~1월
+일월이십이일~1월22일
+이천이십육년~2026년
+삼월일일월요일~3월1일(월)
+사월삼십일일요일~4월30일(일)
+구십년대~90년대
+이십일세기~21세기
+# irregular month names (유월 = June, 시월 = October)
+유월~6월
+시월십오일~10월15일
