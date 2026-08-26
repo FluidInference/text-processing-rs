@@ -31,6 +31,13 @@ lipo -create \
     -output "$BUILD_DIR/macos/libtext_processing_rs.a"
 
 echo "Creating XCFramework..."
+# NOTE: headers live in swift/include/CNemoTextProcessing/ so each slice gets
+# Headers/CNemoTextProcessing/module.modulemap. Xcode's ProcessXCFramework copies
+# each xcframework's Headers/ into the SHARED $BUILT_PRODUCTS_DIR/include, so a
+# top-level include/module.modulemap collides with any other xcframework that
+# ships one ("Multiple commands produce .../include/module.modulemap"). Clang
+# still resolves `import CNemoTextProcessing` because it looks for a module map
+# in a subdirectory named after the module. Keep the directory name == module name.
 xcodebuild -create-xcframework \
     -library "$BUILD_DIR/macos/libtext_processing_rs.a" \
     -headers swift/include \
