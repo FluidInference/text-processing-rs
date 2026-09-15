@@ -277,14 +277,35 @@ npm run wasm:publish
 ### CLI Tools
 
 ```bash
-# Build the Rust library (release, with FFI)
-cargo build --release --target aarch64-apple-darwin --features ffi
+# Build the Rust library for this Mac's architecture.
+RUST_TARGET="$(rustc -vV | sed -n 's/^host: //p')"
+cargo build --release --target "$RUST_TARGET" --features "ffi,fst-engine"
 
 # Build Swift CLI tools
 cd swift-test && swift build
 ```
 
-Binaries are at `swift-test/.build/debug/nemo-itn` and `swift-test/.build/debug/nemo-tn`.
+Binaries are at `swift-test/.build/debug/nemo-itn`,
+`swift-test/.build/debug/nemo-tn`, and
+`swift-test/.build/debug/nemo-tn-aligned`.
+
+#### nemo-tn
+```bash
+swift-test/.build/debug/nemo-tn -s 'The price is $1,234.56.'
+# output: The price is one thousand two hundred and thirty four point five six dollars
+```
+
+#### nemo-tn-aligned
+The aligned CLI emits compact JSON for argument input and JSON Lines for stdin:
+
+```bash
+swift-test/.build/debug/nemo-tn-aligned --lang en 'The price is $1,234.56.'
+# output: {"input":"The price is $1,234.56.","language":"en","normalized":"The price is one thousand two hundred and thirty four dollars fifty six cents.","spans":[{"input_end":3,"input_start":0,"kind":"word","normalized":"The","original":"The"},{"input_end":9,"input_start":4,"kind":"word","normalized":"price","original":"price"},{"input_end":12,"input_start":10,"kind":"word","normalized":"is","original":"is"},{"input_end":22,"input_start":13,"kind":"money","normalized":"one thousand two hundred and thirty four dollars fifty six cents","original":"$1,234.56"},{"input_end":23,"input_start":22,"kind":"punctuation","normalized":".","original":"."}]}
+```
+
+Each result contains `input`, `language`, the complete `normalized` text, and
+`spans` with `input_start`, `input_end`, `original`, `normalized`, and `kind`.
+Offsets are half-open UTF-8 byte offsets.
 
 ### Swift (XCFramework)
 
