@@ -6,7 +6,8 @@
 //! verbalizer only accepts fields in a specific order, so the driver tries
 //! every field permutation of each token until one verbalizes.
 
-use super::engine::apply;
+use super::engine::{apply, apply_with_alignment};
+use super::{AlignedNormalization, AlignedSpan, TokenKind};
 use rustfst::prelude::*;
 
 /// A parsed tag value: a leaf string, a nested tag, or a bare boolean flag.
@@ -20,6 +21,8 @@ enum Val {
 /// Recursive-descent parser over the classifier's tagged output.
 struct TagParser {
     chars: Vec<char>,
+    byte_offsets: Vec<usize>,
+    byte_len: usize,
     pos: usize,
 }
 
@@ -27,8 +30,17 @@ impl TagParser {
     fn new(s: &str) -> Self {
         TagParser {
             chars: s.chars().collect(),
+            byte_offsets: s.char_indices().map(|(offset, _)| offset).collect(),
+            byte_len: s.len(),
             pos: 0,
         }
+    }
+
+    fn byte_position(&self) -> usize {
+        self.byte_offsets
+            .get(self.pos)
+            .copied()
+            .unwrap_or(self.byte_len)
     }
 
     fn skip_ws(&mut self) {
@@ -75,6 +87,26 @@ impl TagParser {
             } else {
                 out.push((k, self.value()));
             }
+        }
+        out
+    }
+
+    /// Parse root fields while retaining the output byte boundary at which
+    /// each top-level `tokens { ... }` record ends. The selected FST path maps
+    /// that boundary back to an input byte position.
+    fn aligned_fields(&mut self) -> Vec<(String, Val, usize)> {
+        let mut out = Vec::new();
+        loop {
+            self.skip_ws();
+            if self.pos >= self.chars.len() || self.chars[self.pos] == '}' {
+                break;
+            }
+            let key = self.key();
+            if key.is_empty() {
+                break;
+            }
+            let value = self.value();
+            out.push((key, value, self.byte_position()));
         }
         out
     }
@@ -203,17 +235,87 @@ pub fn normalize(
 
     let mut parts = Vec::with_capacity(tokens.len());
     for (k, v) in tokens {
-        let single = vec![(k, v)];
-        let mut verbalized = None;
-        for candidate in permute(&single) {
-            if let Some(out) = apply(verbalize, &candidate) {
-                verbalized = Some(out);
-                break;
-            }
-        }
-        parts.push(verbalized.unwrap_or_default());
+        parts.push(verbalize_token(verbalize, k, v).unwrap_or_default());
     }
 
+    finish_normalization(parts, post, input, sep)
+}
+
+/// Run TN while retaining the input span consumed by every top-level NeMo
+/// classifier token.
+pub(super) fn normalize_aligned(
+    classify: &VectorFst<TropicalWeight>,
+    verbalize: &VectorFst<TropicalWeight>,
+    post: Option<&VectorFst<TropicalWeight>>,
+    input: &str,
+    sep: &str,
+) -> Option<AlignedNormalization> {
+    let classified = apply_with_alignment(classify, input)?;
+    let tokens = TagParser::new(&classified.output).aligned_fields();
+    let mut parts = Vec::with_capacity(tokens.len());
+    let mut spans = Vec::with_capacity(tokens.len());
+    let mut previous_input_end = 0usize;
+
+    for (key, value, output_end) in tokens {
+        let raw_input_end = source_char_boundary(
+            input,
+            classified
+                .input_at_output_boundary
+                .get(output_end)
+                .copied()
+                .unwrap_or(input.len())
+                .min(input.len()),
+        );
+        let (input_start, input_end) =
+            trim_source_span(input, previous_input_end.min(raw_input_end), raw_input_end);
+        previous_input_end = raw_input_end;
+
+        let original = input[input_start..input_end].to_string();
+        let kind = token_kind(&value, &original);
+        let normalized = verbalize_token(verbalize, key, value).unwrap_or_default();
+        parts.push(normalized.clone());
+        spans.push(AlignedSpan {
+            input_start,
+            input_end,
+            original,
+            normalized,
+            kind,
+        });
+    }
+
+    Some(AlignedNormalization {
+        normalized: finish_normalization(parts, post, input, sep),
+        spans,
+    })
+}
+
+fn source_char_boundary(input: &str, mut position: usize) -> usize {
+    while !input.is_char_boundary(position) {
+        position -= 1;
+    }
+    position
+}
+
+fn verbalize_token(
+    verbalize: &VectorFst<TropicalWeight>,
+    key: String,
+    value: Val,
+) -> Option<String> {
+    let single = vec![(key, value)];
+    for candidate in permute(&single) {
+        if let Some(output) = apply(verbalize, &candidate) {
+            return Some(output);
+        }
+    }
+    None
+}
+
+fn finish_normalization(
+    parts: Vec<String>,
+    post: Option<&VectorFst<TropicalWeight>>,
+    input: &str,
+    sep: &str,
+) -> String {
     // NeMo's post-verbalization steps (normalize.py): collapse spaces, apply the
     // post-processing FST, Moses-detokenize, then re-align punctuation spacing to
     // the original input.
@@ -223,6 +325,51 @@ pub fn normalize(
         None => joined,
     };
     post_process_punct(input, &moses_despace(&processed))
+}
+
+fn trim_source_span(input: &str, start: usize, end: usize) -> (usize, usize) {
+    let raw = &input[start..end];
+    let trimmed_start = raw.trim_start_matches(char::is_whitespace);
+    let leading_bytes = raw.len() - trimmed_start.len();
+    let trimmed = trimmed_start.trim_end_matches(char::is_whitespace);
+    (start + leading_bytes, start + leading_bytes + trimmed.len())
+}
+
+fn token_kind(value: &Val, original: &str) -> TokenKind {
+    let class = match value {
+        Val::Map(fields) => fields
+            .iter()
+            .map(|(key, _)| key.as_str())
+            .find(|key| *key != "preserve_order"),
+        _ => None,
+    };
+
+    match class {
+        Some("cardinal") => TokenKind::Cardinal,
+        Some("ordinal") => TokenKind::Ordinal,
+        Some("decimal") => TokenKind::Decimal,
+        Some("fraction") => TokenKind::Fraction,
+        Some("time") => TokenKind::Time,
+        Some("measure") => TokenKind::Measure,
+        Some("percent") => TokenKind::Percent,
+        Some("date") => TokenKind::Date,
+        Some("telephone") => TokenKind::Telephone,
+        Some("money") => TokenKind::Money,
+        Some("electronic") => TokenKind::Electronic,
+        Some("verbatim") => TokenKind::Verbatim,
+        Some("letters") => TokenKind::Letters,
+        Some("abbreviation") => TokenKind::Abbreviation,
+        Some("name") | None
+            if !original.is_empty()
+                && original
+                    .chars()
+                    .all(|c| !c.is_alphanumeric() && !c.is_whitespace()) =>
+        {
+            TokenKind::Punctuation
+        }
+        Some("name") | None => TokenKind::Word,
+        Some(other) => TokenKind::Other(other.to_string()),
+    }
 }
 
 /// Collapse runs of spaces to one and trim (NeMo's `SPACE_DUP` + strip).

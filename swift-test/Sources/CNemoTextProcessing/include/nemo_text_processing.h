@@ -1,6 +1,7 @@
 #ifndef NEMO_TEXT_PROCESSING_H
 #define NEMO_TEXT_PROCESSING_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -34,6 +35,23 @@ char* nemo_tn_normalize_sentence_with_max_span(const char* input, uint32_t max_s
 
 /* Byte-exact NeMo TN via the compiled-FST engine (NULL if unavailable) */
 char* nemo_tn_fst(const char* input, const char* lang);
+
+typedef struct NemoTnAlignedSpan {
+    size_t input_start;
+    size_t input_end;
+    char* original;
+    char* normalized;
+    char* kind;
+} NemoTnAlignedSpan;
+
+typedef struct NemoTnAlignment {
+    char* normalized;
+    NemoTnAlignedSpan* spans;
+    size_t span_count;
+} NemoTnAlignment;
+
+NemoTnAlignment* nemo_tn_fst_aligned(const char* input, const char* lang);
+void nemo_tn_alignment_free(NemoTnAlignment* alignment);
 
 #ifdef __cplusplus
 }

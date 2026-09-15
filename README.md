@@ -126,6 +126,29 @@ let result = tn_normalize_sentence("I paid $5 for 23 items");
 assert_eq!(result, "I paid five dollars for twenty three items");
 ```
 
+Compiled-FST TN can also retain the source range and semantic class for every
+normalized span. Offsets are half-open UTF-8 byte offsets:
+
+```rust
+use text_processing_rs::fst;
+
+let result = fst::normalize_aligned("The price is $1,234.56.", "en").unwrap();
+assert_eq!(
+    result.normalized,
+    "The price is one thousand two hundred and thirty four dollars fifty six cents."
+);
+
+let money = &result.spans[3];
+assert_eq!(money.input_start, 13);
+assert_eq!(money.input_end, 22);
+assert_eq!(money.original, "$1,234.56");
+assert_eq!(money.kind.as_str(), "money");
+```
+
+Build this API with `--features fst-engine`. It uses the same compiled NeMo
+classifier and verbalizer as `fst::<lang>::normalize`, rather than recovering
+alignment by diffing the final strings.
+
 ### Swift
 
 ```swift
@@ -149,6 +172,16 @@ let itnFr = NemoTextProcessing.normalizeSentence("j'ai vingt et un ans", languag
 
 let tn = NemoTextProcessing.tnNormalizeSentence("I paid $5 for 23 items")
 // "I paid five dollars for twenty three items"
+
+if let aligned = NemoTextProcessing.tnNormalizeAligned(
+    "The price is $1,234.56.",
+    language: "en"
+) {
+    let money = aligned.spans[3]
+    // money.original == "$1,234.56"
+    // money.normalized == "one thousand ... dollars fifty six cents"
+    // money.inputRange == 13..<22, money.kind == "money"
+}
 ```
 
 ### CLI
@@ -215,6 +248,7 @@ echo "2:30 PM" | nemo-tn               # → two thirty p m
 - Phone numbers, IP addresses, SSN
 - Case preservation for proper nouns and abbreviations
 - Sentence-level normalization with sliding window span matching
+- Source-to-normalized span alignment with semantic classes (compiled FST)
 - Custom rules for domain-specific terms
 - C FFI for integration with Swift, Python, and other languages
 

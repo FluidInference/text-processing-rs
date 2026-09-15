@@ -1,5 +1,23 @@
 import Foundation
 
+/// One source span and the spoken-form words produced for it by TN.
+public struct TNAlignedSpan: Sendable, Equatable {
+    /// Half-open UTF-8 byte range in the original input.
+    public let inputRange: Range<Int>
+    public let original: String
+    /// Direct verbalizer output for this classifier token. Use the containing
+    /// `TNAlignment.normalized` for sentence-level punctuation and spacing.
+    public let normalized: String
+    /// Stable NeMo class such as `word`, `money`, `date`, or `telephone`.
+    public let kind: String
+}
+
+/// Sentence-level normalized text and its source-to-output span mapping.
+public struct TNAlignment: Sendable, Equatable {
+    public let normalized: String
+    public let spans: [TNAlignedSpan]
+}
+
 /// Swift wrapper for NeMo Text Processing (Inverse Text Normalization).
 ///
 /// Converts spoken-form ASR output to written form:
@@ -269,6 +287,59 @@ public enum NemoTextProcessing {
         }
         defer { nemo_free_string(resultPtr) }
         return String(cString: resultPtr)
+    }
+
+    /// Normalize through the compiled NeMo FST and retain the source span for
+    /// every normalized token.
+    ///
+    /// This API is available when the native library is built with the
+    /// `fst-engine` feature. Offsets are UTF-8 byte offsets, so slice
+    /// `input.utf8` rather than using them as `String.Index` values directly.
+    ///
+    /// - Parameters:
+    ///   - input: Complete written-form sentence.
+    ///   - language: One of `en`, `fr`, `es`, `de`, `zh`, `hi`, or `ja`.
+    /// - Returns: Normalized text and aligned spans, or `nil` when FST TN is
+    ///   unavailable or the language is unsupported.
+    public static func tnNormalizeAligned(_ input: String, language: String) -> TNAlignment? {
+        guard let inputC = input.cString(using: .utf8),
+              let langC = language.cString(using: .utf8),
+              let resultPtr = nemo_tn_fst_aligned(inputC, langC) else {
+            return nil
+        }
+        defer { nemo_tn_alignment_free(resultPtr) }
+
+        let result = resultPtr.pointee
+        guard let normalizedPtr = result.normalized else {
+            return nil
+        }
+
+        let count = Int(result.span_count)
+        if count > 0 && result.spans == nil {
+            return nil
+        }
+
+        let nativeSpans = UnsafeBufferPointer(start: result.spans, count: count)
+        var spans: [TNAlignedSpan] = []
+        spans.reserveCapacity(count)
+        for native in nativeSpans {
+            guard let original = native.original,
+                  let normalized = native.normalized,
+                  let kind = native.kind else {
+                return nil
+            }
+            spans.append(TNAlignedSpan(
+                inputRange: Int(native.input_start)..<Int(native.input_end),
+                original: String(cString: original),
+                normalized: String(cString: normalized),
+                kind: String(cString: kind)
+            ))
+        }
+
+        return TNAlignment(
+            normalized: String(cString: normalizedPtr),
+            spans: spans
+        )
     }
 
     // MARK: - Custom Rules

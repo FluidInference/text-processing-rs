@@ -6,7 +6,7 @@
 //! Grammars in `grammars/ja/` are exported from NeMo-text-processing
 //! (Apache-2.0, pinned commit `1f1263579fe57ba7ed783cad3dddee710fcc5064`).
 
-use super::{driver, load_gz};
+use super::{driver, load_gz, AlignedNormalization};
 use lazy_static::lazy_static;
 use rustfst::prelude::*;
 
@@ -29,4 +29,9 @@ lazy_static! {
 /// ```
 pub fn normalize(input: &str) -> String {
     driver::normalize(&CLASSIFY, &VERBALIZE, None, input, "")
+}
+
+/// Normalize Japanese text and retain the source span for every output token.
+pub fn normalize_aligned(input: &str) -> Option<AlignedNormalization> {
+    driver::normalize_aligned(&CLASSIFY, &VERBALIZE, None, input, "")
 }
