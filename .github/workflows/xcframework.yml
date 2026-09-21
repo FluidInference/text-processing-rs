@@ -1,8 +1,9 @@
 name: XCFramework
 
 # Builds NemoTextProcessing.xcframework (macOS universal + iOS device + iOS
-# simulator) so Apple consumers (e.g. FluidAudio) can link the native FFI via
-# a SwiftPM `.binaryTarget(url:checksum:)` instead of hand-linking the lib.
+# simulator universal + Mac Catalyst universal) so Apple consumers (e.g.
+# FluidAudio) can link the native FFI via a SwiftPM `.binaryTarget(url:checksum:)`
+# instead of hand-linking the lib.
 on:
   push:
     tags: ["v*"]
@@ -27,7 +28,7 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-apple-darwin,x86_64-apple-darwin,aarch64-apple-ios,aarch64-apple-ios-sim
+          targets: aarch64-apple-darwin,x86_64-apple-darwin,aarch64-apple-ios,aarch64-apple-ios-sim,x86_64-apple-ios,aarch64-apple-ios-macabi,x86_64-apple-ios-macabi
 
       - name: Build xcframework
         run: ./build-xcframework.sh
