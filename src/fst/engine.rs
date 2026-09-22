@@ -17,6 +17,14 @@ use rustfst::algorithms::compose::compose;
 use rustfst::algorithms::rm_epsilon::rm_epsilon;
 use rustfst::prelude::*;
 
+/// The selected transducer path, including the input position reached at each
+/// output-byte boundary. The boundary table lets the higher-level token parser
+/// recover which source bytes produced each top-level classifier token.
+pub(super) struct AppliedPath {
+    pub output: String,
+    pub input_at_output_boundary: Vec<usize>,
+}
+
 /// Build a linear FST that accepts exactly the bytes of `s` (input == output).
 ///
 /// Working at the byte level keeps the engine encoding-agnostic: Chinese,
@@ -39,14 +47,14 @@ fn byte_acceptor(s: &str) -> VectorFst<TropicalWeight> {
     fst
 }
 
-/// Return the output-label string of the lowest-weight path through an acyclic
-/// FST, or `None` if it has no accepting path.
+/// Return the input/output label pairs on the lowest-weight path through an
+/// acyclic FST, or `None` if it has no accepting path.
 ///
 /// Iterative-DFS topological order, then a single relaxation pass
 /// (`dist[next] = min(dist[next], dist[s] + w)`) followed by a backtrack over
 /// the recorded predecessors. Matches OpenFST's tropical shortest-path on the
 /// acyclic FSTs this engine produces.
-fn shortest_output(fst: &VectorFst<TropicalWeight>) -> Option<String> {
+fn shortest_labels(fst: &VectorFst<TropicalWeight>) -> Option<Vec<(u32, u32)>> {
     let start = fst.start()?;
     let n = fst.num_states();
 
@@ -76,7 +84,7 @@ fn shortest_output(fst: &VectorFst<TropicalWeight>) -> Option<String> {
     // Relax edges in topological order.
     let inf = f32::INFINITY;
     let mut dist = vec![inf; n];
-    let mut pred: Vec<Option<(usize, u32)>> = vec![None; n];
+    let mut pred: Vec<Option<(usize, u32, u32)>> = vec![None; n];
     dist[start as usize] = 0.0;
     for &s in &order {
         if dist[s] == inf {
@@ -87,7 +95,7 @@ fn shortest_output(fst: &VectorFst<TropicalWeight>) -> Option<String> {
             let ns = tr.nextstate as usize;
             if w < dist[ns] {
                 dist[ns] = w;
-                pred[ns] = Some((s, tr.olabel));
+                pred[ns] = Some((s, tr.ilabel, tr.olabel));
             }
         }
     }
@@ -108,30 +116,79 @@ fn shortest_output(fst: &VectorFst<TropicalWeight>) -> Option<String> {
     // Backtrack, collecting non-epsilon output labels.
     let mut f = best_final?;
     let mut labels = Vec::new();
-    while let Some((p, olabel)) = pred[f] {
-        if olabel != 0 {
-            labels.push(olabel as u8);
-        }
+    while let Some((p, ilabel, olabel)) = pred[f] {
+        labels.push((ilabel, olabel));
         f = p;
     }
     labels.reverse();
-    Some(String::from_utf8_lossy(&labels).to_string())
+    Some(labels)
+}
+
+fn applied_path(labels: Vec<(u32, u32)>) -> Option<AppliedPath> {
+    let output_len = labels.iter().filter(|(_, output)| *output != 0).count();
+    let mut output = Vec::with_capacity(output_len);
+    let mut input_at_output_boundary = vec![0usize; output_len + 1];
+    let mut input_position = 0usize;
+    let mut output_position = 0usize;
+
+    for (input, emitted) in labels {
+        if input != 0 {
+            input_position += 1;
+        }
+        if emitted != 0 {
+            output.push(emitted as u8);
+            output_position += 1;
+        }
+        // Input-only arcs between emitted bytes belong to the boundary that
+        // has most recently been reached. Updating it is important for spaces
+        // and deleted characters between adjacent classifier tokens.
+        input_at_output_boundary[output_position] = input_position;
+    }
+
+    Some(AppliedPath {
+        output: String::from_utf8(output).ok()?,
+        input_at_output_boundary,
+    })
 }
 
 /// Apply a transducer to `input`: compose, remove epsilons, take the tropical
 /// shortest path's output. Returns `None` if the input is not in the domain
 /// (empty composition) or the shortest path emits nothing.
 pub fn apply(fst: &VectorFst<TropicalWeight>, input: &str) -> Option<String> {
+    let labels = apply_labels(fst, input)?;
+    let output = labels
+        .into_iter()
+        .filter_map(|(_, output)| (output != 0).then_some(output as u8))
+        .collect::<Vec<_>>();
+    if output.is_empty() {
+        None
+    } else {
+        String::from_utf8(output).ok()
+    }
+}
+
+/// Apply a transducer while retaining input progress along the selected path.
+///
+/// This is used only for classifier alignment. Verbalization callers that need
+/// just the output should continue to use [`apply`].
+pub(super) fn apply_with_alignment(
+    fst: &VectorFst<TropicalWeight>,
+    input: &str,
+) -> Option<AppliedPath> {
+    let path = applied_path(apply_labels(fst, input)?)?;
+    if path.output.is_empty() {
+        None
+    } else {
+        Some(path)
+    }
+}
+
+fn apply_labels(fst: &VectorFst<TropicalWeight>, input: &str) -> Option<Vec<(u32, u32)>> {
     let mut composed: VectorFst<TropicalWeight> =
         compose(byte_acceptor(input), fst.clone()).ok()?;
     if composed.num_states() == 0 || composed.start().is_none() {
         return None;
     }
     rm_epsilon(&mut composed).ok()?;
-    let out = shortest_output(&composed)?;
-    if out.is_empty() {
-        None
-    } else {
-        Some(out)
-    }
+    shortest_labels(&composed)
 }

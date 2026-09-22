@@ -2,6 +2,9 @@
 
 use wasm_bindgen::prelude::*;
 
+#[cfg(feature = "fst-engine")]
+use js_sys::{Array, Object, Reflect};
+
 use crate::{
     custom_rules, normalize, normalize_sentence, normalize_sentence_lang,
     normalize_sentence_with_options, normalize_with_lang, normalize_with_options, tn_normalize,
@@ -126,6 +129,53 @@ pub fn tn_normalize_sentence_with_max_span_lang_js(
     max_span_tokens: u32,
 ) -> String {
     tn_normalize_sentence_with_max_span_lang(input, lang, max_span_tokens as usize)
+}
+
+/// Compiled-FST TN with source-span alignment.
+///
+/// Returns `null` unless the build enables both `wasm` and `fst-engine`, or
+/// when `lang` is unsupported. Offsets are half-open UTF-8 byte offsets.
+#[wasm_bindgen(js_name = tnFstNormalizeAligned)]
+pub fn tn_fst_normalize_aligned_js(input: &str, lang: &str) -> JsValue {
+    #[cfg(not(feature = "fst-engine"))]
+    {
+        let _ = (input, lang);
+        JsValue::NULL
+    }
+
+    #[cfg(feature = "fst-engine")]
+    {
+        let Some(alignment) = crate::fst::normalize_aligned(input, lang) else {
+            return JsValue::NULL;
+        };
+        let result = Object::new();
+        let spans = Array::new();
+        for span in alignment.spans {
+            let item = Object::new();
+            set_js_property(
+                &item,
+                "inputStart",
+                &JsValue::from_f64(span.input_start as f64),
+            );
+            set_js_property(&item, "inputEnd", &JsValue::from_f64(span.input_end as f64));
+            set_js_property(&item, "original", &JsValue::from_str(&span.original));
+            set_js_property(&item, "normalized", &JsValue::from_str(&span.normalized));
+            set_js_property(&item, "kind", &JsValue::from_str(span.kind.as_str()));
+            spans.push(&item);
+        }
+        set_js_property(
+            &result,
+            "normalized",
+            &JsValue::from_str(&alignment.normalized),
+        );
+        set_js_property(&result, "spans", &spans);
+        result.into()
+    }
+}
+
+#[cfg(feature = "fst-engine")]
+fn set_js_property(object: &Object, name: &str, value: &JsValue) {
+    let _ = Reflect::set(object, &JsValue::from_str(name), value);
 }
 
 #[wasm_bindgen(js_name = addRule)]

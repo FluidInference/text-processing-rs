@@ -10,6 +10,27 @@ use crate::{
     tn_normalize_sentence_with_max_span_lang, NormalizeOptions,
 };
 
+/// One source-to-normalized TN span returned through the C ABI.
+///
+/// All strings are owned by the containing [`NemoTnAlignment`] and remain valid
+/// until [`nemo_tn_alignment_free`] is called.
+#[repr(C)]
+pub struct NemoTnAlignedSpan {
+    pub input_start: usize,
+    pub input_end: usize,
+    pub original: *mut c_char,
+    pub normalized: *mut c_char,
+    pub kind: *mut c_char,
+}
+
+/// Sentence-level compiled-FST TN output and its source-span mapping.
+#[repr(C)]
+pub struct NemoTnAlignment {
+    pub normalized: *mut c_char,
+    pub spans: *mut NemoTnAlignedSpan,
+    pub span_count: usize,
+}
+
 /// Build [`NormalizeOptions`] from FFI primitives.
 ///
 /// `concat_compound_numbers`: any non-zero value enables concat behavior
@@ -491,6 +512,128 @@ pub unsafe extern "C" fn nemo_tn_fst(input: *const c_char, lang: *const c_char) 
             Err(_) => ptr::null_mut(),
         },
         None => ptr::null_mut(),
+    }
+}
+
+/// Normalize with the compiled-FST engine and retain every source span.
+///
+/// Offsets are half-open UTF-8 byte offsets into `input`. The returned object
+/// and every pointer it owns must be released with
+/// [`nemo_tn_alignment_free`].
+///
+/// Returns null when the library was built without `fst-engine`, the language
+/// is unsupported, either input string is invalid UTF-8, or allocation of a C
+/// string fails.
+///
+/// # Safety
+/// - `input` and `lang` must be valid null-terminated UTF-8 strings.
+/// - The result must be freed exactly once with [`nemo_tn_alignment_free`].
+#[no_mangle]
+#[cfg(feature = "fst-engine")]
+pub unsafe extern "C" fn nemo_tn_fst_aligned(
+    input: *const c_char,
+    lang: *const c_char,
+) -> *mut NemoTnAlignment {
+    if input.is_null() || lang.is_null() {
+        return ptr::null_mut();
+    }
+    let input_str = match CStr::from_ptr(input).to_str() {
+        Ok(s) => s,
+        Err(_) => return ptr::null_mut(),
+    };
+    let lang_str = match CStr::from_ptr(lang).to_str() {
+        Ok(s) => s,
+        Err(_) => return ptr::null_mut(),
+    };
+
+    let Some(alignment) = crate::fst::normalize_aligned(input_str, lang_str) else {
+        return ptr::null_mut();
+    };
+    let Ok(normalized) = CString::new(alignment.normalized) else {
+        return ptr::null_mut();
+    };
+
+    let converted = alignment
+        .spans
+        .into_iter()
+        .map(|span| {
+            Some((
+                span.input_start,
+                span.input_end,
+                CString::new(span.original).ok()?,
+                CString::new(span.normalized).ok()?,
+                CString::new(span.kind.as_str()).ok()?,
+            ))
+        })
+        .collect::<Option<Vec<_>>>();
+    let Some(converted) = converted else {
+        return ptr::null_mut();
+    };
+
+    let spans = converted
+        .into_iter()
+        .map(
+            |(input_start, input_end, original, normalized, kind)| NemoTnAlignedSpan {
+                input_start,
+                input_end,
+                original: original.into_raw(),
+                normalized: normalized.into_raw(),
+                kind: kind.into_raw(),
+            },
+        )
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    let span_count = spans.len();
+    let spans = Box::into_raw(spans) as *mut NemoTnAlignedSpan;
+
+    Box::into_raw(Box::new(NemoTnAlignment {
+        normalized: normalized.into_raw(),
+        spans,
+        span_count,
+    }))
+}
+
+#[no_mangle]
+#[cfg(not(feature = "fst-engine"))]
+pub unsafe extern "C" fn nemo_tn_fst_aligned(
+    _input: *const c_char,
+    _lang: *const c_char,
+) -> *mut NemoTnAlignment {
+    ptr::null_mut()
+}
+
+/// Free a result returned by [`nemo_tn_fst_aligned`].
+///
+/// Passing null is allowed.
+///
+/// # Safety
+/// - `alignment` must be null or a pointer returned by
+///   [`nemo_tn_fst_aligned`].
+/// - The pointer must not be freed more than once.
+#[no_mangle]
+pub unsafe extern "C" fn nemo_tn_alignment_free(alignment: *mut NemoTnAlignment) {
+    if alignment.is_null() {
+        return;
+    }
+
+    let alignment = Box::from_raw(alignment);
+    if !alignment.normalized.is_null() {
+        drop(CString::from_raw(alignment.normalized));
+    }
+    if !alignment.spans.is_null() {
+        let slice = ptr::slice_from_raw_parts_mut(alignment.spans, alignment.span_count);
+        let mut spans = Box::from_raw(slice);
+        for span in spans.iter_mut() {
+            if !span.original.is_null() {
+                drop(CString::from_raw(span.original));
+            }
+            if !span.normalized.is_null() {
+                drop(CString::from_raw(span.normalized));
+            }
+            if !span.kind.is_null() {
+                drop(CString::from_raw(span.kind));
+            }
+        }
     }
 }
 

@@ -1,6 +1,7 @@
 #ifndef NEMO_TEXT_PROCESSING_H
 #define NEMO_TEXT_PROCESSING_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -186,6 +187,39 @@ char* nemo_tn_normalize_sentence_with_max_span_lang(const char* input, const cha
  * @return Newly allocated string (free with nemo_free_string), or NULL.
  */
 char* nemo_tn_fst(const char* input, const char* lang);
+
+/** One aligned source span produced by compiled-FST text normalization. */
+typedef struct NemoTnAlignedSpan {
+    /** Half-open UTF-8 byte range in the original input. */
+    size_t input_start;
+    size_t input_end;
+    /** Original source substring. Owned by the containing alignment. */
+    char* original;
+    /** Direct verbalizer output for this classifier token. */
+    char* normalized;
+    /** Stable semantic class, for example "word", "money", or "date". */
+    char* kind;
+} NemoTnAlignedSpan;
+
+/** Sentence-level normalized output and source-to-output span mapping. */
+typedef struct NemoTnAlignment {
+    char* normalized;
+    NemoTnAlignedSpan* spans;
+    size_t span_count;
+} NemoTnAlignment;
+
+/**
+ * Normalize via the compiled-FST engine and retain source spans.
+ *
+ * Supported langs: "en", "zh", "ja", "fr", "es", "de", "hi".
+ * Returns NULL when fst-engine is unavailable, the language is unsupported,
+ * or the input is invalid. The result must be released exactly once with
+ * nemo_tn_alignment_free().
+ */
+NemoTnAlignment* nemo_tn_fst_aligned(const char* input, const char* lang);
+
+/** Free a result returned by nemo_tn_fst_aligned(). NULL is allowed. */
+void nemo_tn_alignment_free(NemoTnAlignment* alignment);
 
 /**
  * Free a string allocated by nemo_normalize or nemo_normalize_sentence.
