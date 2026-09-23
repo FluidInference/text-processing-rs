@@ -122,8 +122,10 @@ fn shortest_output(fst: &VectorFst<TropicalWeight>) -> Option<String> {
 /// shortest path's output. Returns `None` if the input is not in the domain
 /// (empty composition) or the shortest path emits nothing.
 pub fn apply(fst: &VectorFst<TropicalWeight>, input: &str) -> Option<String> {
+    // Borrow the grammar: cloning it per call copied the whole FST (several MB
+    // for es verbalize) once per token.
     let mut composed: VectorFst<TropicalWeight> =
-        compose(byte_acceptor(input), fst.clone()).ok()?;
+        compose::<_, VectorFst<_>, VectorFst<_>, _, _, _>(byte_acceptor(input), fst).ok()?;
     if composed.num_states() == 0 || composed.start().is_none() {
         return None;
     }
