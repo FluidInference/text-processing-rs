@@ -35,6 +35,31 @@ char* nemo_tn_normalize_sentence_with_max_span(const char* input, uint32_t max_s
 /* Byte-exact NeMo TN via the compiled-FST engine (NULL if unavailable) */
 char* nemo_tn_fst(const char* input, const char* lang);
 
+/**
+ * nemo_tn_fst with caller options. Only roman_enumerators applies to the FST
+ * path: non-zero reads English roman-numeral list markers as numbers
+ * ("(ii)" -> "(two)") before the grammars run; zero is byte-exact NeMo.
+ *
+ * @param input Null-terminated UTF-8 string
+ * @param lang Null-terminated language code
+ * @param roman_enumerators 0 = off (NeMo parity), non-zero = on
+ * @return Newly allocated string (free with nemo_free_string), or NULL.
+ */
+char* nemo_tn_fst_with_options(const char* input, const char* lang, uint32_t roman_enumerators);
+
+/**
+ * Text Normalization: normalize a full sentence for a specific language with
+ * caller options.
+ *
+ * @param input Null-terminated UTF-8 string
+ * @param lang Null-terminated language code (e.g. "en", "fr")
+ * @param max_span_tokens Maximum consecutive tokens per span; 0 = library default (16)
+ * @param roman_enumerators Non-zero reads English roman-numeral list markers as
+ *        numbers ("(ii)" -> "(two)") before the taggers run.
+ * @return Newly allocated string, must be freed with nemo_free_string().
+ */
+char* nemo_tn_normalize_sentence_lang_with_options(const char* input, const char* lang, uint32_t max_span_tokens, uint32_t roman_enumerators);
+
 #ifdef __cplusplus
 }
 #endif

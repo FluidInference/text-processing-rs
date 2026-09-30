@@ -6,8 +6,8 @@ use crate::{
     custom_rules, normalize, normalize_sentence, normalize_sentence_lang,
     normalize_sentence_with_options, normalize_with_lang, normalize_with_options, tn_normalize,
     tn_normalize_lang, tn_normalize_sentence, tn_normalize_sentence_lang,
-    tn_normalize_sentence_with_max_span, tn_normalize_sentence_with_max_span_lang,
-    NormalizeOptions,
+    tn_normalize_sentence_lang_with_options, tn_normalize_sentence_with_max_span,
+    tn_normalize_sentence_with_max_span_lang, NormalizeOptions,
 };
 
 /// Build [`NormalizeOptions`] from JS-friendly primitives.
@@ -27,6 +27,7 @@ fn js_options(
             Some(max_span_tokens as usize)
         },
         disable_bare_second,
+        roman_enumerators: false,
     }
 }
 
@@ -126,6 +127,22 @@ pub fn tn_normalize_sentence_with_max_span_lang_js(
     max_span_tokens: u32,
 ) -> String {
     tn_normalize_sentence_with_max_span_lang(input, lang, max_span_tokens as usize)
+}
+
+/// Sentence TN with options. `maxSpanTokens == 0` means "use library
+/// default" (16). `romanEnumerators=true` reads English roman-numeral list
+/// markers as numbers (`(ii)` → `(two)`) before the taggers run
+/// (FluidAudio #972).
+#[wasm_bindgen(js_name = tnNormalizeSentenceLangWithOptions)]
+pub fn tn_normalize_sentence_lang_with_options_js(
+    input: &str,
+    lang: &str,
+    max_span_tokens: u32,
+    roman_enumerators: bool,
+) -> String {
+    let options =
+        js_options(false, max_span_tokens, false).with_roman_enumerators(roman_enumerators);
+    tn_normalize_sentence_lang_with_options(input, lang, options)
 }
 
 #[wasm_bindgen(js_name = addRule)]

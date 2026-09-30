@@ -329,3 +329,43 @@ fn test_tn_range() {
         results.failures.len()
     );
 }
+
+// FluidAudio #972: roman-numeral list markers are an opt-in extension beyond
+// NeMo (`roman_enumerators`); the default path must keep passing them through.
+
+#[test]
+fn test_roman_enumerators_default_unchanged() {
+    use text_processing_rs::tn_normalize_sentence_lang;
+    assert_eq!(
+        tn_normalize_sentence_lang("(i) pay rent; (ii) leave", "en"),
+        "(i) pay rent; (ii) leave"
+    );
+}
+
+#[test]
+fn test_roman_enumerators_opt_in() {
+    use text_processing_rs::{tn_normalize_sentence_lang_with_options, NormalizeOptions};
+    let opts = NormalizeOptions::new().with_roman_enumerators(true);
+    assert_eq!(
+        tn_normalize_sentence_lang_with_options(
+            "The tenant shall: (i) pay $5; (ii) keep the peace; (iv) vacate on notice.",
+            "en",
+            opts
+        ),
+        "The tenant shall: (one) pay five dollars; (two) keep the peace; (four) vacate on notice."
+    );
+    // Stand-alone ambiguous markers and prose are untouched even when opted in.
+    assert_eq!(
+        tn_normalize_sentence_lang_with_options("morphine (IV) fluids", "en", opts),
+        "morphine (IV) fluids"
+    );
+    assert_eq!(
+        tn_normalize_sentence_lang_with_options("mix it, did I?", "en", opts),
+        "mix it, did I?"
+    );
+    // English-only: other languages ignore the flag.
+    assert_eq!(
+        tn_normalize_sentence_lang_with_options("(ii) chats", "fr", opts),
+        "(ii) chats"
+    );
+}

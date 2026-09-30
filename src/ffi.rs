@@ -6,8 +6,9 @@ use std::ptr;
 use crate::{
     custom_rules, normalize, normalize_sentence, normalize_sentence_lang,
     normalize_sentence_with_options, normalize_with_options, tn_normalize, tn_normalize_lang,
-    tn_normalize_sentence, tn_normalize_sentence_lang, tn_normalize_sentence_with_max_span,
-    tn_normalize_sentence_with_max_span_lang, NormalizeOptions,
+    tn_normalize_sentence, tn_normalize_sentence_lang, tn_normalize_sentence_lang_with_options,
+    tn_normalize_sentence_with_max_span, tn_normalize_sentence_with_max_span_lang,
+    NormalizeOptions,
 };
 
 /// Build [`NormalizeOptions`] from FFI primitives.
@@ -24,6 +25,7 @@ fn options_from_ffi(
     concat_compound_numbers: u32,
     max_span_tokens: u32,
     disable_bare_second: u32,
+    roman_enumerators: u32,
 ) -> NormalizeOptions {
     NormalizeOptions {
         concat_compound_numbers: concat_compound_numbers != 0,
@@ -33,6 +35,7 @@ fn options_from_ffi(
             Some(max_span_tokens as usize)
         },
         disable_bare_second: disable_bare_second != 0,
+        roman_enumerators: roman_enumerators != 0,
     }
 }
 
@@ -115,7 +118,7 @@ pub unsafe extern "C" fn nemo_normalize_with_options(
         Err(_) => return ptr::null_mut(),
     };
 
-    let options = options_from_ffi(concat_compound_numbers, 0, disable_bare_second);
+    let options = options_from_ffi(concat_compound_numbers, 0, disable_bare_second, 0);
     let result = normalize_with_options(c_str, options);
 
     match CString::new(result) {
@@ -159,6 +162,7 @@ pub unsafe extern "C" fn nemo_normalize_sentence_with_options(
         concat_compound_numbers,
         max_span_tokens,
         disable_bare_second,
+        0,
     );
     let result = normalize_sentence_with_options(c_str, options);
 
@@ -485,7 +489,7 @@ pub unsafe extern "C" fn nemo_tn_fst(input: *const c_char, lang: *const c_char) 
         Ok(s) => s,
         Err(_) => return ptr::null_mut(),
     };
-    match fst_normalize(input_str, lang_str) {
+    match fst_normalize(input_str, lang_str, NormalizeOptions::new()) {
         Some(result) => match CString::new(result) {
             Ok(c_string) => c_string.into_raw(),
             Err(_) => ptr::null_mut(),
@@ -494,23 +498,82 @@ pub unsafe extern "C" fn nemo_tn_fst(input: *const c_char, lang: *const c_char) 
     }
 }
 
+/// `nemo_tn_fst` with caller options. Only `roman_enumerators` applies to the
+/// FST path: non-zero reads English roman-numeral list markers as numbers
+/// (`(ii)` → `(two)`) before the grammars run; zero is byte-exact NeMo.
+///
+/// # Safety
+/// - `input` and `lang` must be valid null-terminated UTF-8 strings
+/// - Returns a newly allocated string that must be freed with `nemo_free_string`
+#[no_mangle]
+pub unsafe extern "C" fn nemo_tn_fst_with_options(
+    input: *const c_char,
+    lang: *const c_char,
+    roman_enumerators: u32,
+) -> *mut c_char {
+    if input.is_null() || lang.is_null() {
+        return ptr::null_mut();
+    }
+    let input_str = match CStr::from_ptr(input).to_str() {
+        Ok(s) => s,
+        Err(_) => return ptr::null_mut(),
+    };
+    let lang_str = match CStr::from_ptr(lang).to_str() {
+        Ok(s) => s,
+        Err(_) => return ptr::null_mut(),
+    };
+    let options = options_from_ffi(0, 0, 0, roman_enumerators);
+    match fst_normalize(input_str, lang_str, options) {
+        Some(result) => match CString::new(result) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut(),
+        },
+        None => ptr::null_mut(),
+    }
+}
+
+/// Normalize a full sentence (TN) for a specific language with caller options.
+///
+/// `max_span_tokens`: `0` for the library default (`16`). `roman_enumerators`:
+/// non-zero reads English roman-numeral list markers as numbers (`(ii)` →
+/// `(two)`) before the taggers run.
+///
+/// # Safety
+/// - `input` and `lang` must be valid null-terminated UTF-8 strings
+/// - Returns a newly allocated string that must be freed with `nemo_free_string`
+#[no_mangle]
+pub unsafe extern "C" fn nemo_tn_normalize_sentence_lang_with_options(
+    input: *const c_char,
+    lang: *const c_char,
+    max_span_tokens: u32,
+    roman_enumerators: u32,
+) -> *mut c_char {
+    if input.is_null() || lang.is_null() {
+        return ptr::null_mut();
+    }
+    let input_str = match CStr::from_ptr(input).to_str() {
+        Ok(s) => s,
+        Err(_) => return ptr::null_mut(),
+    };
+    let lang_str = match CStr::from_ptr(lang).to_str() {
+        Ok(s) => s,
+        Err(_) => return ptr::null_mut(),
+    };
+    let options = options_from_ffi(0, max_span_tokens, 0, roman_enumerators);
+    let result = tn_normalize_sentence_lang_with_options(input_str, lang_str, options);
+    match CString::new(result) {
+        Ok(c_string) => c_string.into_raw(),
+        Err(_) => ptr::null_mut(),
+    }
+}
+
 #[cfg(feature = "fst-engine")]
-fn fst_normalize(input: &str, lang: &str) -> Option<String> {
-    use crate::fst;
-    Some(match lang {
-        "en" => fst::en::normalize(input),
-        "zh" => fst::zh::normalize(input),
-        "ja" => fst::ja::normalize(input),
-        "fr" => fst::fr::normalize(input),
-        "es" => fst::es::normalize(input),
-        "de" => fst::de::normalize(input),
-        "hi" => fst::hi::normalize(input),
-        _ => return None,
-    })
+fn fst_normalize(input: &str, lang: &str, options: NormalizeOptions) -> Option<String> {
+    crate::fst::normalize_lang_with_options(input, lang, options)
 }
 
 #[cfg(not(feature = "fst-engine"))]
-fn fst_normalize(_input: &str, _lang: &str) -> Option<String> {
+fn fst_normalize(_input: &str, _lang: &str, _options: NormalizeOptions) -> Option<String> {
     None
 }
 
@@ -552,6 +615,56 @@ mod tests {
         unsafe {
             let result = nemo_normalize(ptr::null());
             assert!(result.is_null());
+        }
+    }
+
+    #[test]
+    fn test_ffi_tn_sentence_lang_with_options_roman_enumerators() {
+        unsafe {
+            let input = CString::new("(i) pay $5; (ii) leave").unwrap();
+            let en = CString::new("en").unwrap();
+            let off =
+                nemo_tn_normalize_sentence_lang_with_options(input.as_ptr(), en.as_ptr(), 0, 0);
+            assert_eq!(
+                CStr::from_ptr(off).to_str().unwrap(),
+                "(i) pay five dollars; (ii) leave"
+            );
+            nemo_free_string(off);
+            let on =
+                nemo_tn_normalize_sentence_lang_with_options(input.as_ptr(), en.as_ptr(), 0, 1);
+            assert_eq!(
+                CStr::from_ptr(on).to_str().unwrap(),
+                "(one) pay five dollars; (two) leave"
+            );
+            nemo_free_string(on);
+        }
+    }
+
+    #[cfg(feature = "fst-engine")]
+    #[test]
+    fn test_ffi_tn_fst_with_options_roman_enumerators() {
+        unsafe {
+            let input = CString::new("(i) pay $5; (ii) leave").unwrap();
+            let en = CString::new("en").unwrap();
+            // Flag off is byte-identical to nemo_tn_fst (NeMo parity).
+            let plain = nemo_tn_fst(input.as_ptr(), en.as_ptr());
+            let off = nemo_tn_fst_with_options(input.as_ptr(), en.as_ptr(), 0);
+            assert_eq!(
+                CStr::from_ptr(plain).to_str().unwrap(),
+                CStr::from_ptr(off).to_str().unwrap()
+            );
+            assert_eq!(
+                CStr::from_ptr(off).to_str().unwrap(),
+                "(i) pay five dollars; (ii) leave"
+            );
+            nemo_free_string(plain);
+            nemo_free_string(off);
+            let on = nemo_tn_fst_with_options(input.as_ptr(), en.as_ptr(), 1);
+            assert_eq!(
+                CStr::from_ptr(on).to_str().unwrap(),
+                "(one) pay five dollars; (two) leave"
+            );
+            nemo_free_string(on);
         }
     }
 
