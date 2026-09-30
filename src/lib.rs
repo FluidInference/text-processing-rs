@@ -1543,6 +1543,48 @@ pub fn tn_normalize_sentence_lang(input: &str, lang: &str) -> String {
     tn_normalize_sentence_with_max_span_lang(input, lang, DEFAULT_MAX_SPAN_TOKENS)
 }
 
+/// Normalize a full sentence (TN) for a specific language with caller options.
+///
+/// Honors [`NormalizeOptions::max_span_tokens`] and
+/// [`NormalizeOptions::roman_enumerators`] (English only: `"(ii)"` →
+/// `"(two)"` before the taggers run). The ITN-only flags are ignored.
+///
+/// ```
+/// use text_processing_rs::{tn_normalize_sentence_lang_with_options, NormalizeOptions};
+///
+/// let opts = NormalizeOptions::new().with_roman_enumerators(true);
+/// assert_eq!(
+///     tn_normalize_sentence_lang_with_options("(i) pay $5; (ii) leave", "en", opts),
+///     "(one) pay five dollars; (two) leave"
+/// );
+/// ```
+pub fn tn_normalize_sentence_lang_with_options(
+    input: &str,
+    lang: &str,
+    options: NormalizeOptions,
+) -> String {
+    let prepared = tn_prepass(input, lang, options);
+    tn_normalize_sentence_with_max_span_lang(
+        &prepared,
+        lang,
+        options.max_span_tokens.unwrap_or(DEFAULT_MAX_SPAN_TOKENS),
+    )
+}
+
+/// Option-gated rewrites that run before any TN engine (rule-based or FST):
+/// currently only the English roman-numeral list-marker pass.
+pub(crate) fn tn_prepass<'a>(
+    input: &'a str,
+    lang: &str,
+    options: NormalizeOptions,
+) -> std::borrow::Cow<'a, str> {
+    if options.roman_enumerators && matches!(lang, "en" | "") {
+        std::borrow::Cow::Owned(tn::en::roman::spell_enumerators(input))
+    } else {
+        std::borrow::Cow::Borrowed(input)
+    }
+}
+
 /// Normalize a full sentence (TN) for a specific language with configurable max span.
 pub fn tn_normalize_sentence_with_max_span_lang(
     input: &str,

@@ -31,9 +31,36 @@ pub mod hi;
 pub mod ja;
 pub mod zh;
 
+use crate::NormalizeOptions;
 use flate2::read::GzDecoder;
 use rustfst::prelude::*;
 use std::io::Read;
+
+/// Normalize `input` with the grammars for `lang` (`en`, `zh`, `ja`, `fr`,
+/// `es`, `de`, `hi`); `None` for an unsupported code.
+pub fn normalize_lang(input: &str, lang: &str) -> Option<String> {
+    Some(match lang {
+        "en" => en::normalize(input),
+        "zh" => zh::normalize(input),
+        "ja" => ja::normalize(input),
+        "fr" => fr::normalize(input),
+        "es" => es::normalize(input),
+        "de" => de::normalize(input),
+        "hi" => hi::normalize(input),
+        _ => return None,
+    })
+}
+
+/// [`normalize_lang`] with the option-gated pre-pass applied first. Only
+/// [`NormalizeOptions::roman_enumerators`] affects this path; with every flag
+/// off the output is byte-exact NeMo.
+pub fn normalize_lang_with_options(
+    input: &str,
+    lang: &str,
+    options: NormalizeOptions,
+) -> Option<String> {
+    normalize_lang(&crate::tn_prepass(input, lang, options), lang)
+}
 
 /// Decompress a bundled `*.fst.gz` grammar and load it as an FST.
 fn load_gz(gz: &[u8]) -> VectorFst<TropicalWeight> {

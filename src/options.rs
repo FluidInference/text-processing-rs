@@ -25,6 +25,15 @@ pub struct NormalizeOptions {
     /// Compound ordinals (`"twenty second"` → `"22nd"`) and date contexts
     /// (`"January second twenty twenty five"`) still convert. Default `false`.
     pub disable_bare_second: bool,
+
+    /// TN only (English): read roman-numeral list markers as numbers —
+    /// `"(ii)"` → `"(two)"`, `"ii)"` → `"two)"`, `"ii."` → `"two."` — before
+    /// the taggers run (FluidAudio #972). NeMo's roman grammar is
+    /// uppercase-only and keyword-anchored, so these otherwise pass through
+    /// and a TTS frontend reads them as letters. Off by default because it is
+    /// an extension beyond NeMo's output. See
+    /// [`crate::tn::en::roman::spell_enumerators`] for the exact rules.
+    pub roman_enumerators: bool,
 }
 
 impl NormalizeOptions {
@@ -34,6 +43,7 @@ impl NormalizeOptions {
             concat_compound_numbers: false,
             max_span_tokens: None,
             disable_bare_second: false,
+            roman_enumerators: false,
         }
     }
 
@@ -52,6 +62,12 @@ impl NormalizeOptions {
     /// Set [`Self::disable_bare_second`].
     pub const fn with_disable_bare_second(mut self, enabled: bool) -> Self {
         self.disable_bare_second = enabled;
+        self
+    }
+
+    /// Set [`Self::roman_enumerators`].
+    pub const fn with_roman_enumerators(mut self, enabled: bool) -> Self {
+        self.roman_enumerators = enabled;
         self
     }
 }
