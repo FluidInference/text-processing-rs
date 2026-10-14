@@ -1362,10 +1362,10 @@ fn test_sentence_mixed_fractions() {
 }
 
 #[test]
-fn test_sentence_oh_digit_sequence_is_not_a_time() {
+fn test_sentence_oh_time_stays_a_time() {
     assert_eq!(
-        normalize_sentence("go to room one oh one"),
-        "go to room 101"
+        normalize_sentence("meet me at nine oh five"),
+        "meet me at 09:05"
     );
 }
 

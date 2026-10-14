@@ -952,18 +952,6 @@ fn parse_span(
         return Some((result, 90));
     }
 
-    // "one oh one" is a digit sequence (101) unless a larger span adds an
-    // explicit time marker such as a.m./p.m. Treat it before the generic time
-    // tagger so room numbers and short codes do not become 01:01.
-    if span
-        .split_whitespace()
-        .any(|token| token.eq_ignore_ascii_case("oh"))
-    {
-        if let Some(result) = cardinal::parse(span) {
-            return Some((result, 89));
-        }
-    }
-
     // Concat-compound cardinal opt-in: priority 89, beats date/time. No
     // short-span gate — this is opt-in, so the caller has accepted
     // aggressive matching across longer spans like "one thousand two
