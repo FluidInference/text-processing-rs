@@ -917,7 +917,7 @@ fn tn_parse_span_lang(span: &str, lang: &str) -> Option<(String, u8)> {
 ///
 /// Returns `(replacement, priority_score)` if a tagger matches.
 /// Taggers are ordered by precision: high-confidence patterns first,
-/// broad patterns (cardinal) last and limited to short spans.
+/// broad patterns (cardinal) last.
 ///
 /// Excluded in sentence mode: `word` and `telephone` (over-fire on natural language).
 ///
@@ -950,6 +950,18 @@ fn parse_span(
     }
     if let Some(result) = measure::parse(span) {
         return Some((result, 90));
+    }
+
+    // "one oh one" is a digit sequence (101) unless a larger span adds an
+    // explicit time marker such as a.m./p.m. Treat it before the generic time
+    // tagger so room numbers and short codes do not become 01:01.
+    if span
+        .split_whitespace()
+        .any(|token| token.eq_ignore_ascii_case("oh"))
+    {
+        if let Some(result) = cardinal::parse(span) {
+            return Some((result, 89));
+        }
     }
 
     // Concat-compound cardinal opt-in: priority 89, beats date/time. No
@@ -994,9 +1006,12 @@ fn parse_span(
         }
     }
 
-    // Default cardinal fallback (priority 70). In concat-compound mode the
-    // cardinal path is already covered by the priority-89 branch above.
-    if !concat_compound && token_count <= 4 {
+    // Default cardinal fallback (priority 70). Let the caller's sentence span
+    // limit bound the search. Restricting cardinals to four tokens split valid
+    // numbers such as "three thousand nine hundred nine" into "3900 9".
+    // In concat-compound mode the cardinal path is already covered by the
+    // priority-89 branch above.
+    if !concat_compound {
         if let Some(result) = cardinal::parse(span) {
             return Some((result, 70));
         }
@@ -1273,6 +1288,7 @@ where
 
     let mut out = String::new();
     let mut i = 0usize;
+    let mut prev_replacement_ends_with_period = false;
 
     while i < pretokens.len() {
         let max_end = usize::min(pretokens.len(), i + max_span);
@@ -1323,9 +1339,21 @@ where
 
         if let Some((end, replacement, _)) = best {
             push_detokenized(&mut out, pretokens[i].sep, &replacement);
+            prev_replacement_ends_with_period = replacement.ends_with('.');
             i = end;
         } else {
-            push_detokenized(&mut out, pretokens[i].sep, &pretokens[i].text);
+            // A tagger may render an abbreviation with its terminal period
+            // ("three pm." -> "03:00 p.m.") while the sentence period remains
+            // as the next pretoken. Drop that single period, but keep an
+            // ellipsis ("p.m...." stays intact) and literal periods elsewhere.
+            let is_glued_period = |p: &Pretoken| p.sep.is_empty() && p.text == ".";
+            let duplicate_period = prev_replacement_ends_with_period
+                && is_glued_period(&pretokens[i])
+                && !pretokens.get(i + 1).is_some_and(is_glued_period);
+            if !duplicate_period {
+                push_detokenized(&mut out, pretokens[i].sep, &pretokens[i].text);
+            }
+            prev_replacement_ends_with_period = false;
             i += 1;
         }
     }

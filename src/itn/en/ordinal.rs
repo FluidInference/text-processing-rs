@@ -64,7 +64,7 @@ lazy_static! {
 
 /// Parse spoken ordinal to written form.
 pub fn parse(input: &str) -> Option<String> {
-    let input = input.to_lowercase();
+    let input = input.to_lowercase().replace('-', " ");
     let words: Vec<&str> = input.split_whitespace().collect();
 
     if words.is_empty() {
@@ -165,6 +165,7 @@ mod tests {
         assert_eq!(parse("twenty second"), Some("22nd".to_string()));
         assert_eq!(parse("twenty third"), Some("23rd".to_string()));
         assert_eq!(parse("forty second"), Some("42nd".to_string()));
+        assert_eq!(parse("thirty-second"), Some("32nd".to_string()));
     }
 
     #[test]

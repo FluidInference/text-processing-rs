@@ -481,11 +481,11 @@ fn test_sentence_mixed_punctuation_and_numbers() {
         normalize_sentence("I bought twenty three items comma and paid five dollars"),
         "I bought 23 items , and paid $5"
     );
-    // "forty two to thirty seven" is caught by the time tagger (X to Y = time pattern)
-    // This is expected — the time tagger has higher priority than cardinal in parse_span.
+    // A range whose right-hand side cannot be an hour must not be fabricated
+    // into a time.
     assert_eq!(
         normalize_sentence("the score was forty two to thirty seven period"),
-        "the score was 36:18 ."
+        "the score was 42 to 37 ."
     );
     assert_eq!(
         normalize_sentence("question mark did you say one hundred"),
@@ -1332,5 +1332,59 @@ fn test_issue_82_ordinals_still_work() {
     assert_ne!(
         normalize_sentence("one second of silence"),
         "3rd of silence"
+    );
+}
+
+// --- Sentence-mode accuracy regressions ---
+
+#[test]
+fn test_sentence_hyphenated_numbers() {
+    assert_eq!(
+        normalize_sentence("she is forty-six years old"),
+        "she is 46 years old"
+    );
+    assert_eq!(
+        normalize_sentence("the thirty-second floor"),
+        "the 32nd floor"
+    );
+}
+
+#[test]
+fn test_sentence_mixed_fractions() {
+    assert_eq!(
+        normalize_sentence("add one and three quarters cups of flour"),
+        "add 1 3/4 cups of flour"
+    );
+    assert_eq!(
+        normalize_sentence("wait two and a half hours"),
+        "wait 2 and a half hours"
+    );
+}
+
+#[test]
+fn test_sentence_oh_digit_sequence_is_not_a_time() {
+    assert_eq!(
+        normalize_sentence("go to room one oh one"),
+        "go to room 101"
+    );
+}
+
+#[test]
+fn test_sentence_long_cardinal_is_not_split() {
+    assert_eq!(
+        normalize_sentence("the total was three thousand nine hundred nine"),
+        "the total was 3909"
+    );
+}
+
+#[test]
+fn test_sentence_no_double_period_after_meridiem() {
+    assert_eq!(
+        normalize_sentence("the meeting is at three pm."),
+        "the meeting is at 03:00 p.m."
+    ); // Literal periods, including an ellipsis, are still preserved.
+    assert_eq!(
+        normalize_sentence("and then twenty one..."),
+        "and then 21..."
     );
 }
