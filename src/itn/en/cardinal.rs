@@ -170,7 +170,13 @@ fn single_digit_char(word: &str) -> Option<char> {
 /// `date::parse_old_year`). Use [`words_to_number_aviation`] for opt-in
 /// flight-number / call-sign contexts.
 pub fn words_to_number(input: &str) -> Option<i128> {
-    let input = input.to_lowercase();
+    let input = input.to_lowercase().replace('-', " ");
+    let unfiltered: Vec<&str> = input.split_whitespace().collect();
+    if matches!(unfiltered.first(), Some(&"and"))
+        || matches!(unfiltered.last(), Some(&"and" | &"a"))
+    {
+        return None;
+    }
     let words: Vec<&str> = input
         .split_whitespace()
         .filter(|w| *w != "and" && *w != "a")
@@ -216,7 +222,13 @@ pub fn words_to_number(input: &str) -> Option<i128> {
 /// to avoid clobbering date/time/measure semantics (e.g. `"twenty one forty
 /// two"` as old-year `2042`).
 pub fn words_to_number_aviation(input: &str) -> Option<i128> {
-    let input = input.to_lowercase();
+    let input = input.to_lowercase().replace('-', " ");
+    let unfiltered: Vec<&str> = input.split_whitespace().collect();
+    if matches!(unfiltered.first(), Some(&"and"))
+        || matches!(unfiltered.last(), Some(&"and" | &"a"))
+    {
+        return None;
+    }
     let words: Vec<&str> = input
         .split_whitespace()
         .filter(|w| *w != "and" && *w != "a")
@@ -385,6 +397,7 @@ mod tests {
         assert_eq!(parse("twenty one"), Some("21".to_string()));
         assert_eq!(parse("forty two"), Some("42".to_string()));
         assert_eq!(parse("ninety nine"), Some("99".to_string()));
+        assert_eq!(parse("forty-six"), Some("46".to_string()));
     }
 
     #[test]
@@ -444,6 +457,9 @@ mod tests {
     fn test_invalid() {
         assert_eq!(parse("hello"), None);
         assert_eq!(parse("one hello"), None);
+        assert_eq!(parse("and thirty two"), None);
+        assert_eq!(parse("twenty one and"), None);
+        assert_eq!(parse("twenty one a"), None);
     }
 
     /// Digit-by-digit reading (issue #15). Sequences of single-digit words

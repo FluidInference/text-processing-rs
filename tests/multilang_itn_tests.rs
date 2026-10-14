@@ -142,3 +142,23 @@ fn test_max_span_zero_uses_single_token_spans() {
         "我有21个苹果"
     );
 }
+
+// ── Sentence-mode accuracy regressions ───────────────────────────────
+
+#[test]
+fn test_fr_sentence_ordinal_is_not_a_fraction() {
+    assert_eq!(
+        normalize_sentence_lang("le cent onzième jour", "fr"),
+        "le 111ᵉ jour"
+    );
+}
+
+#[test]
+fn test_fr_sentence_pour_cent() {
+    assert_eq!(normalize_sentence_lang("quarante pour cent", "fr"), "40 %");
+}
+
+#[test]
+fn test_de_sentence_prozent() {
+    assert_eq!(normalize_sentence_lang("vierzig prozent", "de"), "40 %");
+}

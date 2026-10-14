@@ -922,14 +922,10 @@ fn test_sentence_itn_empty() {
 
 #[test]
 fn test_sentence_itn_multiple_numbers() {
-    // KNOWN_ISSUE: "and" is consumed by the cardinal tagger as a separator word.
-    // In sentence mode, "thirty two" is parsed, but "and" before it gets eaten
-    // by a span that tries "and thirty two" as a single cardinal expression.
-    // The word "and" is dropped because cardinal::words_to_number filters it out.
-    // Result: "I have 21 apples 32 oranges" (missing "and")
+    // A coordinating conjunction between separate quantities is preserved.
     assert_eq!(
         normalize_sentence("I have twenty one apples and thirty two oranges"),
-        "I have 21 apples 32 oranges"
+        "I have 21 apples and 32 oranges"
     );
 }
 

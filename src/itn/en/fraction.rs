@@ -20,7 +20,7 @@ use super::cardinal;
 /// Parse a spoken English fraction to written form, or `None` when the input
 /// is not an unambiguous fraction (so higher-priority taggers can handle it).
 pub fn parse(input: &str) -> Option<String> {
-    let lower = input.to_lowercase();
+    let lower = input.to_lowercase().replace('-', " ");
     let tokens: Vec<&str> = lower.split_whitespace().collect();
 
     // A fraction needs at least a numerator word and a denominator word.
@@ -29,6 +29,26 @@ pub fn parse(input: &str) -> Option<String> {
     }
 
     let (denominator, denom_is_plural) = parse_denominator(tokens.last()?)?;
+
+    // Mixed fractions: "one and three quarters" -> "1 3/4". Parse this
+    // before the simple numerator path so the cardinal parser does not
+    // discard "and" and collapse the phrase into the improper fraction "13/4".
+    if let Some(and_index) = tokens[..tokens.len() - 1]
+        .iter()
+        .rposition(|token| *token == "and")
+    {
+        let whole_tokens = &tokens[..and_index];
+        let numerator_tokens = &tokens[and_index + 1..tokens.len() - 1];
+        if !whole_tokens.is_empty() && !numerator_tokens.is_empty() {
+            let whole = cardinal::words_to_number(&whole_tokens.join(" "))?;
+            // "two and a half" is left to read as words: the article is not
+            // a numerator, and "2 1/2" reads worse than the spoken phrase.
+            let numerator = cardinal::words_to_number(&numerator_tokens.join(" "))?;
+            if whole >= 0 && numerator >= 1 && (denom_is_plural || numerator == 1) {
+                return Some(format!("{} {}/{}", whole, numerator, denominator));
+            }
+        }
+    }
 
     // The numerator is everything before the denominator. `words_to_number`
     // rejects the article "a"/"an", so "a quarter of the pizza" is left alone.
@@ -126,6 +146,16 @@ mod tests {
         assert_eq!(parse("five eighths"), Some("5/8".to_string()));
         assert_eq!(parse("twenty two thirds"), Some("22/3".to_string()));
         assert_eq!(parse("three halves"), Some("3/2".to_string()));
+    }
+
+    #[test]
+    fn test_mixed_fraction() {
+        assert_eq!(parse("one and three quarters"), Some("1 3/4".to_string()));
+        assert_eq!(parse("two and a half"), None);
+        assert_eq!(
+            parse("one hundred and one half"),
+            Some("100 1/2".to_string())
+        );
     }
 
     #[test]
