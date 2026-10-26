@@ -970,13 +970,11 @@ fn test_sentence_itn_max_span_tokens() {
 
 #[test]
 fn test_sentence_itn_adjacent_numbers() {
-    // KNOWN_ISSUE: Adjacent number words get combined by the cardinal tagger.
-    // "twenty one forty two" is parsed as a single cardinal: 20+1+40+2 = 2043
-    // The sliding window tries the longest span first (all 4 tokens),
-    // and cardinal happily parses them all as one number.
-    // This is inherent to the greedy longest-match algorithm.
+    // Adjacent numbers that aren't one number are not summed (was 2043): the
+    // cardinal reader rejects the 4-token span, so the window falls back to
+    // the two 2-token spans.
     let result = normalize_sentence("twenty one forty two");
-    assert_eq!(result, "2043");
+    assert_eq!(result, "21 42");
 }
 
 // ════════════════════════════════════════════════════════════════════════

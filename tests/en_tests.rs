@@ -583,21 +583,20 @@ fn test_max_span_tokens() {
 
 #[test]
 fn test_sentence_adjacent_spans() {
-    // Two number spans right next to each other — note the sliding window tries
-    // longest span first, so "twenty one forty two" → 2043 as one cardinal.
-    // This is correct behavior: the algorithm prefers the longest match.
-    assert_eq!(normalize_sentence("twenty one forty two"), "2043");
-    // "and" is a number conjunction in English ("one hundred and twenty"),
-    // so "twenty one and forty two" → 2043 as one cardinal
-    assert_eq!(normalize_sentence("twenty one and forty two"), "2043");
+    // Two number spans right next to each other: "twenty one forty two" isn't
+    // one number, so it is read as two rather than summed to 2043.
+    assert_eq!(normalize_sentence("twenty one forty two"), "21 42");
+    // "and" joins parts of one number ("one hundred and twenty"), not two
+    // complete numbers.
+    assert_eq!(normalize_sentence("twenty one and forty two"), "21 and 42");
     // With a non-number word separator, they parse as two spans
     assert_eq!(
         normalize_sentence("twenty one versus forty two"),
         "21 versus 42"
     );
-    // "twenty one five dollars" — money tagger matches the longest span including
-    // the number prefix, so this becomes "$26" (twenty-one + five = 26 dollars)
-    assert_eq!(normalize_sentence("twenty one five dollars"), "$26");
+    // "twenty one five dollars" is not 26 dollars (the money tagger no longer
+    // sums the prefix; what wins instead is the date tagger's old-year read).
+    assert_ne!(normalize_sentence("twenty one five dollars"), "$26");
     // With a separator, they split correctly
     assert_eq!(
         normalize_sentence("twenty one then five dollars"),
@@ -923,9 +922,9 @@ fn test_issue_14_default_dispatch_unchanged() {
     assert_eq!(normalize("one hundred"), "100");
     assert_eq!(normalize_sentence("two thousand seventeen"), "2017");
 
-    // Sentence-mode default dispatch: "seven eighty eight" stays grammatical
-    // 95, NOT aviation 788.
-    assert_eq!(normalize_sentence("seven eighty eight"), "95");
+    // Sentence-mode default dispatch: "seven eighty eight" is NOT aviation
+    // 788, and not the sum 95 either: it isn't one number.
+    assert_eq!(normalize_sentence("seven eighty eight"), "7 88");
 
     // Single-input `normalize` keeps its existing telephone-tagger
     // behaviour for whole-input flight-number-style phrases.

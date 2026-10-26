@@ -191,7 +191,11 @@ pub fn words_to_number(input: &str) -> Option<i128> {
     // forms are only digits in the context of a longer code (e.g. "oh oh
     // seven"). Single-token "zero" / "one" / ... fall through to grammatical
     // and resolve correctly there.
-    if words.len() >= 2 && words.iter().all(|w| single_digit_char(w).is_some()) {
+    // Digits joined by "and" are a list ("five and six"), not a code.
+    if words.len() >= 2
+        && words.len() == unfiltered.len()
+        && words.iter().all(|w| single_digit_char(w).is_some())
+    {
         return words
             .iter()
             .map(|w| single_digit_char(w).unwrap())
@@ -240,7 +244,11 @@ pub fn words_to_number_aviation(input: &str) -> Option<i128> {
 
     // Digit-by-digit reading wins when unambiguous (multi-token only — see
     // [`words_to_number`] for the rationale on rejecting bare "oh" / "o").
-    if words.len() >= 2 && words.iter().all(|w| single_digit_char(w).is_some()) {
+    // Digits joined by "and" are a list ("five and six"), not a code.
+    if words.len() >= 2
+        && words.len() == unfiltered.len()
+        && words.iter().all(|w| single_digit_char(w).is_some())
+    {
         return words
             .iter()
             .map(|w| single_digit_char(w).unwrap())
@@ -341,15 +349,41 @@ fn grammatical_words_to_number(words: &[&str]) -> Option<i128> {
     let mut result: i128 = 0;
     let mut current: i128 = 0;
     let mut found_number = false;
+    // What the previous word filled, so a run that isn't one number ("five
+    // six", "ten thirty", "twenty thirty") is rejected instead of summed.
+    // A ones word may follow a tens word or a scale; a teen or tens word
+    // only a scale (or nothing).
+    #[derive(PartialEq)]
+    enum Last {
+        Start,
+        Unit,
+        Tens,
+        Scale,
+    }
+    let mut last = Last::Start;
 
     for &word in words {
         if let Some(&val) = ONES.get(word) {
+            let allowed = if val < 10 {
+                last != Last::Unit
+            } else {
+                last == Last::Start || last == Last::Scale
+            };
+            if !allowed {
+                return None;
+            }
             current += val as i128;
             found_number = true;
+            last = Last::Unit;
         } else if let Some(&val) = TENS.get(word) {
+            if !(last == Last::Start || last == Last::Scale) {
+                return None;
+            }
             current += val as i128;
             found_number = true;
+            last = Last::Tens;
         } else if word == "hundred" {
+            last = Last::Scale;
             if current == 0 {
                 current = 1;
             }
@@ -364,6 +398,7 @@ fn grammatical_words_to_number(words: &[&str]) -> Option<i128> {
                 result += current;
                 current = 0;
                 found_number = true;
+                last = Last::Scale;
             }
         } else {
             return None;
@@ -540,12 +575,37 @@ mod tests {
     }
 
     /// Generic `words_to_number` (the dispatch path) must NOT do aviation
-    /// reading: "seven eighty eight" stays grammatical 95 there, so date/time
-    /// taggers see consistent values.
+    /// reading, and a run that isn't one number is not summed either:
+    /// "seven eighty eight" is neither 788 nor 95 there.
     #[test]
     fn test_words_to_number_no_aviation_reading() {
-        assert_eq!(words_to_number("seven eighty eight"), Some(95));
-        assert_eq!(words_to_number("twenty one forty two"), Some(63));
+        assert_eq!(words_to_number("seven eighty eight"), None);
+        assert_eq!(words_to_number("twenty one forty two"), None);
         assert_eq!(words_to_number("two thousand seventeen"), Some(2017));
+    }
+
+    #[test]
+    fn test_runs_that_are_not_one_number() {
+        for s in [
+            "five and six",
+            "one and two",
+            "ten thirty",
+            "ten thirty five",
+            "twenty thirty",
+            "twenty and thirty",
+            "fifteen five",
+            "three thousand nine hundred nine nine",
+        ] {
+            assert_eq!(words_to_number(s), None, "{s}");
+        }
+        // All single digits, no "and": still the digit-by-digit reading.
+        assert_eq!(words_to_number("one two three"), Some(123));
+        assert_eq!(words_to_number("two thousand and five"), Some(2005));
+        assert_eq!(words_to_number("one hundred and five"), Some(105));
+        assert_eq!(words_to_number("three thousand nine hundred nine"), Some(3909));
+        assert_eq!(words_to_number("twenty one hundred"), Some(2100));
+        assert_eq!(words_to_number("nineteen hundred eighty four"), Some(1984));
+        assert_eq!(words_to_number("a hundred and twelve"), Some(112));
+        assert_eq!(words_to_number("one million two hundred thousand"), Some(1_200_000));
     }
 }
