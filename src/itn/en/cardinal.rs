@@ -602,10 +602,16 @@ mod tests {
         assert_eq!(words_to_number("one two three"), Some(123));
         assert_eq!(words_to_number("two thousand and five"), Some(2005));
         assert_eq!(words_to_number("one hundred and five"), Some(105));
-        assert_eq!(words_to_number("three thousand nine hundred nine"), Some(3909));
+        assert_eq!(
+            words_to_number("three thousand nine hundred nine"),
+            Some(3909)
+        );
         assert_eq!(words_to_number("twenty one hundred"), Some(2100));
         assert_eq!(words_to_number("nineteen hundred eighty four"), Some(1984));
         assert_eq!(words_to_number("a hundred and twelve"), Some(112));
-        assert_eq!(words_to_number("one million two hundred thousand"), Some(1_200_000));
+        assert_eq!(
+            words_to_number("one million two hundred thousand"),
+            Some(1_200_000)
+        );
     }
 }
