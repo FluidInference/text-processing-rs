@@ -594,9 +594,14 @@ fn test_sentence_adjacent_spans() {
         normalize_sentence("twenty one versus forty two"),
         "21 versus 42"
     );
-    // "twenty one five dollars" is not 26 dollars (the money tagger no longer
-    // sums the prefix; what wins instead is the date tagger's old-year read).
-    assert_ne!(normalize_sentence("twenty one five dollars"), "$26");
+    // "twenty one five dollars" is no longer 26 dollars: the money tagger
+    // doesn't sum the prefix any more.
+    // KNOWN_ISSUE: the date tagger's old-year reading wins instead, giving
+    // "2015 dollars"; pinned so the next change to this path shows up here.
+    assert_eq!(
+        normalize_sentence("twenty one five dollars"),
+        "2015 dollars"
+    );
     // With a separator, they split correctly
     assert_eq!(
         normalize_sentence("twenty one then five dollars"),

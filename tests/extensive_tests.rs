@@ -1183,15 +1183,11 @@ fn test_boundary_unicode() {
 
 #[test]
 fn test_boundary_very_long_input() {
-    // A very long sentence shouldn't crash.
-    // KNOWN_ISSUE: Similar to adjacent numbers, 100 repetitions of "twenty one"
-    // get combined by the cardinal tagger's greedy span matching (up to 4 tokens
-    // at a time in sentence mode). The result is a series of combined numbers
-    // rather than individual "21"s. The important thing is it doesn't crash.
+    // A very long sentence shouldn't crash, and adjacent numbers aren't
+    // combined: each "twenty one" stays its own 21.
     let long_input = "twenty one ".repeat(100);
     let result = normalize_sentence(long_input.trim());
-    assert!(!result.is_empty(), "Should not return empty for long input");
-    // Don't assert specific content — the greedy algorithm combines tokens
+    assert_eq!(result, vec!["21"; 100].join(" "));
 }
 
 #[test]
