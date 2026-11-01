@@ -970,13 +970,11 @@ fn test_sentence_itn_max_span_tokens() {
 
 #[test]
 fn test_sentence_itn_adjacent_numbers() {
-    // KNOWN_ISSUE: Adjacent number words get combined by the cardinal tagger.
-    // "twenty one forty two" is parsed as a single cardinal: 20+1+40+2 = 2043
-    // The sliding window tries the longest span first (all 4 tokens),
-    // and cardinal happily parses them all as one number.
-    // This is inherent to the greedy longest-match algorithm.
+    // Adjacent numbers that aren't one number are not summed (was 2043): the
+    // cardinal reader rejects the 4-token span, so the window falls back to
+    // the two 2-token spans.
     let result = normalize_sentence("twenty one forty two");
-    assert_eq!(result, "2043");
+    assert_eq!(result, "21 42");
 }
 
 // ════════════════════════════════════════════════════════════════════════
@@ -1185,15 +1183,11 @@ fn test_boundary_unicode() {
 
 #[test]
 fn test_boundary_very_long_input() {
-    // A very long sentence shouldn't crash.
-    // KNOWN_ISSUE: Similar to adjacent numbers, 100 repetitions of "twenty one"
-    // get combined by the cardinal tagger's greedy span matching (up to 4 tokens
-    // at a time in sentence mode). The result is a series of combined numbers
-    // rather than individual "21"s. The important thing is it doesn't crash.
+    // A very long sentence shouldn't crash, and adjacent numbers aren't
+    // combined: each "twenty one" stays its own 21.
     let long_input = "twenty one ".repeat(100);
     let result = normalize_sentence(long_input.trim());
-    assert!(!result.is_empty(), "Should not return empty for long input");
-    // Don't assert specific content — the greedy algorithm combines tokens
+    assert_eq!(result, vec!["21"; 100].join(" "));
 }
 
 #[test]

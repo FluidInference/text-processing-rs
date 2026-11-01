@@ -69,6 +69,18 @@ lazy_static! {
     };
 }
 
+/// What the previous word of a grammatical number filled, so a run that
+/// isn't one number ("five six", "ten thirty", "twenty thirty") is rejected
+/// instead of summed: a ones word may follow a tens word or a scale word, a
+/// teen or tens word only a scale word (or nothing).
+#[derive(PartialEq)]
+enum Last {
+    Start,
+    Unit,
+    Tens,
+    Scale,
+}
+
 /// Parse spoken cardinal number to string representation.
 ///
 /// Returns None if the input cannot be parsed as a number.
@@ -162,13 +174,14 @@ fn single_digit_char(word: &str) -> Option<char> {
 ///   four"` → `1234`. Uses a left-to-right accumulator with scale words
 ///   multiplying the current group.
 ///
-/// Filler words `"and"` and `"a"` are stripped.
+/// Filler words `"and"` and `"a"` are stripped. A run of ones, teens and
+/// tens words that isn't one number is `None`, not a sum: `"ten thirty"`,
+/// `"five six"`, `"twenty one forty two"`.
 ///
 /// Note: aviation flight-number reading (`"seven eighty eight"` → `788`) is
-/// **not** applied here because it conflicts with date and time taggers (e.g.
-/// `"twenty one forty two"` must remain readable as old-year `2042` for
-/// `date::parse_old_year`). Use [`words_to_number_aviation`] for opt-in
-/// flight-number / call-sign contexts.
+/// **not** applied here because it conflicts with the time tagger (e.g.
+/// `"two thirty five"` is the time 02:35). Use [`words_to_number_aviation`]
+/// for opt-in flight-number / call-sign contexts.
 pub fn words_to_number(input: &str) -> Option<i128> {
     let input = input.to_lowercase().replace('-', " ");
     let unfiltered: Vec<&str> = input.split_whitespace().collect();
@@ -191,7 +204,12 @@ pub fn words_to_number(input: &str) -> Option<i128> {
     // forms are only digits in the context of a longer code (e.g. "oh oh
     // seven"). Single-token "zero" / "one" / ... fall through to grammatical
     // and resolve correctly there.
-    if words.len() >= 2 && words.iter().all(|w| single_digit_char(w).is_some()) {
+    // A run with a filler word ("and", "a") isn't a code: "five and six" is
+    // a list.
+    if words.len() >= 2
+        && words.len() == unfiltered.len()
+        && words.iter().all(|w| single_digit_char(w).is_some())
+    {
         return words
             .iter()
             .map(|w| single_digit_char(w).unwrap())
@@ -219,8 +237,8 @@ pub fn words_to_number(input: &str) -> Option<i128> {
 ///
 /// This is **opt-in**: callers reach for it explicitly from flight-number /
 /// call-sign contexts. Generic ITN/TN dispatch keeps using [`words_to_number`]
-/// to avoid clobbering date/time/measure semantics (e.g. `"twenty one forty
-/// two"` as old-year `2042`).
+/// to avoid clobbering date/time/measure semantics (e.g. `"two thirty five"`
+/// as the time 02:35).
 pub fn words_to_number_aviation(input: &str) -> Option<i128> {
     let input = input.to_lowercase().replace('-', " ");
     let unfiltered: Vec<&str> = input.split_whitespace().collect();
@@ -240,7 +258,12 @@ pub fn words_to_number_aviation(input: &str) -> Option<i128> {
 
     // Digit-by-digit reading wins when unambiguous (multi-token only — see
     // [`words_to_number`] for the rationale on rejecting bare "oh" / "o").
-    if words.len() >= 2 && words.iter().all(|w| single_digit_char(w).is_some()) {
+    // A run with a filler word ("and", "a") isn't a code: "five and six" is
+    // a list.
+    if words.len() >= 2
+        && words.len() == unfiltered.len()
+        && words.iter().all(|w| single_digit_char(w).is_some())
+    {
         return words
             .iter()
             .map(|w| single_digit_char(w).unwrap())
@@ -341,15 +364,30 @@ fn grammatical_words_to_number(words: &[&str]) -> Option<i128> {
     let mut result: i128 = 0;
     let mut current: i128 = 0;
     let mut found_number = false;
+    let mut last = Last::Start;
 
     for &word in words {
         if let Some(&val) = ONES.get(word) {
+            let allowed = if val < 10 {
+                last != Last::Unit
+            } else {
+                last == Last::Start || last == Last::Scale
+            };
+            if !allowed {
+                return None;
+            }
             current += val as i128;
             found_number = true;
+            last = Last::Unit;
         } else if let Some(&val) = TENS.get(word) {
+            if !(last == Last::Start || last == Last::Scale) {
+                return None;
+            }
             current += val as i128;
             found_number = true;
+            last = Last::Tens;
         } else if word == "hundred" {
+            last = Last::Scale;
             if current == 0 {
                 current = 1;
             }
@@ -364,6 +402,7 @@ fn grammatical_words_to_number(words: &[&str]) -> Option<i128> {
                 result += current;
                 current = 0;
                 found_number = true;
+                last = Last::Scale;
             }
         } else {
             return None;
@@ -502,9 +541,8 @@ mod tests {
     /// Aviation flight-number style (issue #14): opt-in helper. A leading run
     /// of single-digit words gets concatenated with the trailing grammatical
     /// compound, e.g. "seven eighty eight" = "7" ‖ 88 = 788. Generic
-    /// `words_to_number` deliberately does *not* do this — it would break
-    /// `date::parse_old_year` ("twenty one forty two" → 2042) and overlap with
-    /// the time tagger ("two thirty five" → 02:35).
+    /// `words_to_number` deliberately does *not* do this — it would overlap
+    /// with the time tagger ("two thirty five" → 02:35).
     #[test]
     fn test_words_to_number_aviation_flight_number() {
         assert_eq!(words_to_number_aviation("seven eighty eight"), Some(788));
@@ -540,12 +578,43 @@ mod tests {
     }
 
     /// Generic `words_to_number` (the dispatch path) must NOT do aviation
-    /// reading: "seven eighty eight" stays grammatical 95 there, so date/time
-    /// taggers see consistent values.
+    /// reading, and a run that isn't one number is not summed either:
+    /// "seven eighty eight" is neither 788 nor 95 there.
     #[test]
     fn test_words_to_number_no_aviation_reading() {
-        assert_eq!(words_to_number("seven eighty eight"), Some(95));
-        assert_eq!(words_to_number("twenty one forty two"), Some(63));
+        assert_eq!(words_to_number("seven eighty eight"), None);
+        assert_eq!(words_to_number("twenty one forty two"), None);
         assert_eq!(words_to_number("two thousand seventeen"), Some(2017));
+    }
+
+    #[test]
+    fn test_runs_that_are_not_one_number() {
+        for s in [
+            "five and six",
+            "one and two",
+            "ten thirty",
+            "ten thirty five",
+            "twenty thirty",
+            "twenty and thirty",
+            "fifteen five",
+            "three thousand nine hundred nine nine",
+        ] {
+            assert_eq!(words_to_number(s), None, "{s}");
+        }
+        // All single digits, no "and": still the digit-by-digit reading.
+        assert_eq!(words_to_number("one two three"), Some(123));
+        assert_eq!(words_to_number("two thousand and five"), Some(2005));
+        assert_eq!(words_to_number("one hundred and five"), Some(105));
+        assert_eq!(
+            words_to_number("three thousand nine hundred nine"),
+            Some(3909)
+        );
+        assert_eq!(words_to_number("twenty one hundred"), Some(2100));
+        assert_eq!(words_to_number("nineteen hundred eighty four"), Some(1984));
+        assert_eq!(words_to_number("a hundred and twelve"), Some(112));
+        assert_eq!(
+            words_to_number("one million two hundred thousand"),
+            Some(1_200_000)
+        );
     }
 }
