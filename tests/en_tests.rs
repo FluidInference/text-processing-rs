@@ -668,6 +668,19 @@ fn test_sentence_date_in_context() {
     );
 }
 
+#[test]
+fn test_sentence_bare_year_twenty_tens() {
+    assert_eq!(
+        normalize_sentence("in twenty twenty we moved to boston"),
+        "in 2020 we moved to boston"
+    );
+    assert_eq!(
+        normalize_sentence("the plan runs until twenty thirty"),
+        "the plan runs until 2030"
+    );
+    assert_eq!(normalize("twenty twenty"), "2020");
+}
+
 // --- Ordinal in various positions ---
 
 #[test]

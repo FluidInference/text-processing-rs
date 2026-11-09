@@ -306,33 +306,13 @@ fn parse_year(input: &str) -> Option<String> {
     }
 
     // "nineteen X" or "twenty X" pattern - must have exactly 2 words
-    // This prevents "twenty one" from being matched as 2001 (should be cardinal 21)
     if words.len() == 2 {
         let century_prefix = words[0];
         let year_suffix = words[1];
 
-        // For "twenty X", only allow teens (ten-nineteen) as suffix
-        // This allows "twenty twelve" → 2012 but not "twenty one" → 2001
-        if century_prefix == "twenty" {
-            let is_teens = matches!(
-                year_suffix,
-                "ten"
-                    | "eleven"
-                    | "twelve"
-                    | "thirteen"
-                    | "fourteen"
-                    | "fifteen"
-                    | "sixteen"
-                    | "seventeen"
-                    | "eighteen"
-                    | "nineteen"
-            );
-            if is_teens {
-                return parse_year_number(input).map(|y| y.to_string());
-            }
-        }
-
-        // For other century prefixes (eleven-nineteen), allow teens and tens
+        // The suffix must be a teen or a tens word: "twenty twelve" → 2012,
+        // "twenty twenty" → 2020, but "twenty one" stays the cardinal 21
+        // instead of becoming 2001
         let is_year_suffix = matches!(
             year_suffix,
             "ten"
@@ -367,6 +347,7 @@ fn parse_year(input: &str) -> Option<String> {
                     | "seventeen"
                     | "eighteen"
                     | "nineteen"
+                    | "twenty"
             )
         {
             return parse_year_number(input).map(|y| y.to_string());
@@ -517,6 +498,15 @@ mod tests {
         assert_eq!(parse("two thousand and twenty"), Some("2020".to_string()));
         assert_eq!(parse("nineteen ninety four"), Some("1994".to_string()));
         assert_eq!(parse("twenty twelve"), Some("2012".to_string()));
+    }
+
+    #[test]
+    fn test_twenty_tens_years() {
+        assert_eq!(parse("twenty twenty"), Some("2020".to_string()));
+        assert_eq!(parse("twenty thirty"), Some("2030".to_string()));
+        assert_eq!(parse("twenty fifty"), Some("2050".to_string()));
+        // "twenty one" is the cardinal 21, not the year 2001
+        assert_eq!(parse("twenty one"), None);
     }
 
     #[test]
