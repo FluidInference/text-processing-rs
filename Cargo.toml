@@ -1,9 +1,9 @@
 [package]
 name = "text-processing-rs"
-version = "0.3.2"
+version = "0.3.3"
 edition = "2021"
 license = "Apache-2.0"
-description = "Inverse Text Normalization (ITN) — convert spoken-form ASR output to written form"
+description = "Text normalization (TN) and inverse text normalization (ITN): convert between written and spoken forms, ported from NeMo"
 repository = "https://github.com/FluidInference/text-processing-rs"
 keywords = ["asr", "speech", "normalization", "nlp", "itn"]
 categories = ["text-processing"]
