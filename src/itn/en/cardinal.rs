@@ -163,6 +163,16 @@ fn single_digit_char(word: &str) -> Option<char> {
     })
 }
 
+/// `"a"` reads as one only right before a scale word at the start of a
+/// number (`"a hundred"`, `"a thousand"`). Anywhere else it's the article,
+/// which belongs to the text around the number: `"a ten year old"` is
+/// `"a 10 year old"`, not `"10 year old"`.
+fn article_only_before_scale(words: &[&str]) -> bool {
+    words.iter().enumerate().all(|(i, w)| {
+        *w != "a" || (i == 0 && words.get(1).is_some_and(|next| SCALES.contains_key(*next)))
+    })
+}
+
 /// Convert spoken number words to integer.
 ///
 /// Two readings are accepted, in order:
@@ -174,7 +184,8 @@ fn single_digit_char(word: &str) -> Option<char> {
 ///   four"` → `1234`. Uses a left-to-right accumulator with scale words
 ///   multiplying the current group.
 ///
-/// Filler words `"and"` and `"a"` are stripped. A run of ones, teens and
+/// Filler words `"and"` and `"a"` are stripped; `"a"` only at the start and
+/// before a scale word (`"a hundred"`). A run of ones, teens and
 /// tens words that isn't one number is `None`, not a sum: `"ten thirty"`,
 /// `"five six"`, `"twenty one forty two"`.
 ///
@@ -187,6 +198,7 @@ pub fn words_to_number(input: &str) -> Option<i128> {
     let unfiltered: Vec<&str> = input.split_whitespace().collect();
     if matches!(unfiltered.first(), Some(&"and"))
         || matches!(unfiltered.last(), Some(&"and" | &"a"))
+        || !article_only_before_scale(&unfiltered)
     {
         return None;
     }
@@ -244,6 +256,7 @@ pub fn words_to_number_aviation(input: &str) -> Option<i128> {
     let unfiltered: Vec<&str> = input.split_whitespace().collect();
     if matches!(unfiltered.first(), Some(&"and"))
         || matches!(unfiltered.last(), Some(&"and" | &"a"))
+        || !article_only_before_scale(&unfiltered)
     {
         return None;
     }
@@ -585,6 +598,17 @@ mod tests {
         assert_eq!(words_to_number("seven eighty eight"), None);
         assert_eq!(words_to_number("twenty one forty two"), None);
         assert_eq!(words_to_number("two thousand seventeen"), Some(2017));
+    }
+
+    #[test]
+    fn test_article_reads_as_one_only_before_a_scale() {
+        assert_eq!(words_to_number("a hundred"), Some(100));
+        assert_eq!(words_to_number("a thousand"), Some(1000));
+        assert_eq!(words_to_number("a hundred and twelve"), Some(112));
+        for s in ["a ten", "a thirty six", "a twenty five", "one a hundred"] {
+            assert_eq!(words_to_number(s), None, "{s}");
+            assert_eq!(words_to_number_aviation(s), None, "{s}");
+        }
     }
 
     #[test]
