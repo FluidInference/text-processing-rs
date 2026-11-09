@@ -12,8 +12,14 @@ use super::number_to_words;
 pub fn parse(input: &str) -> Option<String> {
     let trimmed = input.trim();
 
-    // Try "14:30" format
-    if let Some(result) = parse_colon_format(trimmed) {
+    // Try "14:30" format, also as "14:30 Uhr": the spoken form already says
+    // "uhr", so a trailing one is not read twice.
+    let colon_time = trimmed
+        .len()
+        .checked_sub(4)
+        .filter(|&i| trimmed.is_char_boundary(i) && trimmed[i..].eq_ignore_ascii_case(" uhr"))
+        .map_or(trimmed, |i| &trimmed[..i]);
+    if let Some(result) = parse_colon_format(colon_time) {
         return Some(result);
     }
 

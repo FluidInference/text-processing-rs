@@ -33,6 +33,11 @@ pub fn parse(input: &str) -> Option<String> {
         return None;
     }
 
+    // A phone number ends in a digit; a trailing "." is the sentence's.
+    if !trimmed.ends_with(|c: char| c.is_ascii_digit()) {
+        return None;
+    }
+
     // Must contain at least one separator (-, ., space, parens) to distinguish
     // from plain numbers like "1000000"
     let has_separator = trimmed

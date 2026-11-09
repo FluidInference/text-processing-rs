@@ -131,13 +131,11 @@ pub fn parse(input: &str) -> Option<String> {
     // Check for scale suffix: "$2.5 billion"
     let (amount_str, scale) = extract_scale(rest);
 
-    // Without a scale suffix, the amount must be purely numeric (digits, dots, commas).
-    // This prevents "$10.20 on March 8" from matching as money and consuming trailing words.
-    if scale.is_none()
-        && !amount_str
-            .chars()
-            .all(|c| c.is_ascii_digit() || c == '.' || c == ',')
-    {
+    // A trailing dot ("$12.50.") is the sentence's, not the cents'. Without a
+    // scale suffix, what remains must be one number. This prevents
+    // "$10.20 on March 8" from matching as money and consuming trailing words.
+    let amount_str = amount_str.strip_suffix('.').unwrap_or(amount_str);
+    if scale.is_none() && !crate::tn::is_written_number(amount_str) {
         return None;
     }
 

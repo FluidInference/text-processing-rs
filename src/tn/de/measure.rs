@@ -113,18 +113,15 @@ pub fn parse(input: &str) -> Option<String> {
             (false, num_part)
         };
 
+        // The text before the unit must be one number, not the words in
+        // front of it.
+        if !crate::tn::is_written_number(digits) {
+            continue;
+        }
         let clean: String = digits
             .chars()
             .filter(|c| c.is_ascii_digit() || *c == '.' || *c == ',')
             .collect();
-
-        if clean.is_empty()
-            || !clean
-                .chars()
-                .all(|c| c.is_ascii_digit() || c == '.' || c == ',')
-        {
-            continue;
-        }
 
         // Handle decimals
         let decimal_sep = if clean.contains(',') { ',' } else { '.' };

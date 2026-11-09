@@ -133,17 +133,21 @@ fn parse_french_date(input: &str) -> Option<String> {
         number_to_words(day as i64)
     };
 
-    if tokens.len() >= 3 {
-        let year_str =
-            tokens[2].trim_end_matches(|c: char| c == '.' || c == ',' || c == '!' || c == '?');
-        if year_str.chars().all(|c| c.is_ascii_digit()) && year_str.len() == 4 {
+    // The date must be the whole span: a third token is the year or nothing.
+    match tokens.len() {
+        2 => Some(format!("{} {}", day_word, month_spoken)),
+        3 => {
+            let year_str =
+                tokens[2].trim_end_matches(|c: char| c == '.' || c == ',' || c == '!' || c == '?');
+            if year_str.len() != 4 || !year_str.chars().all(|c| c.is_ascii_digit()) {
+                return None;
+            }
             let year: u32 = year_str.parse().ok()?;
             let year_words = verbalize_year(year)?;
-            return Some(format!("{} {} {}", day_word, month_spoken, year_words));
+            Some(format!("{} {} {}", day_word, month_spoken, year_words))
         }
+        _ => None,
     }
-
-    Some(format!("{} {}", day_word, month_spoken))
 }
 
 fn parse_english_month_date(input: &str) -> Option<String> {
@@ -220,11 +224,13 @@ fn parse_english_month_date(input: &str) -> Option<String> {
         let year_str = year_str
             .trim()
             .trim_end_matches(|c: char| c == '.' || c == ',' || c == '!' || c == '?');
-        if !year_str.is_empty() && year_str.chars().all(|c| c.is_ascii_digit()) {
-            let year: u32 = year_str.parse().ok()?;
-            let year_words = verbalize_year(year)?;
-            return Some(format!("{} {} {}", day_word, month_name, year_words));
+        // What follows the comma must be the year, not the rest of the sentence.
+        if year_str.is_empty() || !year_str.chars().all(|c| c.is_ascii_digit()) {
+            return None;
         }
+        let year: u32 = year_str.parse().ok()?;
+        let year_words = verbalize_year(year)?;
+        return Some(format!("{} {} {}", day_word, month_name, year_words));
     }
 
     Some(format!("{} {}", day_word, month_name))
