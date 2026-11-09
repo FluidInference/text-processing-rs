@@ -67,6 +67,25 @@ enum NemoTextProcessing {
         return String(cString: resultPtr)
     }
 
+    /// FST TN with source spans. Returns nil when the library was built without
+    /// the fst-engine feature or the language is unsupported.
+    static func tnFstAligned(_ input: String, _ lang: String) -> (normalized: String, spans: [FstSpan])? {
+        guard let resultPtr = nemo_tn_fst_aligned(input, lang) else { return nil }
+        defer { nemo_tn_alignment_free(resultPtr) }
+        let result = resultPtr.pointee
+        guard let normalized = result.normalized else { return nil }
+        let spans = UnsafeBufferPointer(start: result.spans, count: Int(result.span_count)).map {
+            FstSpan(
+                start: Int($0.input_start),
+                end: Int($0.input_end),
+                original: $0.original.map { String(cString: $0) } ?? "",
+                normalized: $0.normalized.map { String(cString: $0) } ?? "",
+                kind: $0.kind.map { String(cString: $0) } ?? ""
+            )
+        }
+        return (String(cString: normalized), spans)
+    }
+
     static func tnNormalizeSentence(_ input: String, maxSpanTokens: UInt32) -> String {
         guard let resultPtr = nemo_tn_normalize_sentence_with_max_span(input, maxSpanTokens) else { return input }
         defer { nemo_free_string(resultPtr) }
@@ -90,6 +109,14 @@ enum NemoTextProcessing {
         guard let p = nemo_version() else { return "unknown" }
         return String(cString: p)
     }
+}
+
+struct FstSpan: Equatable {
+    let start: Int
+    let end: Int
+    let original: String
+    let normalized: String
+    let kind: String
 }
 
 // MARK: - Test Harness
@@ -452,6 +479,27 @@ struct NemoTest {
                         fr.failed += 1
                         fr.failures.append(("FST Engine", "\(lang):\(input)", expected, got))
                         print("    FAIL \(lang) \"\(input)\" -> \"\(got)\" (expected \"\(expected)\")")
+                    }
+                }
+
+                // Source-aligned TN through the C struct ABI.
+                let alignedInput = "The price is $1,234.56."
+                let aligned = NemoTextProcessing.tnFstAligned(alignedInput, "en")
+                let alignedChecks: [(String, String, String)] = [
+                    ("normalized", aligned?.normalized ?? "<nil>",
+                     "The price is one thousand two hundred and thirty four dollars fifty six cents."),
+                    ("span count", "\(aligned?.spans.count ?? 0)", "5"),
+                    ("money span", aligned.map { "\($0.spans[3])" } ?? "<nil>",
+                     "\(FstSpan(start: 13, end: 22, original: "$1,234.56", normalized: "one thousand two hundred and thirty four dollars fifty six cents", kind: "money"))"),
+                    ("unsupported lang", NemoTextProcessing.tnFstAligned(alignedInput, "xx") == nil ? "nil" : "non-nil", "nil"),
+                ]
+                for (label, got, expected) in alignedChecks {
+                    if got == expected {
+                        fr.passed += 1
+                    } else {
+                        fr.failed += 1
+                        fr.failures.append(("FST Engine", "aligned \(label)", expected, got))
+                        print("    FAIL aligned \(label): \"\(got)\" (expected \"\(expected)\")")
                     }
                 }
                 let mark = fr.failed == 0 ? "PASS" : "FAIL"

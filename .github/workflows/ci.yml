@@ -92,3 +92,6 @@ jobs:
       # big-grammar languages (hi, es) fast.
       - name: Run FST-engine parity tests
         run: cargo test --release --features fst-engine --test fst_parity -- --nocapture
+      # Source-aligned TN over the same fixtures, plus its C FFI surface.
+      - name: Run FST-engine alignment tests
+        run: cargo test --release --features ffi,fst-engine --test fst_alignment
