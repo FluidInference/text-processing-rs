@@ -356,6 +356,34 @@ fn test_sentence_ordinal_in_context() {
 }
 
 #[test]
+fn test_sentence_keeps_article_before_number() {
+    // "a" is the article here, not part of the number. NeMo keeps it too
+    // (tests/data/en/telephone.txt: "a thirty six" -> "a 36").
+    assert_eq!(normalize_sentence("a thirty six"), "a 36");
+    assert_eq!(
+        normalize_sentence("she has a ten year old son"),
+        "she has a 10 year old son"
+    );
+    assert_eq!(
+        normalize_sentence("it is a five minute walk"),
+        "it is a 5 minute walk"
+    );
+    assert_eq!(
+        normalize_sentence("he gave me a twenty dollar bill"),
+        "he gave me a $20 bill"
+    );
+    // Before a scale word, "a" still reads as one.
+    assert_eq!(
+        normalize_sentence("a hundred people attended"),
+        "100 people attended"
+    );
+    assert_eq!(
+        normalize_sentence("about a hundred and fifty dollars"),
+        "about $150"
+    );
+}
+
+#[test]
 fn test_sentence_existing_tests_via_sentence() {
     // Existing normalize() test cases should also work through normalize_sentence()
     // when the entire input is a single normalizable expression.
