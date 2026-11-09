@@ -42,8 +42,14 @@ fn parse_simple_fraction(input: &str) -> Option<String> {
         return None;
     }
 
-    let denom = parse_denominator(tokens.last()?)?;
+    let denominator_word = tokens.last()?;
+    let denom = parse_denominator(denominator_word)?;
     let numer = word_to_int(&tokens[..tokens.len() - 1].join(" "))?;
+    // A numerator above one requires a plural denominator. A singular phrase
+    // such as "cent onzième" is an ordinal (111th), not 100/11.
+    if numer > 1 && !denominator_word.ends_with('s') {
+        return None;
+    }
     Some(format!("{}/{}", numer, denom))
 }
 
@@ -111,6 +117,7 @@ mod tests {
         assert_eq!(parse("un cinquième"), Some("1/5".to_string()));
         assert_eq!(parse("un quatrième"), Some("1/4".to_string()));
         assert_eq!(parse("un centième"), Some("1/100".to_string()));
+        assert_eq!(parse("cent onzième"), None);
     }
 
     #[test]

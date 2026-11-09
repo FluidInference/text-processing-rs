@@ -245,6 +245,7 @@ fn get_unit_mappings() -> Vec<(&'static str, &'static str)> {
         (" watts", "W"),
         (" watt", "W"),
         // Percentage
+        (" pour cent", "%"),
         (" pourcent", "%"),
     ]
 }
@@ -309,5 +310,11 @@ mod tests {
             parse("dix-huit virgule cinq kilomètres"),
             Some("18,5 km".to_string())
         );
+    }
+
+    #[test]
+    fn test_percentage() {
+        assert_eq!(parse("quarante pour cent"), Some("40 %".to_string()));
+        assert_eq!(parse("quarante pourcent"), Some("40 %".to_string()));
     }
 }

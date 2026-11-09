@@ -387,8 +387,11 @@ fn parse_phone_number(input: &str) -> Option<String> {
     let (prefix, rest) = extract_phone_prefix(input);
     let digits = parse_digit_sequence_with_double(rest)?;
 
-    // Must have at least 7 digits for phone number (or 3 for short codes)
-    if !has_plus && digits.len() < 3 {
+    // Must have at least 7 digits for phone number (or 3 for short codes).
+    // Four to six spoken digits ("ten thirty" → 1030, "twenty twenty",
+    // "nine four one zero five") are a number, a year or a code, not a phone
+    // number, so they are left to the other taggers instead of "103-0".
+    if !has_plus && (digits.len() < 3 || (4..7).contains(&digits.len())) {
         return None;
     }
 
@@ -717,6 +720,24 @@ mod tests {
     #[test]
     fn test_three_digits() {
         assert_eq!(parse("seven nine nine"), Some("799".to_string()));
+    }
+
+    #[test]
+    fn test_four_to_six_digits_are_not_a_phone_number() {
+        for s in [
+            "ten thirty",
+            "twenty twenty",
+            "thirty five sixty two",
+            "one two three four",
+            "nine four one zero five",
+            "twenty thirty forty",
+        ] {
+            assert_eq!(parse(s), None, "{s}");
+        }
+        assert_eq!(
+            parse("five five five one two one two"),
+            Some("555-1212".to_string())
+        );
     }
 
     #[test]

@@ -184,8 +184,10 @@ pub(super) fn apply_with_alignment(
 }
 
 fn apply_labels(fst: &VectorFst<TropicalWeight>, input: &str) -> Option<Vec<(u32, u32)>> {
+    // Borrow the grammar: cloning it per call copied the whole FST (several MB
+    // for es verbalize) once per token.
     let mut composed: VectorFst<TropicalWeight> =
-        compose(byte_acceptor(input), fst.clone()).ok()?;
+        compose::<_, VectorFst<_>, VectorFst<_>, _, _, _>(byte_acceptor(input), fst).ok()?;
     if composed.num_states() == 0 || composed.start().is_none() {
         return None;
     }

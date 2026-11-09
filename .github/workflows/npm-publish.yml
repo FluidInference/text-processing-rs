@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      # npm trusted publishing authenticates with the job's OIDC token.
+      id-token: write
     steps:
       - uses: actions/checkout@v4
 
@@ -18,10 +20,22 @@ jobs:
           node-version: 22
           registry-url: "https://registry.npmjs.org"
 
+      # Trusted publishing needs npm 11.5.1 or newer; Node 22 ships npm 10.
+      - run: npm install -g npm@latest
+
       - uses: jetli/wasm-pack-action@v0.4.0
 
       - run: rustup target add wasm32-unknown-unknown
       - run: npm run wasm:ci
-      - run: npm run wasm:publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # Authenticates through npm trusted publishing, configured for this
+      # workflow on npmjs.com. A version already on npm is skipped, so a
+      # re-run, or a release published by hand, doesn't fail the job.
+      - name: Publish
+        run: |
+          name=$(node -p "require('./pkg-web/package.json').name")
+          version=$(node -p "require('./pkg-web/package.json').version")
+          if npm view "$name@$version" version >/dev/null 2>&1; then
+            echo "$name@$version is already on npm; nothing to publish."
+          else
+            npm run wasm:publish
+          fi

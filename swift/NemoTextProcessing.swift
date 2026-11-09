@@ -289,6 +289,34 @@ public enum NemoTextProcessing {
         return String(cString: resultPtr)
     }
 
+    /// Normalize a full sentence for a specific language with options.
+    ///
+    /// - Parameters:
+    ///   - input: Sentence containing written-form spans
+    ///   - language: ISO 639-1 language code
+    ///   - maxSpanTokens: Maximum consecutive tokens per span; `0` = library default (16)
+    ///   - romanEnumerators: When true, English roman-numeral list markers are
+    ///     read as numbers (`"(ii)"` → `"(two)"`) before the taggers run
+    ///     (FluidAudio #972). Off keeps NeMo's behavior, which leaves them as letters.
+    /// - Returns: Sentence with written-form spans replaced with spoken form
+    public static func tnNormalizeSentence(
+        _ input: String,
+        language: String,
+        maxSpanTokens: UInt32,
+        romanEnumerators: Bool
+    ) -> String {
+        guard let inputC = input.cString(using: .utf8),
+              let langC = language.cString(using: .utf8) else {
+            return input
+        }
+        let romanFlag: UInt32 = romanEnumerators ? 1 : 0
+        guard let resultPtr = nemo_tn_normalize_sentence_lang_with_options(inputC, langC, maxSpanTokens, romanFlag) else {
+            return input
+        }
+        defer { nemo_free_string(resultPtr) }
+        return String(cString: resultPtr)
+    }
+
     /// Normalize through the compiled NeMo FST and retain the source span for
     /// every normalized token.
     ///

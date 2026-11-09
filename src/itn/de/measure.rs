@@ -57,6 +57,7 @@ const SIMPLE_UNITS: &[(&str, &str)] = &[
     ("watt", "w"),
     ("fuß", "ft"),
     ("fuss", "ft"),
+    ("prozent", "%"),
 ];
 
 /// Parse spoken German measurement expression to written form.
@@ -249,5 +250,10 @@ mod tests {
     #[test]
     fn test_fraction_measure() {
         assert_eq!(parse("ein halb fuß"), Some("1/2 ft".to_string()));
+    }
+
+    #[test]
+    fn test_percentage() {
+        assert_eq!(parse("vierzig prozent"), Some("40 %".to_string()));
     }
 }

@@ -208,10 +208,16 @@ fn parse_to_pattern(original: &str, input: &str, period: &str, timezone: &str) -
 
             if let Some(hour_val) = hour {
                 let hour_val = hour_val as i64;
+                if !(1..=24).contains(&hour_val) {
+                    return None;
+                }
 
                 // Try parsing full min_part as a number
                 if let Some(minutes_before) = words_to_number(min_part) {
                     let minutes_before = minutes_before as i64;
+                    if !(1..=59).contains(&minutes_before) {
+                        return None;
+                    }
                     let prev_hour = if hour_val == 1 { 12 } else { hour_val - 1 };
                     let minute = 60 - minutes_before;
                     return Some(format_time(prev_hour, minute, period, timezone));

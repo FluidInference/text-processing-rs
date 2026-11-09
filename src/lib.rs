@@ -917,7 +917,7 @@ fn tn_parse_span_lang(span: &str, lang: &str) -> Option<(String, u8)> {
 ///
 /// Returns `(replacement, priority_score)` if a tagger matches.
 /// Taggers are ordered by precision: high-confidence patterns first,
-/// broad patterns (cardinal) last and limited to short spans.
+/// broad patterns (cardinal) last.
 ///
 /// Excluded in sentence mode: `word` and `telephone` (over-fire on natural language).
 ///
@@ -994,9 +994,12 @@ fn parse_span(
         }
     }
 
-    // Default cardinal fallback (priority 70). In concat-compound mode the
-    // cardinal path is already covered by the priority-89 branch above.
-    if !concat_compound && token_count <= 4 {
+    // Default cardinal fallback (priority 70). Let the caller's sentence span
+    // limit bound the search. Restricting cardinals to four tokens split valid
+    // numbers such as "three thousand nine hundred nine" into "3900 9".
+    // In concat-compound mode the cardinal path is already covered by the
+    // priority-89 branch above.
+    if !concat_compound {
         if let Some(result) = cardinal::parse(span) {
             return Some((result, 70));
         }
@@ -1273,6 +1276,7 @@ where
 
     let mut out = String::new();
     let mut i = 0usize;
+    let mut prev_replacement_ends_with_period = false;
 
     while i < pretokens.len() {
         let max_end = usize::min(pretokens.len(), i + max_span);
@@ -1323,9 +1327,21 @@ where
 
         if let Some((end, replacement, _)) = best {
             push_detokenized(&mut out, pretokens[i].sep, &replacement);
+            prev_replacement_ends_with_period = replacement.ends_with('.');
             i = end;
         } else {
-            push_detokenized(&mut out, pretokens[i].sep, &pretokens[i].text);
+            // A tagger may render an abbreviation with its terminal period
+            // ("three pm." -> "03:00 p.m.") while the sentence period remains
+            // as the next pretoken. Drop that single period, but keep an
+            // ellipsis ("p.m...." stays intact) and literal periods elsewhere.
+            let is_glued_period = |p: &Pretoken| p.sep.is_empty() && p.text == ".";
+            let duplicate_period = prev_replacement_ends_with_period
+                && is_glued_period(&pretokens[i])
+                && !pretokens.get(i + 1).is_some_and(is_glued_period);
+            if !duplicate_period {
+                push_detokenized(&mut out, pretokens[i].sep, &pretokens[i].text);
+            }
+            prev_replacement_ends_with_period = false;
             i += 1;
         }
     }
@@ -1541,6 +1557,48 @@ pub fn tn_normalize_lang(input: &str, lang: &str) -> String {
 /// Falls back to English for unrecognized language codes.
 pub fn tn_normalize_sentence_lang(input: &str, lang: &str) -> String {
     tn_normalize_sentence_with_max_span_lang(input, lang, DEFAULT_MAX_SPAN_TOKENS)
+}
+
+/// Normalize a full sentence (TN) for a specific language with caller options.
+///
+/// Honors [`NormalizeOptions::max_span_tokens`] and
+/// [`NormalizeOptions::roman_enumerators`] (English only: `"(ii)"` →
+/// `"(two)"` before the taggers run). The ITN-only flags are ignored.
+///
+/// ```
+/// use text_processing_rs::{tn_normalize_sentence_lang_with_options, NormalizeOptions};
+///
+/// let opts = NormalizeOptions::new().with_roman_enumerators(true);
+/// assert_eq!(
+///     tn_normalize_sentence_lang_with_options("(i) pay $5; (ii) leave", "en", opts),
+///     "(one) pay five dollars; (two) leave"
+/// );
+/// ```
+pub fn tn_normalize_sentence_lang_with_options(
+    input: &str,
+    lang: &str,
+    options: NormalizeOptions,
+) -> String {
+    let prepared = tn_prepass(input, lang, options);
+    tn_normalize_sentence_with_max_span_lang(
+        &prepared,
+        lang,
+        options.max_span_tokens.unwrap_or(DEFAULT_MAX_SPAN_TOKENS),
+    )
+}
+
+/// Option-gated rewrites that run before any TN engine (rule-based or FST):
+/// currently only the English roman-numeral list-marker pass.
+pub(crate) fn tn_prepass<'a>(
+    input: &'a str,
+    lang: &str,
+    options: NormalizeOptions,
+) -> std::borrow::Cow<'a, str> {
+    if options.roman_enumerators && matches!(lang, "en" | "") {
+        std::borrow::Cow::Owned(tn::en::roman::spell_enumerators(input))
+    } else {
+        std::borrow::Cow::Borrowed(input)
+    }
 }
 
 /// Normalize a full sentence (TN) for a specific language with configurable max span.
