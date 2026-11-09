@@ -148,46 +148,40 @@ pub fn tn_normalize_sentence_lang_with_options_js(
     tn_normalize_sentence_lang_with_options(input, lang, options)
 }
 
-/// Compiled-FST TN with source-span alignment.
+/// Compiled-FST TN with source-span alignment. Exported only by builds with the
+/// `fst-engine` feature; the published npm package is built without it.
 ///
-/// Returns `null` unless the build enables both `wasm` and `fst-engine`, or
-/// when `lang` is unsupported. Offsets are half-open UTF-8 byte offsets.
+/// Returns `{ normalized, spans: [{ inputStart, inputEnd, original, normalized,
+/// kind }] }`, or `null` when `lang` is unsupported or the grammar cannot
+/// classify `input`. Offsets are half-open UTF-8 byte offsets into `input`.
+#[cfg(feature = "fst-engine")]
 #[wasm_bindgen(js_name = tnFstNormalizeAligned)]
 pub fn tn_fst_normalize_aligned_js(input: &str, lang: &str) -> JsValue {
-    #[cfg(not(feature = "fst-engine"))]
-    {
-        let _ = (input, lang);
-        JsValue::NULL
-    }
-
-    #[cfg(feature = "fst-engine")]
-    {
-        let Some(alignment) = crate::fst::normalize_aligned(input, lang) else {
-            return JsValue::NULL;
-        };
-        let result = Object::new();
-        let spans = Array::new();
-        for span in alignment.spans {
-            let item = Object::new();
-            set_js_property(
-                &item,
-                "inputStart",
-                &JsValue::from_f64(span.input_start as f64),
-            );
-            set_js_property(&item, "inputEnd", &JsValue::from_f64(span.input_end as f64));
-            set_js_property(&item, "original", &JsValue::from_str(&span.original));
-            set_js_property(&item, "normalized", &JsValue::from_str(&span.normalized));
-            set_js_property(&item, "kind", &JsValue::from_str(span.kind.as_str()));
-            spans.push(&item);
-        }
+    let Some(alignment) = crate::fst::normalize_aligned(input, lang) else {
+        return JsValue::NULL;
+    };
+    let result = Object::new();
+    let spans = Array::new();
+    for span in alignment.spans {
+        let item = Object::new();
         set_js_property(
-            &result,
-            "normalized",
-            &JsValue::from_str(&alignment.normalized),
+            &item,
+            "inputStart",
+            &JsValue::from_f64(span.input_start as f64),
         );
-        set_js_property(&result, "spans", &spans);
-        result.into()
+        set_js_property(&item, "inputEnd", &JsValue::from_f64(span.input_end as f64));
+        set_js_property(&item, "original", &JsValue::from_str(&span.original));
+        set_js_property(&item, "normalized", &JsValue::from_str(&span.normalized));
+        set_js_property(&item, "kind", &JsValue::from_str(span.kind.as_str()));
+        spans.push(&item);
     }
+    set_js_property(
+        &result,
+        "normalized",
+        &JsValue::from_str(&alignment.normalized),
+    );
+    set_js_property(&result, "spans", &spans);
+    result.into()
 }
 
 #[cfg(feature = "fst-engine")]

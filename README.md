@@ -73,6 +73,19 @@ wasm.addRule("gee pee tee", "GPT");
 console.log(wasm.normalize("gee pee tee")); // "GPT"
 ```
 
+Source-aligned compiled-FST TN (`tnFstNormalizeAligned`) needs the
+`fst-engine` feature, which the npm package leaves out. Build it into
+`pkg-node-fst/` with `npm run wasm:build:node:fst`:
+
+```javascript
+import * as wasm from "./pkg-node-fst/text_processing_rs.js";
+
+const { normalized, spans } = wasm.tnFstNormalizeAligned("The price is $1,234.56.", "en");
+// spans[3]: { inputStart: 13, inputEnd: 22, original: "$1,234.56",
+//             normalized: "one thousand ... fifty six cents", kind: "money" }
+// Offsets are UTF-8 byte offsets; slice new TextEncoder().encode(input).
+```
+
 The generated npm package name is `@fluidinference/text-processing-rs`.
 
 Web project usage (Vite / Next.js / webpack):
@@ -264,7 +277,7 @@ cargo test
 ### WASM + JavaScript
 
 ```bash
-# Build + smoke test (Node) + build browser artifact
+# Build + smoke test (Node, with and without fst-engine) + build browser artifact
 npm run wasm:ci
 
 # Create a tarball from the browser package
