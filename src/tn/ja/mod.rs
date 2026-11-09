@@ -23,8 +23,8 @@ const ONES: [&str; 10] = [
 
 /// Convert an integer to Japanese words in romaji.
 ///
-/// Groups by man (10,000) and oku (100,000,000) following the Japanese
-/// number system. Handles special sound changes (rendaku):
+/// Groups by man (10^4), oku (10^8), chou (10^12) and kei (10^16) following
+/// the Japanese number system. Handles special sound changes (rendaku):
 /// - 300 = sanbyaku, 600 = roppyaku, 800 = happyaku
 /// - 3000 = sanzen, 8000 = hassen
 ///
@@ -52,56 +52,27 @@ fn unsigned_to_words(n: u64) -> String {
         return "zero".to_string();
     }
 
-    let mut parts: Vec<String> = Vec::new();
+    // Japanese groups by four digits: man (10^4), oku (10^8), chou (10^12)
+    // and kei (10^16), which covers every u64.
+    const UNITS: [&str; 5] = ["", "man", "oku", "chou", "kei"];
+    let mut groups: Vec<u32> = Vec::new();
     let mut remaining = n;
-
-    // Japanese groups by man (10,000) and oku (100,000,000)
-
-    // Process oku groups
-    if remaining >= 100_000_000 {
-        let oku_count = remaining / 100_000_000;
-        remaining %= 100_000_000;
-        // oku_count itself could be large, convert it recursively using sub-man grouping
-        let oku_words = sub_oku_to_words(oku_count);
-        parts.push(format!("{} oku", oku_words));
-    }
-
-    // Process man groups
-    if remaining >= 10_000 {
-        let man_count = remaining / 10_000;
-        remaining %= 10_000;
-        let man_words = chunk_to_words(man_count as u32);
-        parts.push(format!("{} man", man_words));
-    }
-
-    // Remainder (0..9999)
-    if remaining > 0 {
-        parts.push(chunk_to_words(remaining as u32));
-    }
-
-    parts.join(" ")
-}
-
-/// Convert a number that will precede "oku" — it could be up to 9999 man range
-/// but for oku prefix we just need 1..9999 range of sub-man grouping.
-fn sub_oku_to_words(n: u64) -> String {
-    if n == 0 {
-        return "zero".to_string();
+    while remaining > 0 {
+        groups.push((remaining % 10_000) as u32);
+        remaining /= 10_000;
     }
 
     let mut parts: Vec<String> = Vec::new();
-    let mut remaining = n;
-
-    // The oku prefix could itself be in the man range
-    if remaining >= 10_000 {
-        let man_count = remaining / 10_000;
-        remaining %= 10_000;
-        let man_words = chunk_to_words(man_count as u32);
-        parts.push(format!("{} man", man_words));
-    }
-
-    if remaining > 0 {
-        parts.push(chunk_to_words(remaining as u32));
+    for (i, &group) in groups.iter().enumerate().rev() {
+        if group == 0 {
+            continue;
+        }
+        let words = chunk_to_words(group);
+        if UNITS[i].is_empty() {
+            parts.push(words);
+        } else {
+            parts.push(format!("{} {}", words, UNITS[i]));
+        }
     }
 
     parts.join(" ")
@@ -227,6 +198,14 @@ mod tests {
             number_to_words(12345),
             "ichi man ni sen sanbyaku yon juu go"
         );
+    }
+
+    #[test]
+    fn test_chou_kei() {
+        // 10^16 and up used to index past the ones table.
+        assert_eq!(number_to_words(1_000_000_000_000), "ichi chou");
+        assert_eq!(number_to_words(20_000_000_000_000_003), "ni kei san");
+        assert!(number_to_words(i64::MAX).starts_with("kyuu hyaku ni juu ni kei"));
     }
 
     #[test]

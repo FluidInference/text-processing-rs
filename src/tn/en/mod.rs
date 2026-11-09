@@ -164,7 +164,17 @@ pub fn number_to_words_and(n: u128) -> String {
         return "zero".to_string();
     }
 
+    // Up to undecillion (10^36) so every u128 has a scale word.
     let scales: &[(u128, &str)] = &[
+        (
+            1_000_000_000_000_000_000_000_000_000_000_000_000,
+            "undecillion",
+        ),
+        (1_000_000_000_000_000_000_000_000_000_000_000, "decillion"),
+        (1_000_000_000_000_000_000_000_000_000_000, "nonillion"),
+        (1_000_000_000_000_000_000_000_000_000, "octillion"),
+        (1_000_000_000_000_000_000_000_000, "septillion"),
+        (1_000_000_000_000_000_000_000, "sextillion"),
         (1_000_000_000_000_000_000, "quintillion"),
         (1_000_000_000_000_000, "quadrillion"),
         (1_000_000_000_000, "trillion"),
@@ -264,6 +274,16 @@ mod tests {
     fn test_number_to_words_millions() {
         assert_eq!(number_to_words(1000000), "one million");
         assert_eq!(number_to_words(2000003), "two million three");
+    }
+
+    #[test]
+    fn test_number_to_words_and_beyond_quintillion() {
+        // Measures parse up to u128; 10^21 and up used to index past ONES.
+        assert_eq!(
+            number_to_words_and(1_000_000_000_000_000_000_000),
+            "one sextillion"
+        );
+        assert!(number_to_words_and(u128::MAX).starts_with("three hundred forty undecillion"));
     }
 
     #[test]

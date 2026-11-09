@@ -107,41 +107,49 @@ fn unsigned_to_words(n: u64) -> String {
     let mut parts: Vec<String> = Vec::new();
     let mut remaining = n;
 
-    // Spanish uses long scale: billion = 10^12 in some contexts,
-    // but we follow the standard RAE convention:
-    // millon (10^6), mil millones (10^9 - "billon" is 10^12 in Spanish)
+    // Spanish uses the long scale (RAE): millon (10^6), billon (10^12) and
+    // trillon (10^18), each counted up to 999 999 ("mil millones" = 10^9).
     let scales: &[(u64, &str, &str)] = &[
+        (1_000_000_000_000_000_000, "trillon", "trillones"),
         (1_000_000_000_000, "billon", "billones"),
         (1_000_000, "millon", "millones"),
-        (1_000, "mil", "mil"),
     ];
 
     for &(scale_value, singular, plural) in scales {
         if remaining >= scale_value {
-            let chunk = remaining / scale_value;
+            let count = remaining / scale_value;
             remaining %= scale_value;
 
-            if singular == "mil" {
-                // "mil" never takes "un" prefix: 1000 = "mil", not "un mil"
-                if chunk == 1 {
-                    parts.push("mil".to_string());
-                } else {
-                    parts.push(format!("{} mil", chunk_to_words(chunk as u32)));
-                }
+            // "un millon", "dos millones", "mil millones"
+            if count == 1 {
+                parts.push(format!("un {}", singular));
             } else {
-                // millon/billon: "un millon", "dos millones"
-                let chunk_words = chunk_to_words(chunk as u32);
-                if chunk == 1 {
-                    parts.push(format!("un {}", singular));
-                } else {
-                    parts.push(format!("{} {}", chunk_words, plural));
-                }
+                parts.push(format!("{} {}", below_million(count as u32), plural));
             }
         }
     }
 
     if remaining > 0 {
-        parts.push(chunk_to_words(remaining as u32));
+        parts.push(below_million(remaining as u32));
+    }
+
+    parts.join(" ")
+}
+
+/// Convert 1..999_999 to Spanish words.
+fn below_million(n: u32) -> String {
+    let thousands = n / 1000;
+    let rest = n % 1000;
+
+    let mut parts: Vec<String> = Vec::new();
+    // "mil" never takes "un" prefix: 1000 = "mil", not "un mil"
+    if thousands == 1 {
+        parts.push("mil".to_string());
+    } else if thousands > 1 {
+        parts.push(format!("{} mil", chunk_to_words(thousands)));
+    }
+    if rest > 0 {
+        parts.push(chunk_to_words(rest));
     }
 
     parts.join(" ")
@@ -252,6 +260,18 @@ mod tests {
         assert_eq!(number_to_words(1000000), "un millon");
         assert_eq!(number_to_words(2000000), "dos millones");
         assert_eq!(number_to_words(2000003), "dos millones tres");
+    }
+
+    #[test]
+    fn test_mil_millones() {
+        // 10^9 and up used to index past the hundreds table.
+        assert_eq!(number_to_words(1_000_000_001), "mil millones uno");
+        assert_eq!(
+            number_to_words(2_000_000_052),
+            "dos mil millones cincuenta y dos"
+        );
+        assert_eq!(number_to_words(1_000_000_000_000_001), "mil billones uno");
+        assert!(number_to_words(i64::MAX).starts_with("nueve trillones"));
     }
 
     #[test]
