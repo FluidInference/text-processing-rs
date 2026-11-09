@@ -355,10 +355,12 @@ fn parse_minute(input: &str) -> Option<i64> {
         return None;
     }
 
-    // Single word: must be a valid minute word (not a sequence of digits)
+    // Single word: must be a valid minute word (not a sequence of digits).
+    // A lone ones word is not a minute: "three one" is a digit run, a clock
+    // reads "three oh one".
     if words.len() == 1 {
         let minute = words_to_number(words[0]).map(|n| n as i64)?;
-        if minute >= 0 && minute <= 59 {
+        if (10..=59).contains(&minute) {
             return Some(minute);
         }
         return None;
@@ -439,6 +441,15 @@ mod tests {
     fn test_oh_minutes() {
         assert_eq!(parse("eight o six"), Some("08:06".to_string()));
         assert_eq!(parse("twelve oh five"), Some("12:05".to_string()));
+    }
+
+    #[test]
+    fn test_lone_ones_word_is_not_a_minute() {
+        // "three one" is a digit run; a clock reads "three oh one".
+        assert_eq!(parse("three one"), None);
+        assert_eq!(parse("one three"), None);
+        assert_eq!(parse("three oh one"), Some("03:01".to_string()));
+        assert_eq!(parse("three ten"), Some("03:10".to_string()));
     }
 
     #[test]
