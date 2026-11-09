@@ -470,6 +470,7 @@ struct NemoTest {
                     ("ja", "1", "一"),
                     ("fr", "83", "quatre-vingt-trois"),
                     ("de", "1", "eins"),
+                    ("it", "3,23€", "tre euro ventitre centesimi"),
                 ]
                 for (lang, input, expected) in fstCases {
                     let got = NemoTextProcessing.tnFst(input, lang) ?? "<nil>"

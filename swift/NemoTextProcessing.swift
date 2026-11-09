@@ -327,7 +327,7 @@ public enum NemoTextProcessing {
     ///
     /// - Parameters:
     ///   - input: Complete written-form sentence.
-    ///   - language: One of `en`, `fr`, `es`, `de`, `zh`, `hi`, or `ja`.
+    ///   - language: One of `en`, `fr`, `es`, `de`, `zh`, `hi`, `ja`, or `it`.
     /// - Returns: Normalized text and aligned spans, or `nil` when FST TN is
     ///   unavailable, the language is unsupported, or the grammar cannot
     ///   classify `input`.

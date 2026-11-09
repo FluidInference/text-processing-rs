@@ -1,0 +1,9 @@
+# NeMo deterministic TN output (lang=it), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: input~expected.
+
+12:30~dodici e trenta minuti
+05:15~cinque e un quarto
+17:15:26~diciassette e un quarto e ventisei secondi
+23:45~ventitre e quarantacinque minuti
+03:38~tre e trentotto minuti
+l'evento inizia alle 16:00~l'evento inizia alle sedici

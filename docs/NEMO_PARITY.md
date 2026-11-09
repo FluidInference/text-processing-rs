@@ -13,9 +13,9 @@ TL;DR:
   included (the files aggregate several NeMo modes/configs).
 - The optional **`fst-engine`** feature runs NeMo's *actual* compiled grammars
   via [`rustfst`](https://crates.io/crates/rustfst) and reaches **byte-exact
-  NeMo parity for all seven languages** (zh, ja, fr, es, de, en, hi — 100% each
+  NeMo parity for all eight languages** (zh, ja, fr, es, de, en, hi, it — 100% each
   vs NeMo's own deterministic output). Cost: the `rustfst`/`flate2` deps and
-  ~7 MB of gzipped grammars. See "The FST route, shipped" below.
+  ~8 MB of gzipped grammars. See "The FST route, shipped" below.
 
 ## How parity is measured
 
@@ -132,7 +132,7 @@ The FST engine is **language-agnostic** — the driver is unchanged per language
 only the compiled grammars swap, and each language sets a token-join separator
 and whether it has a post-processing FST. Shipped behind the **`fst-engine`**
 cargo feature (off by default; the rule-based path stays the default and carries
-no new weight). **All seven languages reach byte-exact parity with NeMo:**
+no new weight). **All eight languages reach byte-exact parity with NeMo:**
 
 | lang | parity vs NeMo | separator | post-proc FST | rule-based baseline |
 |------|----------------|-----------|---------------|---------------------|
@@ -143,11 +143,12 @@ no new weight). **All seven languages reach byte-exact parity with NeMo:**
 | de (German) | **314/314 (100%)** | `" "` | — | ~15% |
 | en (English) | **506/506 (100%)** | `" "` | ✓ | ~89% |
 | hi (Hindi) | **677/677 (100%)** | `" "` | ✓ | ~2% |
+| it (Italian) | **52/52 (100%)** | `" "` | — | — (FST only) |
 
 "Parity vs NeMo" means the engine reproduces `Normalizer(lang=…,
 deterministic=True)` **byte-for-byte** — verified against NeMo's own output, not
 just the published fixtures. This distinction matters: for zh/ja/fr/hi NeMo's own
-normalizer reproduces its published fixtures exactly, but for en/es/de the
+normalizer reproduces its published fixtures exactly, but for en/es/de/it the
 fixtures aggregate contradictory modes (see above), so the test oracle is NeMo's
 *actual* deterministic output (`tests/fixtures/<lang>/` are regenerated from
 NeMo; de's fixtures are also column-reversed spoken~written upstream).
@@ -176,12 +177,12 @@ joining tokens, NeMo runs a Python post-processing chain that the engine ports i
 Skipping steps 3–4 costs ~9% (en 91% → 100%); every one of those misses was a
 whitespace difference, not a grammar difference.
 
-- Grammars: `grammars/<lang>/*.fst.gz` — bundled **gzipped** (~7 MB for all seven
-  languages combined; raw they are ~90 MB) and decompressed once at first use via
+- Grammars: `grammars/<lang>/*.fst.gz` — bundled **gzipped** (~8 MB for all eight
+  languages combined; raw they are ~100 MB) and decompressed once at first use via
   `flate2`.
 - Engine: `src/fst/` — `engine.rs` (the two fidelity fixes above), `driver.rs`
   (classify → parse → permute → verbalize → join → post-process), one small
   `<lang>.rs` per language (bundled grammars + separator + optional post-proc).
 - Parity test: `tests/fst_parity.rs` runs the bundled NeMo goldens
   (`tests/fixtures/<lang>/`) and asserts 100% per language; the `fst-engine` CI
-  job guards all seven without a NeMo checkout.
+  job guards all eight without a NeMo checkout.

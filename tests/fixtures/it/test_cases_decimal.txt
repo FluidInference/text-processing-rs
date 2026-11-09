@@ -1,0 +1,7 @@
+# NeMo deterministic TN output (lang=it), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: input~expected.
+
+33,32~trentatre virgola trentadue
+5,342~cinque virgola trecento quarantadue
+4,56 milioni~quattro virgola cinquantasei milioni
+3,55 miliardi~tre virgola cinquantacinque miliardi

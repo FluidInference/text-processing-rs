@@ -35,7 +35,7 @@ default = []
 ffi = []  # Enable C FFI bindings
 wasm = ["dep:wasm-bindgen", "dep:js-sys", "dep:console_error_panic_hook", "getrandom?/wasm_js"]
 # Byte-exact NeMo parity engine (runs NeMo's compiled grammars via rustfst).
-# Adds rustfst + flate2 and ~7 MB of gzipped grammars (all languages combined).
+# Adds rustfst + flate2 and ~8 MB of gzipped grammars (all languages combined).
 fst-engine = ["dep:rustfst", "dep:flate2", "dep:getrandom"]
 
 # Skip wasm-opt: wasm-pack's binaryen download is a recurring CI flake, and the

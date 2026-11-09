@@ -1,0 +1,8 @@
+# NeMo deterministic TN output (lang=it), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: input~expected.
+
+2,01 ₽~due rubli un copeca
+3,23€~tre euro ventitre centesimi
+4,2 £~quattro sterline venti penny
+1 eur~un euro
+1 eur per il caffè~un euro per il caffè
