@@ -163,7 +163,7 @@ pub fn apply(fst: &VectorFst<TropicalWeight>, input: &str) -> Option<String> {
     if output.is_empty() {
         None
     } else {
-        String::from_utf8(output).ok()
+        Some(String::from_utf8_lossy(&output).into_owned())
     }
 }
 

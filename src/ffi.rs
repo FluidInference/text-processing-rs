@@ -595,8 +595,8 @@ pub unsafe extern "C" fn nemo_tn_normalize_sentence_lang_with_options(
 /// [`nemo_tn_alignment_free`].
 ///
 /// Returns null when the library was built without `fst-engine`, the language
-/// is unsupported, either input string is invalid UTF-8, or allocation of a C
-/// string fails.
+/// is unsupported, the grammar cannot classify `input`, either input string is
+/// invalid UTF-8, or allocation of a C string fails.
 ///
 /// # Safety
 /// - `input` and `lang` must be valid null-terminated UTF-8 strings.

@@ -272,8 +272,14 @@ pub(super) fn normalize_aligned(
 
         let original = input[input_start..input_end].to_string();
         let kind = token_kind(&value, &original);
-        let normalized = verbalize_token(verbalize, key, value).unwrap_or_default();
-        parts.push(normalized.clone());
+        let verbalized = verbalize_token(verbalize, key, value).unwrap_or_default();
+        let normalized = collapse_spaces(verbalized.clone());
+        parts.push(verbalized);
+        // English classifies empty input as an empty date token. A token that
+        // covers no source text and says nothing has nothing to align.
+        if original.is_empty() && normalized.is_empty() {
+            continue;
+        }
         spans.push(AlignedSpan {
             input_start,
             input_end,

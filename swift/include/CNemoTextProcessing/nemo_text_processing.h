@@ -195,7 +195,7 @@ typedef struct NemoTnAlignedSpan {
     size_t input_end;
     /** Original source substring. Owned by the containing alignment. */
     char* original;
-    /** Direct verbalizer output for this classifier token. */
+    /** Verbalizer output for this classifier token, spaces collapsed. */
     char* normalized;
     /** Stable semantic class, for example "word", "money", or "date". */
     char* kind;
@@ -213,8 +213,8 @@ typedef struct NemoTnAlignment {
  *
  * Supported langs: "en", "zh", "ja", "fr", "es", "de", "hi".
  * Returns NULL when fst-engine is unavailable, the language is unsupported,
- * or the input is invalid. The result must be released exactly once with
- * nemo_tn_alignment_free().
+ * the grammar cannot classify the input, or the input is invalid. The result
+ * must be released exactly once with nemo_tn_alignment_free().
  */
 NemoTnAlignment* nemo_tn_fst_aligned(const char* input, const char* lang);
 

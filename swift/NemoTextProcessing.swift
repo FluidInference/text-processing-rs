@@ -5,8 +5,9 @@ public struct TNAlignedSpan: Sendable, Equatable {
     /// Half-open UTF-8 byte range in the original input.
     public let inputRange: Range<Int>
     public let original: String
-    /// Direct verbalizer output for this classifier token. Use the containing
-    /// `TNAlignment.normalized` for sentence-level punctuation and spacing.
+    /// Verbalizer output for this classifier token, with runs of spaces
+    /// collapsed. Use the containing `TNAlignment.normalized` for sentence-level
+    /// punctuation.
     public let normalized: String
     /// Stable NeMo class such as `word`, `money`, `date`, or `telephone`.
     public let kind: String
@@ -328,7 +329,8 @@ public enum NemoTextProcessing {
     ///   - input: Complete written-form sentence.
     ///   - language: One of `en`, `fr`, `es`, `de`, `zh`, `hi`, or `ja`.
     /// - Returns: Normalized text and aligned spans, or `nil` when FST TN is
-    ///   unavailable or the language is unsupported.
+    ///   unavailable, the language is unsupported, or the grammar cannot
+    ///   classify `input`.
     public static func tnNormalizeAligned(_ input: String, language: String) -> TNAlignment? {
         guard let inputC = input.cString(using: .utf8),
               let langC = language.cString(using: .utf8),

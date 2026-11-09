@@ -1,25 +1,88 @@
 //! Source-alignment coverage for the compiled-FST text normalizer.
 //!
-//! Requires the `fst-engine` feature:
-//! `cargo test --features ffi,fst-engine --test fst_alignment`.
+//! Requires the `fst-engine` feature (release mode keeps the fixture sweep
+//! fast): `cargo test --release --features ffi,fst-engine --test fst_alignment`.
 #![cfg(feature = "fst-engine")]
 
+mod common;
+
+use std::fs;
+use std::path::Path;
 use text_processing_rs::fst::{self, AlignedNormalization, AlignedSpan, TokenKind};
 
+/// Spans are ordered, sit on char boundaries, quote their source exactly, and
+/// leave only whitespace of `input` uncovered.
 fn assert_source_ranges(input: &str, alignment: &AlignedNormalization) {
     let mut previous_end = 0;
 
     for span in &alignment.spans {
-        assert!(span.input_start >= previous_end, "source spans overlap");
         assert!(
-            span.input_start <= span.input_end,
-            "source span is reversed"
+            span.input_start >= previous_end,
+            "source spans overlap in {input:?}"
+        );
+        assert!(
+            span.input_start < span.input_end,
+            "empty source span in {input:?}"
         );
         assert!(input.is_char_boundary(span.input_start));
         assert!(input.is_char_boundary(span.input_end));
+        assert!(
+            input[previous_end..span.input_start].trim().is_empty(),
+            "{input:?}: text before {:?} belongs to no span",
+            span.original
+        );
         assert_eq!(&input[span.input_start..span.input_end], span.original);
+        assert!(
+            span.normalized.trim() == span.normalized && !span.normalized.contains("  "),
+            "{input:?}: span text {:?} has stray spaces",
+            span.normalized
+        );
         previous_end = span.input_end;
     }
+    assert!(
+        input[previous_end..].trim().is_empty(),
+        "{input:?}: trailing text belongs to no span"
+    );
+}
+
+/// Every NeMo fixture input aligns, and its sentence-level result is the one
+/// `normalize_lang` returns.
+#[test]
+fn aligns_every_nemo_fixture() {
+    for lang in ["en", "de", "es", "fr", "hi", "ja", "zh"] {
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures")
+            .join(lang);
+        let mut total = 0;
+        for entry in fs::read_dir(&dir).expect("fixtures dir") {
+            let path = entry.unwrap().path();
+            let name = path.file_name().unwrap().to_string_lossy().to_string();
+            if !name.starts_with("test_cases_") {
+                continue;
+            }
+            for (input, _) in common::parse_test_file(&path) {
+                let alignment = fst::normalize_aligned(&input, lang)
+                    .unwrap_or_else(|| panic!("{lang}: {input:?} did not align"));
+                assert_eq!(
+                    Some(alignment.normalized.as_str()),
+                    fst::normalize_lang(&input, lang).as_deref(),
+                    "{lang}: {input:?}"
+                );
+                assert_source_ranges(&input, &alignment);
+                total += 1;
+            }
+        }
+        assert!(total >= 100, "{lang}: only {total} fixture cases ran");
+    }
+}
+
+#[test]
+fn empty_input_has_no_spans() {
+    // English classifies "" as an empty date token, which must not surface.
+    let alignment = fst::normalize_aligned("", "en").expect("English accepts empty input");
+
+    assert_eq!(alignment.normalized, "");
+    assert!(alignment.spans.is_empty());
 }
 
 #[test]
@@ -175,6 +238,23 @@ fn aligns_spanish_currency_with_non_ascii_offsets() {
     );
     assert_source_ranges(input, &alignment);
     assert_eq!(alignment.normalized, fst::es::normalize(input));
+}
+
+#[test]
+fn aligns_japanese_text_without_word_spaces() {
+    let input = "今日は2024年1月1日です。";
+    let alignment = fst::normalize_aligned(input, "ja").expect("Japanese input should normalize");
+
+    assert_eq!(alignment.normalized, fst::ja::normalize(input));
+    let date = alignment
+        .spans
+        .iter()
+        .find(|span| span.kind == TokenKind::Date)
+        .expect("the date should be one span");
+    assert_eq!(date.original, "2024年1月1日");
+    assert_eq!((date.input_start, date.input_end), (9, 24));
+    assert_eq!(date.normalized, "二千二十四年一月一日");
+    assert_source_ranges(input, &alignment);
 }
 
 #[cfg(feature = "ffi")]

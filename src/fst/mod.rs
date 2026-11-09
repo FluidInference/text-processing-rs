@@ -63,9 +63,18 @@ pub fn normalize_lang_with_options(
 }
 
 /// A semantic class assigned by the NeMo TN classifier.
+///
+/// NeMo tags both plain words and punctuation as `name`; the two are told apart
+/// by the source text. New NeMo classes may gain their own variant, so match
+/// with a wildcard arm.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum TokenKind {
+    /// A `name` token: text the grammar passes through or expands from its
+    /// whitelist (`Mr.` → `mister`).
     Word,
+    /// A `name` token with no letters, digits or whitespace: punctuation and
+    /// other symbols such as `€` or emoji.
     Punctuation,
     Cardinal,
     Ordinal,
@@ -81,6 +90,7 @@ pub enum TokenKind {
     Verbatim,
     Letters,
     Abbreviation,
+    /// Any other class the grammar emits, by its NeMo name.
     Other(String),
 }
 
@@ -120,9 +130,9 @@ pub struct AlignedSpan {
     pub input_start: usize,
     pub input_end: usize,
     pub original: String,
-    /// Direct verbalizer output for this classifier token. Sentence-level
-    /// punctuation and spacing cleanup is reflected in
-    /// [`AlignedNormalization::normalized`].
+    /// Verbalizer output for this classifier token, with runs of spaces
+    /// collapsed and trimmed. Sentence-level punctuation cleanup is reflected
+    /// only in [`AlignedNormalization::normalized`].
     pub normalized: String,
     pub kind: TokenKind,
 }
@@ -139,7 +149,10 @@ pub struct AlignedNormalization {
 /// Normalize with NeMo's compiled FST grammar and preserve source spans.
 ///
 /// Supported language codes are `en`, `fr`, `es`, `de`, `zh`, `hi`, and `ja`.
-/// Returns `None` for unsupported languages or when classification fails.
+/// The grammars run on `input` as given (no [`normalize_lang_with_options`]
+/// pre-pass), so offsets always index the caller's text. Returns `None` for
+/// unsupported languages or when the grammar cannot classify `input` (where
+/// [`normalize_lang`] would pass it through unchanged).
 pub fn normalize_aligned(input: &str, lang: &str) -> Option<AlignedNormalization> {
     match lang {
         "en" => en::normalize_aligned(input),
