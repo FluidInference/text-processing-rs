@@ -67,6 +67,7 @@ lazy_static! {
         m.insert("hrs", UnitInfo { singular: "hour", plural: "hours" });
 
         // Temperature
+        m.insert("°", UnitInfo { singular: "degree", plural: "degrees" });
         m.insert("°C", UnitInfo { singular: "degree Celsius", plural: "degrees Celsius" });
         m.insert("°F", UnitInfo { singular: "degree Fahrenheit", plural: "degrees Fahrenheit" });
         m.insert("°K", UnitInfo { singular: "kelvin", plural: "kelvin" });
