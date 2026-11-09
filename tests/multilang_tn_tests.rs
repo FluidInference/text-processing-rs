@@ -3,6 +3,8 @@
 //! Tests the language dispatch API: tn_normalize_lang() and tn_normalize_sentence_lang().
 //! Ensures all 6 languages are wired up and producing correct output through the public API.
 
+use std::fs;
+use std::path::Path;
 use text_processing_rs::{tn_normalize_lang, tn_normalize_sentence_lang};
 
 // ── French ───────────────────────────────────────────────────────────
@@ -244,5 +246,136 @@ fn test_sentence_lang_empty() {
             "empty failed for lang={}",
             lang
         );
+    }
+}
+
+// ── Sentence spans (#96) ─────────────────────────────────────────────
+
+#[test]
+fn test_de_sentence_keeps_words_around_spans() {
+    // A span match used to swallow the words around it and glue the date's
+    // digits onto the price ("dreihundertzehn millionen ... euro").
+    assert_eq!(
+        tn_normalize_sentence_lang("Am 3.10.2025 kostete es 12,50 € für 2 Stück.", "de"),
+        "Am dritter oktober zweitausendfuenfundzwanzig kostete es zwoelf euro und fuenfzig cent für zwei Stück."
+    );
+    assert_eq!(
+        tn_normalize_sentence_lang("Es kostet 12,50 €.", "de"),
+        "Es kostet zwoelf euro und fuenfzig cent."
+    );
+    assert_eq!(
+        tn_normalize_sentence_lang("Sie kam am 3. Oktober 2025 nach Hause.", "de"),
+        "Sie kam am dritter oktober zweitausendfuenfundzwanzig nach Hause."
+    );
+    assert_eq!(
+        tn_normalize_sentence_lang("Wir treffen uns um 17:30 Uhr am Bahnhof.", "de"),
+        "Wir treffen uns um siebzehn uhr dreissig am Bahnhof."
+    );
+    // The period after a money amount is the sentence's.
+    assert_eq!(
+        tn_normalize_sentence_lang("Es kostet $5.", "de"),
+        "Es kostet fuenf dollar."
+    );
+}
+
+#[test]
+fn test_fr_es_sentence_keeps_words_around_spans() {
+    assert_eq!(
+        tn_normalize_sentence_lang("Il coûte 12,50 € aujourd'hui.", "fr"),
+        "Il coûte douze euros et cinquante centimes aujourd'hui."
+    );
+    assert_eq!(
+        tn_normalize_sentence_lang("Le 3 octobre 2025 il est venu à la maison.", "fr"),
+        "Le trois octobre deux mille vingt-cinq il est venu à la maison."
+    );
+    assert_eq!(
+        tn_normalize_sentence_lang("Cuesta 12,50 € hoy.", "es"),
+        "Cuesta doce euros con cincuenta centimos hoy."
+    );
+    assert_eq!(
+        tn_normalize_sentence_lang("El 3 de octubre de 2025 llegó a casa.", "es"),
+        "El tres de octubre de dos mil veinticinco llegó a casa."
+    );
+    // The decimal comma survives a sentence-final period.
+    assert_eq!(
+        tn_normalize_sentence_lang("Hoy vimos 1,26.", "es"),
+        "Hoy vimos uno coma dos seis."
+    );
+}
+
+/// Every written form a TN tagger accepts alone (the written side of the ITN
+/// data), placed inside a sentence and at its end, keeps the words around it
+/// and the final period.
+#[test]
+fn test_sentence_spans_keep_surrounding_words() {
+    let frames = [
+        ("en", "Today we saw", "for them"),
+        ("de", "Heute sahen wir", "bei ihnen"),
+        ("fr", "Hier nous avons vu", "chez eux"),
+        ("es", "Hoy vimos", "con ellos"),
+    ];
+    let mut failures = Vec::new();
+    for (lang, lead, trail) in frames {
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/data")
+            .join(lang);
+        for entry in fs::read_dir(&dir).expect("data dir") {
+            let path = entry.unwrap().path();
+            let name = path.file_stem().unwrap().to_string_lossy().to_string();
+            if name.contains("cased") || name == "word" || name == "whitelist" {
+                continue;
+            }
+            let data = fs::read_to_string(&path).expect("data file");
+            for line in data.lines().filter(|line| !line.starts_with('#')) {
+                let Some((_, written)) = line.split_once('~') else {
+                    continue;
+                };
+                let x = written.trim();
+                if x.ends_with('.') || tn_normalize_lang(x, lang) == x {
+                    continue;
+                }
+                let mut sentences = vec![format!("{lead} {x} {trail}.")];
+                // NeMo reads a German number before the final period as an
+                // ordinal ("100." -> "hundertste"), so only check it mid-sentence.
+                if !(lang == "de" && x.chars().all(|c| c.is_ascii_digit())) {
+                    sentences.push(format!("{lead} {x}."));
+                }
+                for sentence in sentences {
+                    let out = tn_normalize_sentence_lang(&sentence, lang);
+                    let tail = if sentence.ends_with(&format!("{trail}.")) {
+                        format!(" {trail}.")
+                    } else {
+                        ".".to_string()
+                    };
+                    if !out.starts_with(&format!("{lead} ")) || !out.ends_with(&tail) {
+                        failures.push(format!("[{lang}] {sentence:?} -> {out:?}"));
+                    }
+                }
+            }
+        }
+    }
+    assert!(failures.is_empty(), "{}", failures.join("\n"));
+}
+
+#[test]
+fn test_large_numbers_do_not_panic() {
+    // de, es and ja ran out of scale words and indexed past their tables.
+    for lang in ["en", "fr", "es", "de", "zh", "hi", "ja"] {
+        for n in [
+            "1000000001",
+            "1000000000000000",
+            "18446744073709551615",
+            "99999999999999999999999",
+        ] {
+            for input in [
+                n.to_string(),
+                format!("{n} km"),
+                format!("${n}"),
+                format!("{n} €"),
+            ] {
+                tn_normalize_lang(&input, lang);
+                tn_normalize_sentence_lang(&format!("Wir sahen {input} heute."), lang);
+            }
+        }
     }
 }

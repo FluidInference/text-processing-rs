@@ -1292,13 +1292,7 @@ where
         // already handles "ignore trailing punctuation" cases like
         // `"twenty one,"` -> match `"twenty one"`.
         for end in (i + 1..=max_end).rev() {
-            let mut span = String::new();
-            for (idx, p) in pretokens[i..end].iter().enumerate() {
-                if idx > 0 {
-                    span.push_str(p.sep);
-                }
-                span.push_str(&p.text);
-            }
+            let span = span_text(&pretokens[i..end]);
             let Some((candidate, score)) = parser(&span) else {
                 continue;
             };
@@ -1325,7 +1319,21 @@ where
             }
         }
 
-        if let Some((end, replacement, _)) = best {
+        if let Some((mut end, replacement, _)) = best {
+            // A tagger that tolerates trailing punctuation ("$5." -> "five
+            // dollars") would swallow the sentence's period. After a digit the
+            // mark cannot end an abbreviation ("p.m.", "Dr."), so when the span
+            // without it reads the same, leave the punctuation in the text.
+            while end - i > 1
+                && is_trailing_punct(&pretokens[end - 1])
+                && pretokens[end - 2]
+                    .text
+                    .ends_with(|c: char| c.is_ascii_digit())
+                && parser(&span_text(&pretokens[i..end - 1]))
+                    .is_some_and(|(shorter, _)| shorter == replacement)
+            {
+                end -= 1;
+            }
             push_detokenized(&mut out, pretokens[i].sep, &replacement);
             prev_replacement_ends_with_period = replacement.ends_with('.');
             i = end;
@@ -1347,6 +1355,24 @@ where
     }
 
     out
+}
+
+/// Rebuild the source text of consecutive pretokens, keeping each one's
+/// original separator (`"Dr."` stays glued, not `"Dr ."`).
+fn span_text(pretokens: &[Pretoken]) -> String {
+    let mut span = String::new();
+    for (idx, p) in pretokens.iter().enumerate() {
+        if idx > 0 {
+            span.push_str(p.sep);
+        }
+        span.push_str(&p.text);
+    }
+    span
+}
+
+/// Sentence or clause punctuation split off the end of a word.
+fn is_trailing_punct(p: &Pretoken) -> bool {
+    p.sep.is_empty() && matches!(p.text.as_str(), "." | "," | "!" | "?" | ";" | ":")
 }
 
 /// Append `text` to `out`, inserting a detokenization space after a closing

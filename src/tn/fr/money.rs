@@ -89,6 +89,11 @@ fn parse_suffix_currency(input: &str) -> Option<String> {
         return None;
     };
 
+    // The amount must be one number: "Es kostet 12,50 €" is not money.
+    if !crate::tn::is_written_number(amount_str) {
+        return None;
+    }
+
     parse_amount(amount_str, currency)
 }
 
@@ -113,12 +118,10 @@ fn parse_prefix_currency(input: &str) -> Option<String> {
     // Check for scale suffix: "$2,5 milliards"
     let (amount_str, scale) = extract_scale(rest);
 
-    // Without a scale suffix, the amount must be purely numeric
-    if scale.is_none()
-        && !amount_str
-            .chars()
-            .all(|c| c.is_ascii_digit() || c == '.' || c == ',' || c == ' ')
-    {
+    // A trailing dot ("$5.") is not part of the amount. Without a scale suffix,
+    // what remains must be one number.
+    let amount_str = amount_str.strip_suffix('.').unwrap_or(amount_str);
+    if scale.is_none() && !crate::tn::is_written_number(amount_str) {
         return None;
     }
 
@@ -156,11 +159,7 @@ fn extract_scale(input: &str) -> (&str, Option<&str>) {
     for &scale in SCALE_SUFFIXES {
         if let Some(before) = input.strip_suffix(scale) {
             let before = before.trim_end();
-            if !before.is_empty()
-                && before
-                    .chars()
-                    .all(|c| c.is_ascii_digit() || c == '.' || c == ',' || c == ' ')
-            {
+            if crate::tn::is_written_number(before) {
                 return (before, Some(scale));
             }
         }

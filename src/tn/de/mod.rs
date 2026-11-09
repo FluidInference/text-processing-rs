@@ -74,8 +74,10 @@ fn unsigned_to_words(n: u64) -> String {
     let mut remaining = n;
 
     // German uses long scale: Billion = 10^12, Milliarde = 10^9
-    // "eine Million", "zwei Millionen" etc.
+    // "eine Million", "zwei Millionen" etc. Trillion (10^18) covers every u64.
     let scales: &[(u64, &str, &str)] = &[
+        (1_000_000_000_000_000_000, "trillion", "trillionen"),
+        (1_000_000_000_000_000, "billiarde", "billiarden"),
         (1_000_000_000_000, "billion", "billionen"),
         (1_000_000_000, "milliarde", "milliarden"),
         (1_000_000, "million", "millionen"),
@@ -259,6 +261,17 @@ mod tests {
         assert_eq!(number_to_words(1000000), "eine million");
         assert_eq!(number_to_words(2000000), "zwei millionen");
         assert_eq!(number_to_words(2000003), "zwei millionen drei");
+    }
+
+    #[test]
+    fn test_beyond_billionen() {
+        // 10^15 and up used to index past the hundreds table.
+        assert_eq!(number_to_words(1_000_000_000_000_000), "eine billiarde");
+        assert_eq!(
+            number_to_words(2_000_000_000_000_000_005),
+            "zwei trillionen fuenf"
+        );
+        assert!(number_to_words(i64::MAX).starts_with("neun trillionen"));
     }
 
     #[test]

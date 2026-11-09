@@ -224,10 +224,14 @@ fn with_year(base: String, year: Option<String>, comma: bool) -> String {
 }
 
 /// Recognize a month name (full or 3-letter abbreviation, any case, optional
-/// trailing dot) and return its spoken (lower-case) form.
+/// trailing dot on an abbreviation) and return its spoken (lower-case) form.
 fn parse_month(token: &str) -> Option<&'static str> {
-    let t = token.trim().trim_end_matches('.').to_lowercase();
-    Some(match t.as_str() {
+    let token = token.trim().to_lowercase();
+    let (t, dotted) = match token.strip_suffix('.') {
+        Some(t) => (t, true),
+        None => (token.as_str(), false),
+    };
+    let spoken = match t {
         "january" | "jan" => "january",
         "february" | "feb" => "february",
         "march" | "mar" => "march",
@@ -241,7 +245,13 @@ fn parse_month(token: &str) -> Option<&'static str> {
         "november" | "nov" => "november",
         "december" | "dec" => "december",
         _ => return None,
-    })
+    };
+    // The dot of "Jan." is the abbreviation's; after a full name ("January.")
+    // it is the sentence's, so the span without it must match instead.
+    if dotted && t == spoken {
+        return None;
+    }
+    Some(spoken)
 }
 
 /// Parse a day-of-month token, plain or with an ordinal suffix (`25`, `25th`).

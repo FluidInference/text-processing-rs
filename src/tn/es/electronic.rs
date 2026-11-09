@@ -7,7 +7,17 @@
 /// Parse an email or URL to spoken Spanish form.
 pub fn parse(input: &str) -> Option<String> {
     let trimmed = input.trim();
-    if trimmed.is_empty() {
+    let (Some(first), Some(last)) = (trimmed.chars().next(), trimmed.chars().last()) else {
+        return None;
+    };
+
+    // Emails and URLs never contain whitespace, and sentence punctuation around
+    // them is the sentence's ("cdf@abc.edu." keeps its period). A trailing "/"
+    // is a URL path separator and kept. Mirrors the English tagger.
+    if trimmed.contains(char::is_whitespace)
+        || !first.is_alphanumeric()
+        || (!last.is_alphanumeric() && last != '/')
+    {
         return None;
     }
 

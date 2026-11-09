@@ -32,6 +32,12 @@ pub fn parse(input: &str) -> Option<String> {
         return None;
     }
 
+    // One number, not a run of them ("2 3") or one carrying the sentence's
+    // period ("1,26.").
+    if !crate::tn::is_written_number(digits_part) {
+        return None;
+    }
+
     // Strip thousands separators (spaces, dots, commas used as thousands sep)
     // French uses space or dot as thousands separator
     let clean: String = digits_part.chars().filter(|c| c.is_ascii_digit()).collect();

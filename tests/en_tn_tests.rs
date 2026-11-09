@@ -369,3 +369,23 @@ fn test_roman_enumerators_opt_in() {
         "(ii) chats"
     );
 }
+
+#[test]
+fn test_sentence_final_period_after_money() {
+    // "$12.50." used to read as a decimal ("twelve point five zero dollars")
+    // and lose the sentence's period (#96).
+    assert_eq!(
+        tn_normalize_sentence("It costs $12.50."),
+        "It costs twelve dollars fifty cents."
+    );
+    assert_eq!(tn_normalize_sentence("I paid $5."), "I paid five dollars.");
+    // An abbreviation keeps its own period.
+    assert_eq!(
+        tn_normalize_sentence("Meet at 5:30 p.m. today."),
+        "Meet at five thirty PM today."
+    );
+    assert_eq!(
+        tn_normalize_sentence("Dr. Smith paid $5."),
+        "doctor Smith paid five dollars."
+    );
+}
