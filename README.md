@@ -121,6 +121,21 @@ import init, * as wasm from "@fluidinference/text-processing-rs";
 await init();
 ```
 
+The npm package is a browser (`--target web`) build, so in Node `await init()`
+fails with `fetch failed`. Hand the `.wasm` bytes to `initSync` instead:
+
+```javascript
+import { readFile } from "node:fs/promises";
+import { initSync, tnNormalizeSentence } from "@fluidinference/text-processing-rs";
+
+const wasmUrl = new URL(
+  "text_processing_rs_bg.wasm",
+  import.meta.resolve("@fluidinference/text-processing-rs")
+);
+initSync({ module: await readFile(wasmUrl) });
+console.log(tnNormalizeSentence("I paid $5 for 23 items"));
+```
+
 Sentence-level normalization scans for normalizable spans within a larger sentence:
 
 ```rust
