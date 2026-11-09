@@ -73,6 +73,19 @@ wasm.addRule("gee pee tee", "GPT");
 console.log(wasm.normalize("gee pee tee")); // "GPT"
 ```
 
+Source-aligned compiled-FST TN (`tnFstNormalizeAligned`) needs the
+`fst-engine` feature, which the npm package leaves out. Build it into
+`pkg-node-fst/` with `npm run wasm:build:node:fst`:
+
+```javascript
+import * as wasm from "./pkg-node-fst/text_processing_rs.js";
+
+const { normalized, spans } = wasm.tnFstNormalizeAligned("The price is $1,234.56.", "en");
+// spans[3]: { inputStart: 13, inputEnd: 22, original: "$1,234.56",
+//             normalized: "one thousand ... fifty six cents", kind: "money" }
+// Offsets are UTF-8 byte offsets; slice new TextEncoder().encode(input).
+```
+
 The generated npm package name is `@fluidinference/text-processing-rs`.
 
 Web project usage (Vite / Next.js / webpack):
@@ -126,6 +139,29 @@ let result = tn_normalize_sentence("I paid $5 for 23 items");
 assert_eq!(result, "I paid five dollars for twenty three items");
 ```
 
+Compiled-FST TN can also retain the source range and semantic class for every
+normalized span. Offsets are half-open UTF-8 byte offsets:
+
+```rust
+use text_processing_rs::fst;
+
+let result = fst::normalize_aligned("The price is $1,234.56.", "en").unwrap();
+assert_eq!(
+    result.normalized,
+    "The price is one thousand two hundred and thirty four dollars fifty six cents."
+);
+
+let money = &result.spans[3];
+assert_eq!(money.input_start, 13);
+assert_eq!(money.input_end, 22);
+assert_eq!(money.original, "$1,234.56");
+assert_eq!(money.kind.as_str(), "money");
+```
+
+Build this API with `--features fst-engine`. It uses the same compiled NeMo
+classifier and verbalizer as `fst::<lang>::normalize`, rather than recovering
+alignment by diffing the final strings.
+
 ### Swift
 
 ```swift
@@ -149,6 +185,16 @@ let itnFr = NemoTextProcessing.normalizeSentence("j'ai vingt et un ans", languag
 
 let tn = NemoTextProcessing.tnNormalizeSentence("I paid $5 for 23 items")
 // "I paid five dollars for twenty three items"
+
+if let aligned = NemoTextProcessing.tnNormalizeAligned(
+    "The price is $1,234.56.",
+    language: "en"
+) {
+    let money = aligned.spans[3]
+    // money.original == "$1,234.56"
+    // money.normalized == "one thousand ... dollars fifty six cents"
+    // money.inputRange == 13..<22, money.kind == "money"
+}
 ```
 
 ### CLI
@@ -215,6 +261,7 @@ echo "2:30 PM" | nemo-tn               # → two thirty p m
 - Phone numbers, IP addresses, SSN
 - Case preservation for proper nouns and abbreviations
 - Sentence-level normalization with sliding window span matching
+- Source-to-normalized span alignment with semantic classes (compiled FST)
 - Custom rules for domain-specific terms
 - C FFI for integration with Swift, Python, and other languages
 
@@ -230,7 +277,7 @@ cargo test
 ### WASM + JavaScript
 
 ```bash
-# Build + smoke test (Node) + build browser artifact
+# Build + smoke test (Node, with and without fst-engine) + build browser artifact
 npm run wasm:ci
 
 # Create a tarball from the browser package
@@ -243,14 +290,29 @@ npm run wasm:publish
 ### CLI Tools
 
 ```bash
-# Build the Rust library (release, with FFI)
-cargo build --release --target aarch64-apple-darwin --features ffi
+# Build the Rust library for this Mac's architecture.
+RUST_TARGET="$(rustc -vV | sed -n 's/^host: //p')"
+cargo build --release --target "$RUST_TARGET" --features "ffi,fst-engine"
 
 # Build Swift CLI tools
 cd swift-test && swift build
 ```
 
-Binaries are at `swift-test/.build/debug/nemo-itn` and `swift-test/.build/debug/nemo-tn`.
+Binaries are at `swift-test/.build/debug/nemo-itn`,
+`swift-test/.build/debug/nemo-tn`, and
+`swift-test/.build/debug/nemo-tn-aligned`.
+
+#### nemo-tn-aligned
+The aligned CLI emits compact JSON for argument input and JSON Lines for stdin:
+
+```bash
+swift-test/.build/debug/nemo-tn-aligned --lang en 'The price is $1,234.56.'
+# output: {"input":"The price is $1,234.56.","language":"en","normalized":"The price is one thousand two hundred and thirty four dollars fifty six cents.","spans":[{"input_end":3,"input_start":0,"kind":"word","normalized":"The","original":"The"},{"input_end":9,"input_start":4,"kind":"word","normalized":"price","original":"price"},{"input_end":12,"input_start":10,"kind":"word","normalized":"is","original":"is"},{"input_end":22,"input_start":13,"kind":"money","normalized":"one thousand two hundred and thirty four dollars fifty six cents","original":"$1,234.56"},{"input_end":23,"input_start":22,"kind":"punctuation","normalized":".","original":"."}]}
+```
+
+Each result contains `input`, `language`, the complete `normalized` text, and
+`spans` with `input_start`, `input_end`, `original`, `normalized`, and `kind`.
+Offsets are half-open UTF-8 byte offsets.
 
 ### Swift (XCFramework)
 
