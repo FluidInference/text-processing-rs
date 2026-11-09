@@ -302,12 +302,6 @@ Binaries are at `swift-test/.build/debug/nemo-itn`,
 `swift-test/.build/debug/nemo-tn`, and
 `swift-test/.build/debug/nemo-tn-aligned`.
 
-#### nemo-tn
-```bash
-swift-test/.build/debug/nemo-tn -s 'The price is $1,234.56.'
-# output: The price is one thousand two hundred and thirty four point five six dollars
-```
-
 #### nemo-tn-aligned
 The aligned CLI emits compact JSON for argument input and JSON Lines for stdin:
 
