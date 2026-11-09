@@ -178,7 +178,7 @@ char* nemo_tn_normalize_sentence_with_max_span_lang(const char* input, const cha
 /**
  * Text Normalization via the compiled-FST engine — byte-exact NeMo parity.
  *
- * Supported langs: "en", "zh", "ja", "fr", "es", "de", "hi".
+ * Supported langs: "en", "zh", "ja", "fr", "es", "de", "hi", "it".
  * Returns NULL if the library was built without the fst-engine feature or the
  * language is unsupported, so callers can fall back to nemo_tn_normalize_lang.
  *
@@ -211,7 +211,7 @@ typedef struct NemoTnAlignment {
 /**
  * Normalize via the compiled-FST engine and retain source spans.
  *
- * Supported langs: "en", "zh", "ja", "fr", "es", "de", "hi".
+ * Supported langs: "en", "zh", "ja", "fr", "es", "de", "hi", "it".
  * Returns NULL when fst-engine is unavailable, the language is unsupported,
  * the grammar cannot classify the input, or the input is invalid. The result
  * must be released exactly once with nemo_tn_alignment_free().

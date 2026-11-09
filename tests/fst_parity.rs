@@ -71,3 +71,8 @@ fn en_tn_matches_nemo() {
 fn de_tn_matches_nemo() {
     assert_lang_parity("de", 300, fst::de::normalize);
 }
+
+#[test]
+fn it_tn_matches_nemo() {
+    assert_lang_parity("it", 50, fst::it::normalize);
+}

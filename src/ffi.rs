@@ -488,7 +488,7 @@ pub unsafe extern "C" fn nemo_tn_normalize_sentence_with_max_span_lang(
 }
 
 /// Byte-exact NeMo TN via the compiled-FST engine, for `lang` in
-/// {en, zh, ja, fr, es, de, hi}.
+/// {en, zh, ja, fr, es, de, hi, it}.
 ///
 /// Returns `NULL` when the crate was built without the `fst-engine` feature or
 /// the language is unsupported, so callers can fall back to the rule-based
@@ -745,6 +745,16 @@ mod tests {
             let result = nemo_tn_fst(input.as_ptr(), en.as_ptr());
             assert!(!result.is_null());
             assert_eq!(CStr::from_ptr(result).to_str().unwrap(), "two dollars");
+            nemo_free_string(result);
+
+            let euros = CString::new("3,23€").unwrap();
+            let it = CString::new("it").unwrap();
+            let result = nemo_tn_fst(euros.as_ptr(), it.as_ptr());
+            assert!(!result.is_null());
+            assert_eq!(
+                CStr::from_ptr(result).to_str().unwrap(),
+                "tre euro ventitre centesimi"
+            );
             nemo_free_string(result);
 
             // Unsupported language → NULL (caller falls back to rule-based).

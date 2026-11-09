@@ -12,11 +12,11 @@
 //! Every language reaches byte-exact parity with
 //! `Normalizer(lang=…, deterministic=True)`:
 //! zh 367/367, fr 116/116, ja 542/542, en 506/506, hi 677/677, es 536/536,
-//! de 314/314.
+//! de 314/314, it 52/52.
 //!
 //! This trades the crate's pure-Rust, tiny-bundle shape for byte-exactness and
 //! is therefore optional and off by default. Grammars are bundled gzipped
-//! (~7 MB total for all languages) and decompressed once at first use.
+//! (~8 MB total for all languages) and decompressed once at first use.
 //!
 //! See `docs/NEMO_PARITY.md` for the measured ceilings and the fidelity fixes.
 
@@ -28,6 +28,7 @@ pub mod en;
 pub mod es;
 pub mod fr;
 pub mod hi;
+pub mod it;
 pub mod ja;
 pub mod zh;
 
@@ -37,7 +38,7 @@ use rustfst::prelude::*;
 use std::io::Read;
 
 /// Normalize `input` with the grammars for `lang` (`en`, `zh`, `ja`, `fr`,
-/// `es`, `de`, `hi`); `None` for an unsupported code.
+/// `es`, `de`, `hi`, `it`); `None` for an unsupported code.
 pub fn normalize_lang(input: &str, lang: &str) -> Option<String> {
     Some(match lang {
         "en" => en::normalize(input),
@@ -47,6 +48,7 @@ pub fn normalize_lang(input: &str, lang: &str) -> Option<String> {
         "es" => es::normalize(input),
         "de" => de::normalize(input),
         "hi" => hi::normalize(input),
+        "it" => it::normalize(input),
         _ => return None,
     })
 }
@@ -148,7 +150,7 @@ pub struct AlignedNormalization {
 
 /// Normalize with NeMo's compiled FST grammar and preserve source spans.
 ///
-/// Supported language codes are `en`, `fr`, `es`, `de`, `zh`, `hi`, and `ja`.
+/// Supported language codes are `en`, `fr`, `es`, `de`, `zh`, `hi`, `ja`, and `it`.
 /// The grammars run on `input` as given (no [`normalize_lang_with_options`]
 /// pre-pass), so offsets always index the caller's text. Returns `None` for
 /// unsupported languages or when the grammar cannot classify `input` (where
@@ -162,6 +164,7 @@ pub fn normalize_aligned(input: &str, lang: &str) -> Option<AlignedNormalization
         "zh" => zh::normalize_aligned(input),
         "hi" => hi::normalize_aligned(input),
         "ja" => ja::normalize_aligned(input),
+        "it" => it::normalize_aligned(input),
         _ => None,
     }
 }

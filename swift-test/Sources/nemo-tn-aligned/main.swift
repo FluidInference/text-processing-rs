@@ -87,7 +87,7 @@ let usage = """
       nemo-tn-aligned --help
 
     OPTIONS:
-      -l, --lang <lang>  en, fr, es, de, zh, hi, or ja (default: en)
+      -l, --lang <lang>  en, fr, es, de, zh, hi, ja, or it (default: en)
 
     OUTPUT:
       One compact JSON object per input. Stdin mode emits JSON Lines.
@@ -132,7 +132,7 @@ while index < args.count {
     index += 1
 }
 
-let supportedLanguages = ["en", "fr", "es", "de", "zh", "hi", "ja"]
+let supportedLanguages = ["en", "fr", "es", "de", "zh", "hi", "ja", "it"]
 guard supportedLanguages.contains(language) else {
     fputs(
         "nemo-tn-aligned: unsupported language '\(language)'; expected one of \(supportedLanguages.joined(separator: ", "))\n",
