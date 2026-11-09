@@ -389,3 +389,51 @@ fn test_sentence_final_period_after_money() {
         "doctor Smith paid five dollars."
     );
 }
+
+// #101: sentence mode read ordinary words as numbers or units (Gutenberg prose).
+#[test]
+fn test_sentence_prose_false_positives() {
+    use text_processing_rs::tn_normalize_sentence_lang;
+    let cases = [
+        // "did" is not the numeral DID, after a name or otherwise
+        ("The Mouse did not answer.", "The Mouse did not answer."),
+        ("It did so indeed.", "It did so indeed."),
+        ("Louis XVI was king.", "Louis sixteenth was king."),
+        // bare "in." and "No." are words; "No." before a number still reads "number"
+        (
+            "And she opened the door and went in.",
+            "And she opened the door and went in.",
+        ),
+        ("\"No.\"", "\"No.\""),
+        (
+            "He lives at No. 10 Downing Street.",
+            "He lives at number ten Downing Street.",
+        ),
+        // a year keeps the comma after it and reads as a year
+        (
+            "On the 20th of July, 1866, the steamer",
+            "On the twentieth of July, eighteen sixty six, the steamer",
+        ),
+        ("He paid 1866, then", "He paid eighteen sixty six, then"),
+        (
+            "a pressure of 97,500 lbs",
+            "a pressure of ninety seven thousand five hundred pounds",
+        ),
+        // degrees and primes, as NeMo reads them
+        ("in 42° 15′ N.", "in forty two degrees fifteen′ N."),
+        ("it was 42° today", "it was forty two degrees today"),
+        // prose ending in a street-suffix word is not an address
+        (
+            "rose to the height of 120 feet; thus I ascertained its way",
+            "rose to the height of one hundred and twenty feet; thus I ascertained its way",
+        ),
+        ("123 Main St", "one twenty three Main Street"),
+    ];
+    for (input, expected) in cases {
+        assert_eq!(
+            tn_normalize_sentence_lang(input, "en"),
+            expected,
+            "input: {input}"
+        );
+    }
+}

@@ -35,6 +35,9 @@ pub fn parse(input: &str) -> Option<String> {
     }
 
     let has_comma = digits_part.contains(',');
+    if has_comma && !is_grouped(digits_part) {
+        return None;
+    }
     let clean: String = digits_part.chars().filter(|c| *c != ',').collect();
 
     // Digit-string rule: an unformatted, non-negative integer that is longer
@@ -53,6 +56,13 @@ pub fn parse(input: &str) -> Option<String> {
     } else {
         Some(number_to_words_and(n))
     }
+}
+
+/// Thousands grouping: 1–3 leading digits, then `,ddd` groups ("97,500").
+fn is_grouped(s: &str) -> bool {
+    let mut groups = s.split(',');
+    let first = groups.next().unwrap_or("");
+    (1..=3).contains(&first.len()) && groups.all(|g| g.len() == 3)
 }
 
 #[cfg(test)]

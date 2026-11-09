@@ -42,7 +42,6 @@ lazy_static! {
 
         // Units (when written as abbreviations)
         m.insert("ft.", "feet");
-        m.insert("in.", "inches");
         m.insert("oz.", "ounces");
         m.insert("lb.", "pounds");
         m.insert("lbs.", "pounds");
@@ -55,7 +54,6 @@ lazy_static! {
         m.insert("Corp.", "corporation");
         m.insert("Ltd.", "limited");
         m.insert("Co.", "company");
-        m.insert("No.", "number");
         m.insert("approx.", "approximately");
 
         // Misc special terms
@@ -74,6 +72,15 @@ pub fn parse(input: &str) -> Option<String> {
     // Direct lookup (case-sensitive first)
     if let Some(&spoken) = WHITELIST.get(trimmed) {
         return Some(spoken.to_string());
+    }
+
+    // "No." reads "number" only before a number ("No. 5" → "number five"); on
+    // its own it is the word ("\"No.\"", #101). The same goes for "in.", which
+    // the measure tagger expands after a number.
+    if let Some(rest) = trimmed.strip_prefix("No. ") {
+        if let Some(n) = super::cardinal::parse(rest.trim()) {
+            return Some(format!("number {n}"));
+        }
     }
 
     // Dotted initials collapse to an acronym: "C. S." → "CS".

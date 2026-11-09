@@ -79,8 +79,11 @@ pub fn parse(input: &str) -> Option<String> {
         i += 1;
     }
 
-    // Street words up to and including a recognized suffix.
+    // Street words up to and including a recognized suffix. Each is a
+    // capitalized word or an ordinal ("Elm", "San Tomas", "1st"), at most four
+    // of them, so prose ending in "way" is not an address.
     let mut found_suffix = false;
+    let mut street_words = 0;
     while i < tokens.len() {
         let token = tokens[i];
         if token == "," {
@@ -92,10 +95,18 @@ pub fn parse(input: &str) -> Option<String> {
             found_suffix = true;
             break;
         }
+        street_words += 1;
+        if street_words > 4 {
+            return None;
+        }
         if let Some(ord) = ordinal::parse(token) {
             pieces.push(ord);
-        } else {
+        } else if token.chars().all(|c| c.is_ascii_alphanumeric())
+            && token.starts_with(|c: char| c.is_ascii_uppercase())
+        {
             pieces.push(token.to_string());
+        } else {
+            return None;
         }
         i += 1;
     }
@@ -196,5 +207,8 @@ mod tests {
         assert_eq!(parse("Main St"), None); // no house number
         assert_eq!(parse("1428 Elm St."), None); // trailing period
         assert_eq!(parse("hello world"), None);
+        // #101: prose that happens to end in a suffix word
+        assert_eq!(parse("120 feet; thus I ascertained its way"), None);
+        assert_eq!(parse("120 feet thus I ascertained its way"), None);
     }
 }

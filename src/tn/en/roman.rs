@@ -4,10 +4,9 @@
 //! - "Chapter IV" → "Chapter four"
 //! - "PART XL" → "PART forty"
 //!
-//! Only the keyword-anchored form is handled. NeMo also reads a numeral after
-//! a personal name as an ordinal ("Sam II" → "Sam second"), but that relies on
-//! a large name list; without it a bare-capitalized heuristic over-fires on
-//! ordinary words, so it is intentionally left out.
+//! A capitalized name followed by an upper-case numeral reads as an ordinal
+//! ("Sam II" → "Sam second"). Numerals must be in canonical form, so ordinary
+//! words made of roman letters stay words ("The Mouse did not answer", #101).
 
 use super::number_to_words;
 
@@ -27,17 +26,27 @@ pub fn parse(input: &str) -> Option<String> {
     let trimmed = input.trim();
     let (prefix, roman) = trimmed.split_once(' ')?;
     let roman = roman.trim();
-    let value = roman_to_int(roman)?;
+    let upper = roman.chars().all(|c| c.is_ascii_uppercase());
 
-    // Section keyword → cardinal ("Chapter IV" → "Chapter four").
+    // Section keyword → cardinal ("Chapter IV" → "Chapter four"). A lower-case
+    // numeral must be a strict `I V X` one, so "part mix" stays words.
     if KEYWORDS.contains(&prefix.to_lowercase().as_str()) {
+        let value = if upper {
+            canonical_value(roman)?
+        } else if roman.chars().all(|c| c.is_ascii_lowercase()) {
+            strict_value(roman)?
+        } else {
+            return None;
+        };
         return Some(format!("{} {}", prefix, number_to_words(value)));
     }
 
-    // A capitalized name followed by a multi-character numeral → ordinal
-    // ("Sam II" → "Sam second"). Requiring two or more numeral characters
-    // avoids grabbing a stray "I"/"V" after an ordinary capitalized word.
-    if roman.len() >= 2 && is_name(prefix) {
+    // A capitalized name followed by a multi-character upper-case numeral →
+    // ordinal ("Sam II" → "Sam second"). Requiring two or more numeral
+    // characters avoids grabbing a stray "I"/"V" after an ordinary capitalized
+    // word; requiring upper case and canonical form keeps "It did" a sentence.
+    if roman.len() >= 2 && upper && is_name(prefix) {
+        let value = canonical_value(roman)?;
         return Some(format!(
             "{} {}",
             prefix,
@@ -214,6 +223,44 @@ fn strict_value(numeral: &str) -> Option<i64> {
     (value > 0).then_some(value)
 }
 
+/// Value of a numeral written in canonical form ("XIV", "MCMXCIV"), compared
+/// case-insensitively, else `None`. Rejects letter runs that only parse
+/// additively, like "DID" (999 is "CMXCIX") or "MIM".
+fn canonical_value(numeral: &str) -> Option<i64> {
+    let value = roman_to_int(numeral)?;
+    (to_roman(value)? == numeral.to_ascii_uppercase()).then_some(value)
+}
+
+/// Canonical roman form of 1–3999.
+fn to_roman(mut value: i64) -> Option<String> {
+    if !(1..=3999).contains(&value) {
+        return None;
+    }
+    const PARTS: [(i64, &str); 13] = [
+        (1000, "M"),
+        (900, "CM"),
+        (500, "D"),
+        (400, "CD"),
+        (100, "C"),
+        (90, "XC"),
+        (50, "L"),
+        (40, "XL"),
+        (10, "X"),
+        (9, "IX"),
+        (5, "V"),
+        (4, "IV"),
+        (1, "I"),
+    ];
+    let mut out = String::new();
+    for (n, s) in PARTS {
+        while value >= n {
+            out.push_str(s);
+            value -= n;
+        }
+    }
+    Some(out)
+}
+
 /// Convert a roman numeral to its value, or `None` if it is not a valid
 /// numeral (empty, or containing a non-roman letter).
 fn roman_to_int(s: &str) -> Option<i64> {
@@ -259,6 +306,16 @@ mod tests {
     fn test_not_roman() {
         assert_eq!(parse("Chapter Five"), None); // not a numeral
         assert_eq!(parse("Sam II"), Some("Sam second".to_string())); // name → ordinal
+                                                                     // #101: ordinary words made of roman letters
+        assert_eq!(parse("Mouse did"), None);
+        assert_eq!(parse("It did"), None);
+        assert_eq!(parse("Sam DID"), None); // not canonical (999 is CMXCIX)
+        assert_eq!(parse("part mix"), None);
+        assert_eq!(parse("Louis XVI"), Some("Louis sixteenth".to_string()));
+        assert_eq!(
+            parse("Chapter MCMXCIV"),
+            Some("Chapter one thousand nine hundred ninety four".to_string())
+        );
         assert_eq!(parse("hello world"), None);
         assert_eq!(parse("Chapter"), None);
     }
