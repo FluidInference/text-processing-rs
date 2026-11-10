@@ -913,6 +913,10 @@ fn tn_parse_span_lang(span: &str, lang: &str) -> Option<(String, u8)> {
     None
 }
 
+/// Sentence-mode priority of the English ITN date tagger. A date span hands its
+/// last token to a longer money or measure span (see [`sentence_loop`]).
+const DATE_SPAN_PRIORITY: u8 = 88;
+
 /// Try to parse a span of text using sentence-safe taggers.
 ///
 /// Returns `(replacement, priority_score)` if a tagger matches.
@@ -964,7 +968,7 @@ fn parse_span(
     }
 
     if let Some(result) = date::parse(span) {
-        return Some((result, 88));
+        return Some((result, DATE_SPAN_PRIORITY));
     }
     if let Some(result) = time::parse(span) {
         return Some((result, 85));
@@ -1106,7 +1110,7 @@ pub fn normalize_sentence_with_max_span_lang(
                 return trimmed.to_string();
             }
             let pretokens = pretokenize(trimmed);
-            sentence_loop(&pretokens, max_span_tokens, |span| {
+            sentence_loop(&pretokens, max_span_tokens, None, |span| {
                 parse_span_lang(span, lang)
             })
         }
@@ -1277,8 +1281,15 @@ fn pretokenize(input: &str) -> Vec<Pretoken> {
 
 /// Shared sliding-window match loop used by the three sentence-mode entry
 /// points. `parser` returns `Some((replacement, score))` if the joined span
-/// can be normalized.
-fn sentence_loop<F>(pretokens: &[Pretoken], max_span_tokens: usize, parser: F) -> String
+/// can be normalized. A span scored `hand_off_priority` gives up its last
+/// token to a longer, higher-scored span that starts there; `None` disables
+/// that.
+fn sentence_loop<F>(
+    pretokens: &[Pretoken],
+    max_span_tokens: usize,
+    hand_off_priority: Option<u8>,
+    parser: F,
+) -> String
 where
     F: Fn(&str) -> Option<(String, u8)>,
 {
@@ -1294,43 +1305,25 @@ where
 
     while i < pretokens.len() {
         let max_end = usize::min(pretokens.len(), i + max_span);
-        let mut best: Option<(usize, String, u8)> = None;
+        let mut best = best_span(pretokens, i, max_end, &parser);
 
-        // Longest-span-first search keeps replacements stable and
-        // non-overlapping. Reconstruct each span using the per-pretoken
-        // separator so adjacency is preserved: pretokens that came from a
-        // single original word (e.g. `"Dr."` -> `["Dr", "."]` with sep=`""`
-        // on the period) re-emerge as `"Dr."`, not `"Dr ."`. This is what
-        // the TN whitelist needs to match abbreviations like `"e.g."` /
-        // `"Prof."` (PR #25 review feedback). Trying smaller `end` values
-        // already handles "ignore trailing punctuation" cases like
-        // `"twenty one,"` -> match `"twenty one"`.
-        for end in (i + 1..=max_end).rev() {
-            let span = span_text(&pretokens[i..end]);
-            let Some((candidate, score)) = parser(&span) else {
-                continue;
-            };
-
-            // Reject no-op results (tagger returned same text).
-            let candidate_trimmed = candidate.trim();
-            if candidate_trimmed.is_empty() || candidate_trimmed == span {
-                continue;
+        // A span with priority `hand_off_priority` gives up its last token when
+        // that token starts a longer span from a higher-priority tagger.
+        // Otherwise the year "twenty fifty" would keep "fifty" from the money
+        // "fifty dollar": "twenty fifty dollar bills" reads "20 $50 bills", as
+        // NeMo has it, not "2050 dollar bills".
+        while let Some((end, _, score)) = best {
+            let last = end - 1;
+            let handed_off = hand_off_priority == Some(score)
+                && end - i >= 2
+                && (end + 1..=usize::min(pretokens.len(), last + max_span)).any(|after| {
+                    parser(&span_text(&pretokens[last..after]))
+                        .is_some_and(|(_, next_score)| next_score > score)
+                });
+            if !handed_off {
+                break;
             }
-
-            let candidate_len = end - i;
-            match &best {
-                None => {
-                    best = Some((end, candidate, score));
-                }
-                Some((best_end, _, best_score)) => {
-                    let best_len = *best_end - i;
-                    if candidate_len > best_len
-                        || (candidate_len == best_len && score > *best_score)
-                    {
-                        best = Some((end, candidate, score));
-                    }
-                }
-            }
+            best = best_span(pretokens, i, last, &parser);
         }
 
         if let Some((mut end, replacement, _)) = best {
@@ -1369,6 +1362,56 @@ where
     }
 
     out
+}
+
+/// The longest span starting at `start` and ending at or before `max_end` that
+/// `parser` rewrites, as `(end, replacement, score)`; on equal length the higher
+/// score wins.
+///
+/// Longest-span-first search keeps replacements stable and non-overlapping.
+/// Each span is rebuilt with the per-pretoken separator so adjacency is
+/// preserved: pretokens that came from a single original word (e.g. `"Dr."` ->
+/// `["Dr", "."]` with sep=`""` on the period) re-emerge as `"Dr."`, not `"Dr
+/// ."`. This is what the TN whitelist needs to match abbreviations like
+/// `"e.g."` / `"Prof."` (PR #25 review feedback). Trying smaller `end` values
+/// already handles "ignore trailing punctuation" cases like `"twenty one,"` ->
+/// match `"twenty one"`.
+fn best_span<F>(
+    pretokens: &[Pretoken],
+    start: usize,
+    max_end: usize,
+    parser: &F,
+) -> Option<(usize, String, u8)>
+where
+    F: Fn(&str) -> Option<(String, u8)>,
+{
+    let mut best: Option<(usize, String, u8)> = None;
+    for end in (start + 1..=max_end).rev() {
+        let span = span_text(&pretokens[start..end]);
+        let Some((candidate, score)) = parser(&span) else {
+            continue;
+        };
+
+        // Reject no-op results (tagger returned same text).
+        let candidate_trimmed = candidate.trim();
+        if candidate_trimmed.is_empty() || candidate_trimmed == span {
+            continue;
+        }
+
+        let candidate_len = end - start;
+        match &best {
+            None => {
+                best = Some((end, candidate, score));
+            }
+            Some((best_end, _, best_score)) => {
+                let best_len = *best_end - start;
+                if candidate_len > best_len || (candidate_len == best_len && score > *best_score) {
+                    best = Some((end, candidate, score));
+                }
+            }
+        }
+    }
+    best
 }
 
 /// Rebuild the source text of consecutive pretokens, keeping each one's
@@ -1425,9 +1468,12 @@ fn normalize_sentence_inner(
     }
 
     let pretokens = pretokenize(trimmed);
-    sentence_loop(&pretokens, max_span_tokens, |span| {
-        parse_span(span, concat_compound, disable_bare_second)
-    })
+    sentence_loop(
+        &pretokens,
+        max_span_tokens,
+        Some(DATE_SPAN_PRIORITY),
+        |span| parse_span(span, concat_compound, disable_bare_second),
+    )
 }
 
 // ── Text Normalization (written → spoken) ─────────────────────────────
@@ -1657,7 +1703,7 @@ pub fn tn_normalize_sentence_with_max_span_lang(
 
             let unified = unify_tn_quotes(trimmed);
             let pretokens = pretokenize(&unified);
-            sentence_loop(&pretokens, max_span_tokens, |span| {
+            sentence_loop(&pretokens, max_span_tokens, None, |span| {
                 tn_parse_span_lang(span, lang)
             })
         }
@@ -1673,7 +1719,7 @@ pub fn tn_normalize_sentence_with_max_span(input: &str, max_span_tokens: usize) 
 
     let unified = unify_tn_quotes(trimmed);
     let pretokens = pretokenize(&unified);
-    sentence_loop(&pretokens, max_span_tokens, tn_parse_span)
+    sentence_loop(&pretokens, max_span_tokens, None, tn_parse_span)
 }
 
 #[cfg(test)]
