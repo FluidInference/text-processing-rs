@@ -623,13 +623,9 @@ fn test_sentence_adjacent_spans() {
         "21 versus 42"
     );
     // "twenty one five dollars" is no longer 26 dollars: the money tagger
-    // doesn't sum the prefix any more.
-    // KNOWN_ISSUE: the date tagger's old-year reading wins instead, giving
-    // "2015 dollars"; pinned so the next change to this path shows up here.
-    assert_eq!(
-        normalize_sentence("twenty one five dollars"),
-        "2015 dollars"
-    );
+    // doesn't sum the prefix any more. The year reading "2015" gives its last
+    // word to the money that follows, so it reads as NeMo has it.
+    assert_eq!(normalize_sentence("twenty one five dollars"), "21 $5");
     // With a separator, they split correctly
     assert_eq!(
         normalize_sentence("twenty one then five dollars"),
@@ -679,6 +675,33 @@ fn test_sentence_bare_year_twenty_tens() {
         "the plan runs until 2030"
     );
     assert_eq!(normalize("twenty twenty"), "2020");
+}
+
+#[test]
+fn test_sentence_year_gives_its_tens_word_to_money_and_measure() {
+    // The tens word belongs to the price or measure that follows, as in NeMo
+    assert_eq!(
+        normalize_sentence("he had twenty fifty dollar bills"),
+        "he had 20 $50 bills"
+    );
+    assert_eq!(
+        normalize_sentence("it costs twenty thirty dollars"),
+        "it costs 20 $30"
+    );
+    assert_eq!(
+        normalize_sentence("they bought twenty fifty kilogram bags"),
+        "they bought 20 50 kg bags"
+    );
+    assert_eq!(normalize_sentence("twenty forty percent"), "20 40 %");
+    assert_eq!(
+        normalize_sentence("he had nineteen twenty dollar bills"),
+        "he had 19 $20 bills"
+    );
+    // Without a price or measure after it, the year stays a year
+    assert_eq!(
+        normalize_sentence("the score was twenty thirty"),
+        "the score was 2030"
+    );
 }
 
 // --- Ordinal in various positions ---
