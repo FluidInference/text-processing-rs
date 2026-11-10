@@ -138,3 +138,29 @@ fn test_address() {
 fn test_telephone() {
     run_hi_test("telephone", "tests/data/hi/telephone.txt");
 }
+
+/// The words around a number keep the input's encoding of the nukta letters: NeMo returns them unchanged, and
+/// the port matched on the decomposed form and returned that. Inputs from NeMo's cardinal test cases.
+#[test]
+fn test_keeps_precomposed_nukta_letters() {
+    // ड़ (U+095C), फ़ (U+095E) and ज़ (U+095B), precomposed.
+    let cases = [
+        ("छः खिला\u{095C}ी आउट", "६ खिला\u{095C}ी आउट"),
+        (
+            "पाँच चॉकलेट्स नौ टॉ\u{095E}ि\u{095B}",
+            "५ चॉकलेट्स ९ टॉ\u{095E}ि\u{095B}",
+        ),
+    ];
+    for (input, expected) in cases {
+        assert_eq!(normalize_hi(input), expected, "input: {}", input);
+    }
+}
+
+/// An input written with base + nukta (U+093C) keeps that form, as before.
+#[test]
+fn test_keeps_decomposed_nukta_letters() {
+    assert_eq!(
+        normalize_hi("छः खिला\u{0921}\u{093C}ी आउट"),
+        "६ खिला\u{0921}\u{093C}ी आउट"
+    );
+}

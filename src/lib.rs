@@ -453,45 +453,56 @@ fn try_es_taggers(input: &str) -> Option<String> {
     None
 }
 
+/// The precomposed Devanagari nukta letters and the base letter each one decomposes to (base + U+093C).
+const DEVANAGARI_NUKTA_LETTERS: [(char, char); 8] = [
+    ('\u{0958}', '\u{0915}'), // क़
+    ('\u{0959}', '\u{0916}'), // ख़
+    ('\u{095A}', '\u{0917}'), // ग़
+    ('\u{095B}', '\u{091C}'), // ज़
+    ('\u{095C}', '\u{0921}'), // ड़
+    ('\u{095D}', '\u{0922}'), // ढ़
+    ('\u{095E}', '\u{092B}'), // फ़
+    ('\u{095F}', '\u{092F}'), // य़
+];
+
 /// Decompose precomposed Devanagari nukta characters to base + nukta.
 /// This ensures consistent matching regardless of input encoding.
 fn decompose_devanagari_nukta(input: &str) -> String {
     let mut out = String::with_capacity(input.len() + 16);
     for c in input.chars() {
-        match c {
-            '\u{0958}' => {
-                out.push('\u{0915}');
+        match DEVANAGARI_NUKTA_LETTERS
+            .iter()
+            .find(|&&(precomposed, _)| precomposed == c)
+        {
+            Some(&(_, base)) => {
+                out.push(base);
                 out.push('\u{093C}');
-            } // क़
-            '\u{0959}' => {
-                out.push('\u{0916}');
-                out.push('\u{093C}');
-            } // ख़
-            '\u{095A}' => {
-                out.push('\u{0917}');
-                out.push('\u{093C}');
-            } // ग़
-            '\u{095B}' => {
-                out.push('\u{091C}');
-                out.push('\u{093C}');
-            } // ज़
-            '\u{095C}' => {
-                out.push('\u{0921}');
-                out.push('\u{093C}');
-            } // ड़
-            '\u{095D}' => {
-                out.push('\u{0922}');
-                out.push('\u{093C}');
-            } // ढ़
-            '\u{095E}' => {
-                out.push('\u{092B}');
-                out.push('\u{093C}');
-            } // फ़
-            '\u{095F}' => {
-                out.push('\u{092F}');
-                out.push('\u{093C}');
-            } // य़
-            _ => out.push(c),
+            }
+            None => out.push(c),
+        }
+    }
+    out
+}
+
+/// Recompose base + nukta to the precomposed Devanagari nukta characters, undoing
+/// [`decompose_devanagari_nukta`].
+fn recompose_devanagari_nukta(input: &str) -> String {
+    let mut out = String::with_capacity(input.len());
+    let mut chars = input.chars().peekable();
+    while let Some(c) = chars.next() {
+        let precomposed = match chars.peek() {
+            Some('\u{093C}') => DEVANAGARI_NUKTA_LETTERS
+                .iter()
+                .find(|&&(_, base)| base == c)
+                .map(|&(precomposed, _)| precomposed),
+            _ => None,
+        };
+        match precomposed {
+            Some(precomposed) => {
+                out.push(precomposed);
+                chars.next();
+            }
+            None => out.push(c),
         }
     }
     out
@@ -504,7 +515,12 @@ fn decompose_devanagari_nukta(input: &str) -> String {
 /// Order matters — more specific patterns (money, measure, time, date)
 /// run before generic cardinal replacement.
 fn normalize_lang_hi(input: &str) -> String {
-    // Normalize precomposed nukta characters to decomposed form
+    // Match on the decomposed form, however the input encodes its nukta letters. An input written with the
+    // precomposed letters only gets them back, so the words around a number keep their code points.
+    let precomposed = input
+        .chars()
+        .any(|c| DEVANAGARI_NUKTA_LETTERS.iter().any(|&(p, _)| p == c));
+    let restore_precomposed = precomposed && !input.contains('\u{093C}');
     let input = decompose_devanagari_nukta(input);
     let mut result = input;
 
@@ -544,6 +560,9 @@ fn normalize_lang_hi(input: &str) -> String {
     // 11. Address (digit-by-digit with हाइफ़न/बटा, comma-separated digits)
     result = itn::hi::address::process(&result);
 
+    if restore_precomposed {
+        result = recompose_devanagari_nukta(&result);
+    }
     result
 }
 
