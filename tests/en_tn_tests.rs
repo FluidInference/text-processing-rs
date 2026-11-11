@@ -263,6 +263,29 @@ fn test_pr25_tn_abbreviation_regression() {
 }
 
 #[test]
+fn test_saint_only_before_a_name() {
+    // "St." before a name is "saint"; after a street name it is the street
+    // abbreviation, which NeMo leaves as written.
+    let cases = [
+        ("St. Louis is far.", "saint Louis is far."),
+        (
+            "We visited St. Paul's Cathedral.",
+            "We visited saint Paul's Cathedral.",
+        ),
+        ("Main St.", "Main St."),
+        ("I live on Main St.", "I live on Main St."),
+        ("Meet me at Elm St at noon.", "Meet me at Elm St at noon."),
+        (
+            "He lives on Baker St in London.",
+            "He lives on Baker St in London.",
+        ),
+    ];
+    for (input, expected) in cases {
+        assert_eq!(tn_normalize_sentence(input), expected, "input: {input}");
+    }
+}
+
+#[test]
 fn test_tn_fraction() {
     let results = common::run_test_file(Path::new("tests/data/en/tn_fraction.txt"), tn_normalize);
     println!(

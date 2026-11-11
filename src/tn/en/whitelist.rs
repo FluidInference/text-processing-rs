@@ -21,8 +21,7 @@ lazy_static! {
         m.insert("Mr", "mister");
         m.insert("Ms.", "miss");
         m.insert("Ms", "miss");
-        m.insert("St.", "saint");
-        m.insert("St", "saint");
+        // "St." is not here: it reads "saint" only before a name (see `parse`).
         m.insert("Prof.", "professor");
         m.insert("Jr.", "junior");
         m.insert("Sr.", "senior");
@@ -83,6 +82,19 @@ pub fn parse(input: &str) -> Option<String> {
         }
     }
 
+    // "St." reads "saint" only before a name ("St. Louis" → "saint Louis"). After a
+    // street name it is the street abbreviation, which NeMo leaves as written
+    // ("Main St."), so on its own it is not expanded.
+    if let Some(rest) = trimmed
+        .strip_prefix("St. ")
+        .or_else(|| trimmed.strip_prefix("St "))
+    {
+        let name = rest.trim_start();
+        if name.starts_with(|c: char| c.is_ascii_uppercase()) && !name.contains(' ') {
+            return Some(format!("saint {name}"));
+        }
+    }
+
     // Dotted initials collapse to an acronym: "C. S." → "CS".
     if let Some(acronym) = merge_initials(trimmed) {
         return Some(acronym);
@@ -122,7 +134,15 @@ mod tests {
         assert_eq!(parse("Dr."), Some("doctor".to_string()));
         assert_eq!(parse("Mrs."), Some("misses".to_string()));
         assert_eq!(parse("Mr."), Some("mister".to_string()));
-        assert_eq!(parse("St."), Some("saint".to_string()));
+    }
+
+    #[test]
+    fn test_saint_only_before_a_name() {
+        assert_eq!(parse("St. Louis"), Some("saint Louis".to_string()));
+        assert_eq!(parse("St Paul's"), Some("saint Paul's".to_string()));
+        assert_eq!(parse("St."), None);
+        assert_eq!(parse("St"), None);
+        assert_eq!(parse("St. at"), None);
     }
 
     #[test]

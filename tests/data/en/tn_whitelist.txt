@@ -2,7 +2,7 @@
 Dr.~doctor
 Mrs.~misses
 Mr.~mister
-St.~saint
+St. Louis~saint Louis
 e.g.~for example
 i.e.~that is
 etc.~et cetera
