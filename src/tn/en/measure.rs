@@ -141,6 +141,11 @@ pub fn parse(input: &str) -> Option<String> {
                     // to avoid false matches like "1980s" → "1980 seconds"
                     if unit.len() == 1 && unit.chars().all(|c| c.is_ascii_alphabetic()) {
                         before.ends_with(' ')
+                    } else if **unit == "in" {
+                        // After a space "in" is the preposition ("5 in the box"),
+                        // so it reads "inch" only when attached ("27in"). NeMo has
+                        // no "in" unit; it reads the inch mark (12") instead.
+                        before.ends_with(|c: char| c.is_ascii_digit())
                     } else {
                         before.ends_with(' ') || before.ends_with(|c: char| c.is_ascii_digit())
                     }
@@ -384,6 +389,12 @@ mod tests {
             parse(".5 kg"),
             Some("zero point five kilograms".to_string())
         );
+    }
+
+    #[test]
+    fn test_in_only_attached() {
+        assert_eq!(parse("27in"), Some("twenty seven inches".to_string()));
+        assert_eq!(parse("5 in"), None);
     }
 
     #[test]
