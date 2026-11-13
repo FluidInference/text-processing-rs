@@ -342,16 +342,20 @@ fn extract_timezone(input: &str) -> (&str, Option<String>) {
                 break;
             }
         }
-        if tz_start < tokens.len() && tokens.len() - tz_start >= 2 {
+        // A timezone needs a time before it: "a b c" or "U S A" alone is not one.
+        if tz_start > 0 && tz_start < tokens.len() && tokens.len() - tz_start >= 2 {
             let tz: String = tokens[tz_start..].join("");
-            let time_part = tokens[..tz_start].join(" ");
-            // Return references won't work since we're creating new strings
-            // We need to handle this differently
-            let time_end = input.len()
-                - tokens[tz_start..].iter().map(|t| t.len()).sum::<usize>()
-                - (tokens.len() - tz_start); // spaces
-            let time_part_ref = input[..time_end].trim();
-            return (time_part_ref, Some(tz));
+            // Letters plus one space before each; checked so other spacing can't
+            // slice out of range.
+            let tz_len = tokens[tz_start..].iter().map(|t| t.len()).sum::<usize>()
+                + (tokens.len() - tz_start);
+            if let Some(time_part) = input
+                .len()
+                .checked_sub(tz_len)
+                .and_then(|end| input.get(..end))
+            {
+                return (time_part.trim(), Some(tz));
+            }
         }
     }
 
@@ -404,5 +408,15 @@ mod tests {
             parse("null uhr null minuten null sekunden"),
             Some("00:00:00 Uhr".to_string())
         );
+    }
+
+    #[test]
+    fn test_single_letters_without_a_time() {
+        // Three or more single letters and nothing before them used to underflow
+        // the time/timezone split (#108).
+        assert_eq!(extract_timezone("a b c"), ("a b c", None));
+        assert_eq!(parse("A M E S T"), None);
+        assert_eq!(parse("U S A"), None);
+        assert_eq!(parse("zwölf uhr e s t"), Some("12 Uhr est".to_string()));
     }
 }

@@ -50,7 +50,7 @@ fn extract_period_and_tz(original: &str, input_lower: &str) -> (String, String, 
         if time_part.ends_with(tz) {
             // Extract timezone from original to preserve casing
             let tz_start = original.len() - tz.len();
-            timezone = original[tz_start..].replace(" ", "");
+            timezone = original.get(tz_start..).unwrap_or(tz).replace(" ", "");
             time_part = time_part[..time_part.len() - tz.len()].trim().to_string();
             break;
         }
@@ -84,15 +84,19 @@ fn extract_period_and_tz(original: &str, input_lower: &str) -> (String, String, 
                     },
             );
             let time_original = if timezone.is_empty() {
-                original
+                Some(original)
             } else {
-                &original[..suffix_start]
-            }
-            .trim();
+                // `suffix_start` comes from pattern lengths and can land inside a
+                // multi-byte character ("é am est").
+                original.get(..suffix_start)
+            };
 
-            // Check if AM/PM is uppercase in original
-            let period_start = time_original.len().saturating_sub(*len);
-            let orig_suffix = &time_original[period_start..];
+            // Check if AM/PM is uppercase in original; read it as written in the
+            // pattern when the original can't be sliced at these offsets.
+            let orig_suffix = time_original
+                .map(str::trim)
+                .and_then(|t| t.get(t.len().saturating_sub(*len)..))
+                .unwrap_or(pattern);
 
             period = format_period_with_case(orig_suffix, *pattern);
             time_part = time_part[..time_part.len() - len].trim().to_string();
@@ -466,5 +470,11 @@ mod tests {
             None
         );
         assert_eq!(parse("seven nine nine"), None);
+    }
+
+    #[test]
+    fn test_multibyte_before_period_and_timezone() {
+        // Used to slice the original inside "é" and panic (#108).
+        assert_eq!(parse("é am est"), None);
     }
 }
