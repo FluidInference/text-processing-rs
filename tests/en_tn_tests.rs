@@ -455,6 +455,9 @@ fn test_sentence_prose_false_positives() {
             "rose to the height of one hundred and twenty feet; thus I ascertained its way",
         ),
         ("123 Main St", "one twenty three Main Street"),
+        // "in" after a number is the preposition, not inches
+        ("I have 5 in the box.", "I have five in the box."),
+        ("a 27in monitor", "a twenty seven inches monitor"),
     ];
     for (input, expected) in cases {
         assert_eq!(
