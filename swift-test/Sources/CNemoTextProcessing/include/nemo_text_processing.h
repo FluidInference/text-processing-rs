@@ -21,6 +21,14 @@ char* nemo_normalize_sentence_with_options(
     uint32_t max_span_tokens,
     uint32_t disable_bare_second
 );
+char* nemo_normalize_sentence_lang_with_options(
+    const char* input,
+    const char* lang,
+    uint32_t concat_compound_numbers,
+    uint32_t max_span_tokens,
+    uint32_t disable_bare_second,
+    uint32_t small_numbers_as_words
+);
 void nemo_add_rule(const char* spoken, const char* written);
 int32_t nemo_remove_rule(const char* spoken);
 void nemo_clear_rules(void);

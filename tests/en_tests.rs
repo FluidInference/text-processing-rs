@@ -7,8 +7,8 @@ mod common;
 
 use std::path::Path;
 use text_processing_rs::{
-    custom_rules, normalize, normalize_sentence, normalize_sentence_with_options,
-    normalize_with_options, NormalizeOptions,
+    custom_rules, normalize, normalize_sentence, normalize_sentence_lang_with_options,
+    normalize_sentence_with_options, normalize_with_options, NormalizeOptions,
 };
 
 /// Test helper: shorthand for the concat-compound (aviation-style) options.
@@ -1464,4 +1464,52 @@ fn test_sentence_no_double_period_after_meridiem() {
         normalize_sentence("and then twenty one..."),
         "and then 21..."
     );
+}
+
+/// Issue #109: NeMo keeps a lone zero to twelve, and "three to five" without
+/// a.m. or p.m., as words. `small_numbers_as_words` opts into both.
+#[test]
+fn test_issue_109_default_behavior_unchanged() {
+    assert_eq!(normalize_sentence("no one knows"), "no 1 knows");
+    assert_eq!(
+        normalize_sentence("children aged three to five"),
+        "children aged 04:57"
+    );
+}
+
+#[test]
+fn test_issue_109_small_numbers_as_words() {
+    let opts = NormalizeOptions::new().with_small_numbers_as_words(true);
+    for (input, expected) in [
+        // The issue's rows, as NeMo reads them. No lone "five" here:
+        // `test_custom_rules_all` overrides that word globally while it runs.
+        ("no one knows", "no one knows"),
+        ("children aged three to four", "children aged three to four"),
+        ("it takes two to three days", "it takes two to three days"),
+        ("one, two, three", "one, two, three"),
+        ("One more", "One more"),
+        // Still numbers: thirteen and up, more number words, a unit or currency.
+        ("thirteen", "13"),
+        ("twenty one", "21"),
+        ("one two three", "123"),
+        ("five dollars", "$5"),
+        ("five percent", "5 %"),
+        ("the first one", "the 1st one"),
+        // "M to H" is a time with a.m. or p.m.; "quarter to" always is.
+        ("three to five pm", "04:57 p.m."),
+        ("twenty to seven a m", "06:40 a.m."),
+        ("quarter to five", "04:45"),
+        ("twenty five to six", "25 to six"),
+    ] {
+        assert_eq!(
+            normalize_sentence_with_options(input, opts),
+            expected,
+            "{input}"
+        );
+        assert_eq!(
+            normalize_sentence_lang_with_options(input, "en", opts),
+            expected,
+            "{input}"
+        );
+    }
 }

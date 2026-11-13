@@ -7,10 +7,11 @@ use js_sys::{Array, Object, Reflect};
 
 use crate::{
     custom_rules, normalize, normalize_sentence, normalize_sentence_lang,
-    normalize_sentence_with_options, normalize_with_lang, normalize_with_options, tn_normalize,
-    tn_normalize_lang, tn_normalize_sentence, tn_normalize_sentence_lang,
-    tn_normalize_sentence_lang_with_options, tn_normalize_sentence_with_max_span,
-    tn_normalize_sentence_with_max_span_lang, NormalizeOptions,
+    normalize_sentence_lang_with_options, normalize_sentence_with_options, normalize_with_lang,
+    normalize_with_options, tn_normalize, tn_normalize_lang, tn_normalize_sentence,
+    tn_normalize_sentence_lang, tn_normalize_sentence_lang_with_options,
+    tn_normalize_sentence_with_max_span, tn_normalize_sentence_with_max_span_lang,
+    NormalizeOptions,
 };
 
 /// Build [`NormalizeOptions`] from JS-friendly primitives.
@@ -31,6 +32,7 @@ fn js_options(
         },
         disable_bare_second,
         roman_enumerators: false,
+        small_numbers_as_words: false,
     }
 }
 
@@ -96,6 +98,28 @@ pub fn normalize_sentence_with_options_js(
             disable_bare_second,
         ),
     )
+}
+
+/// Sentence ITN for a specific language with options. `maxSpanTokens == 0`
+/// means "use library default" (16). `smallNumbersAsWords=true` keeps a lone
+/// "zero" to "twelve" as a word and reads "three to five" as a time only when
+/// a.m. or p.m. follows, as NeMo does (English, issue #109).
+#[wasm_bindgen(js_name = normalizeSentenceLangWithOptions)]
+pub fn normalize_sentence_lang_with_options_js(
+    input: &str,
+    lang: &str,
+    concat_compound_numbers: bool,
+    max_span_tokens: u32,
+    disable_bare_second: bool,
+    small_numbers_as_words: bool,
+) -> String {
+    let options = js_options(
+        concat_compound_numbers,
+        max_span_tokens,
+        disable_bare_second,
+    )
+    .with_small_numbers_as_words(small_numbers_as_words);
+    normalize_sentence_lang_with_options(input, lang, options)
 }
 
 #[wasm_bindgen(js_name = tnNormalize)]

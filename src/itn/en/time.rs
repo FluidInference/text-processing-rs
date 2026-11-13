@@ -10,6 +10,13 @@ use super::cardinal::words_to_number;
 
 /// Parse spoken time expression to written form.
 pub fn parse(input: &str) -> Option<String> {
+    parse_with_options(input, false)
+}
+
+/// [`parse`], but with `m_to_h_needs_period` a "minutes to hour" time
+/// (`"ten to eleven"`) needs a.m. or p.m. after it, as in NeMo, so `"three to
+/// five"` stays a range. `"quarter to five"` is a time either way.
+pub fn parse_with_options(input: &str, m_to_h_needs_period: bool) -> Option<String> {
     let original = input.trim();
     let input_lower = original.to_lowercase();
 
@@ -25,7 +32,13 @@ pub fn parse(input: &str) -> Option<String> {
         return Some(result);
     }
 
-    if let Some(result) = parse_to_pattern(original, &time_part, &period, &timezone) {
+    if let Some(result) = parse_to_pattern(
+        original,
+        &time_part,
+        &period,
+        &timezone,
+        m_to_h_needs_period,
+    ) {
         return Some(result);
     }
 
@@ -191,12 +204,22 @@ fn parse_oclock(input: &str, period: &str, timezone: &str) -> Option<String> {
 }
 
 /// Parse "X to Y" pattern (e.g., "quarter to one" = 12:45)
-fn parse_to_pattern(original: &str, input: &str, period: &str, timezone: &str) -> Option<String> {
+fn parse_to_pattern(
+    original: &str,
+    input: &str,
+    period: &str,
+    timezone: &str,
+    m_to_h_needs_period: bool,
+) -> Option<String> {
     if input.starts_with("quarter to ") {
         let hour_part = input.trim_start_matches("quarter to ");
         let hour = words_to_number(hour_part)? as i64;
         let prev_hour = if hour == 1 { 12 } else { hour - 1 };
         return Some(format_time(prev_hour, 45, period, timezone));
+    }
+
+    if m_to_h_needs_period && period.is_empty() {
+        return None;
     }
 
     // "X min to Y" or "X minutes to Y"
@@ -476,5 +499,19 @@ mod tests {
     fn test_multibyte_before_period_and_timezone() {
         // Used to slice the original inside "é" and panic (#108).
         assert_eq!(parse("é am est"), None);
+    }
+
+    #[test]
+    fn test_m_to_h_needs_period() {
+        assert_eq!(parse("three to five"), Some("04:57".to_string()));
+        assert_eq!(parse_with_options("three to five", true), None);
+        assert_eq!(
+            parse_with_options("ten to eleven pm", true),
+            Some("10:50 p.m.".to_string())
+        );
+        assert_eq!(
+            parse_with_options("quarter to five", true),
+            Some("04:45".to_string())
+        );
     }
 }
