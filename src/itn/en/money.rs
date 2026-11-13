@@ -206,10 +206,11 @@ fn parse_money_number(input: &str) -> Option<i64> {
 
     // Try shorthand patterns first
     if words.len() >= 2 {
-        // Check for "X hundred" pattern at the end (ninety nine hundred = 9900)
+        // Check for "X hundred" pattern at the end (ninety nine hundred = 9900).
+        // X under 100 only: "one thousand two hundred" is 1200, not 1002 × 100.
         if *words.last()? == "hundred" {
             let prefix = words[..words.len() - 1].join(" ");
-            if let Some(num) = words_to_number(&prefix) {
+            if let Some(num) = words_to_number(&prefix).filter(|n| *n < 100) {
                 return Some((num as i64) * 100);
             }
         }
@@ -385,6 +386,15 @@ mod tests {
         assert_eq!(
             parse("two point five billion dollars"),
             Some("$2.5 billion".to_string())
+        );
+        // "X hundred" shorthand is for X under 100 only, not 1002 × 100.
+        assert_eq!(
+            parse("one thousand two hundred dollars"),
+            Some("$1200".to_string())
+        );
+        assert_eq!(
+            parse("ninety nine hundred dollars"),
+            Some("$9900".to_string())
         );
     }
 

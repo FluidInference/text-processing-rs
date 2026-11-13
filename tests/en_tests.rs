@@ -617,6 +617,15 @@ fn test_sentence_adjacent_spans() {
     // "and" joins parts of one number ("one hundred and twenty"), not two
     // complete numbers.
     assert_eq!(normalize_sentence("twenty one and forty two"), "21 and 42");
+    assert_eq!(
+        normalize_sentence("between one hundred fifty and two hundred copies"),
+        "between 150 and 200 copies"
+    );
+    assert_eq!(normalize_sentence("fifty and two hundred"), "50 and 200");
+    assert_eq!(
+        normalize_sentence("between one hundred fifty and two hundred dollars"),
+        "between 150 and $200"
+    );
     // With a non-number word separator, they parse as two spans
     assert_eq!(
         normalize_sentence("twenty one versus forty two"),
