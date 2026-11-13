@@ -90,7 +90,7 @@ pub fn parse(input: &str) -> Option<String> {
         .or_else(|| trimmed.strip_prefix("St "))
     {
         let name = rest.trim_start();
-        if name.starts_with(|c: char| c.is_ascii_uppercase()) && !name.contains(' ') {
+        if name.starts_with(char::is_uppercase) && !name.contains(' ') {
             return Some(format!("saint {name}"));
         }
     }
@@ -140,6 +140,7 @@ mod tests {
     fn test_saint_only_before_a_name() {
         assert_eq!(parse("St. Louis"), Some("saint Louis".to_string()));
         assert_eq!(parse("St Paul's"), Some("saint Paul's".to_string()));
+        assert_eq!(parse("St. Étienne"), Some("saint Étienne".to_string()));
         assert_eq!(parse("St."), None);
         assert_eq!(parse("St"), None);
         assert_eq!(parse("St. at"), None);

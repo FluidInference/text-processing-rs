@@ -272,6 +272,10 @@ fn test_saint_only_before_a_name() {
             "We visited St. Paul's Cathedral.",
             "We visited saint Paul's Cathedral.",
         ),
+        (
+            "We flew to St. Étienne yesterday.",
+            "We flew to saint Étienne yesterday.",
+        ),
         ("Main St.", "Main St."),
         ("I live on Main St.", "I live on Main St."),
         ("Meet me at Elm St at noon.", "Meet me at Elm St at noon."),
