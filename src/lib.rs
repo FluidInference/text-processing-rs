@@ -949,15 +949,27 @@ const DATE_SPAN_PRIORITY: u8 = 88;
 /// `money`=95) and the regular cardinal fallback at 70 is skipped (the
 /// concat-compound reader already falls back to grammatical when the
 /// concat pattern does not apply).
+///
+/// `small_numbers_as_words`: a lone `"zero"` to `"twelve"` is left as a word,
+/// and a "minutes to hour" time needs a.m. or p.m. (issue #109).
 fn parse_span(
     span: &str,
     concat_compound: bool,
     disable_bare_second: bool,
+    small_numbers_as_words: bool,
 ) -> Option<(String, u8)> {
     let token_count = span.split_whitespace().count();
     if token_count == 0 {
         return None;
     }
+    // NeMo's English cardinal grammar leaves zero to twelve alone as words
+    // (`labels_exception`); other taggers ("five dollars") still read them.
+    let lone_small_number = small_numbers_as_words
+        && token_count == 1
+        && is_zero_to_twelve(
+            span.trim()
+                .trim_end_matches(|c: char| c.is_ascii_punctuation()),
+        );
 
     if let Some(result) = custom_rules::parse(span) {
         return Some((result, 110));
@@ -980,7 +992,7 @@ fn parse_span(
     // aggressive matching across longer spans like "one thousand two
     // hundred thirty four". `parse_aviation` falls back to grammatical when
     // the concat pattern does not apply, so non-concat phrases still resolve.
-    if concat_compound {
+    if concat_compound && !lone_small_number {
         if let Some(result) = cardinal::parse_aviation(span) {
             return Some((result, 89));
         }
@@ -989,7 +1001,7 @@ fn parse_span(
     if let Some(result) = date::parse(span) {
         return Some((result, DATE_SPAN_PRIORITY));
     }
-    if let Some(result) = time::parse(span) {
+    if let Some(result) = time::parse_with_options(span, small_numbers_as_words) {
         return Some((result, 85));
     }
     if let Some(result) = electronic::parse(span) {
@@ -1022,13 +1034,22 @@ fn parse_span(
     // numbers such as "three thousand nine hundred nine" into "3900 9".
     // In concat-compound mode the cardinal path is already covered by the
     // priority-89 branch above.
-    if !concat_compound {
+    if !concat_compound && !lone_small_number {
         if let Some(result) = cardinal::parse(span) {
             return Some((result, 70));
         }
     }
 
     None
+}
+
+/// `"zero"` to `"twelve"`, in any case.
+fn is_zero_to_twelve(word: &str) -> bool {
+    const WORDS: [&str; 13] = [
+        "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+        "eleven", "twelve",
+    ];
+    WORDS.iter().any(|w| w.eq_ignore_ascii_case(word))
 }
 
 /// Normalize a full sentence, replacing spoken-form spans with written form.
@@ -1044,7 +1065,7 @@ fn parse_span(
 /// assert_eq!(normalize_sentence("hello world"), "hello world");
 /// ```
 pub fn normalize_sentence(input: &str) -> String {
-    normalize_sentence_inner(input, DEFAULT_MAX_SPAN_TOKENS, false, false)
+    normalize_sentence_inner(input, DEFAULT_MAX_SPAN_TOKENS, false, false, false)
 }
 
 /// Unified sentence-mode entry point.
@@ -1078,6 +1099,7 @@ pub fn normalize_sentence_with_options(input: &str, options: NormalizeOptions) -
         max_span,
         options.concat_compound_numbers,
         options.disable_bare_second,
+        options.small_numbers_as_words,
     )
 }
 
@@ -1134,7 +1156,37 @@ pub fn normalize_sentence_with_max_span_lang(
             })
         }
         // "en", "", and any unrecognized code use English sentence mode.
-        _ => normalize_sentence_inner(input, max_span_tokens, false, false),
+        _ => normalize_sentence_inner(input, max_span_tokens, false, false, false),
+    }
+}
+
+/// Normalize a full sentence (ITN) for a specific language with caller options.
+///
+/// English honors every [`NormalizeOptions`] field that applies to ITN; the
+/// other languages honor only [`NormalizeOptions::max_span_tokens`]. The ITN
+/// counterpart of [`tn_normalize_sentence_lang_with_options`].
+///
+/// ```
+/// use text_processing_rs::{normalize_sentence_lang_with_options, NormalizeOptions};
+///
+/// let opts = NormalizeOptions::new().with_small_numbers_as_words(true);
+/// assert_eq!(
+///     normalize_sentence_lang_with_options("no one paid five dollars", "en", opts),
+///     "no one paid $5"
+/// );
+/// ```
+pub fn normalize_sentence_lang_with_options(
+    input: &str,
+    lang: &str,
+    options: NormalizeOptions,
+) -> String {
+    match lang {
+        "fr" | "de" | "es" | "hi" | "ja" | "zh" => normalize_sentence_with_max_span_lang(
+            input,
+            lang,
+            options.max_span_tokens.unwrap_or(DEFAULT_MAX_SPAN_TOKENS),
+        ),
+        _ => normalize_sentence_with_options(input, options),
     }
 }
 
@@ -1480,6 +1532,7 @@ fn normalize_sentence_inner(
     max_span_tokens: usize,
     concat_compound: bool,
     disable_bare_second: bool,
+    small_numbers_as_words: bool,
 ) -> String {
     let trimmed = input.trim();
     if trimmed.is_empty() {
@@ -1491,7 +1544,14 @@ fn normalize_sentence_inner(
         &pretokens,
         max_span_tokens,
         Some(DATE_SPAN_PRIORITY),
-        |span| parse_span(span, concat_compound, disable_bare_second),
+        |span| {
+            parse_span(
+                span,
+                concat_compound,
+                disable_bare_second,
+                small_numbers_as_words,
+            )
+        },
     )
 }
 

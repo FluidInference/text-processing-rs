@@ -84,6 +84,28 @@ char* nemo_normalize_sentence_with_options(
 char* nemo_normalize_sentence_lang(const char* input, const char* lang);
 
 /**
+ * Normalize a full sentence (ITN) for a specific language with caller options.
+ *
+ * @param input Null-terminated UTF-8 string
+ * @param lang  Null-terminated language code (e.g. "en", "de")
+ * @param concat_compound_numbers See nemo_normalize_with_options.
+ * @param max_span_tokens Maximum consecutive tokens per span; 0 = library default (16)
+ * @param disable_bare_second See nemo_normalize_with_options.
+ * @param small_numbers_as_words Non-zero keeps a lone "zero" to "twelve" as a
+ *        word and reads "three to five" as a time only when a.m. or p.m.
+ *        follows, as NeMo does (English only).
+ * @return Newly allocated string, must be freed with nemo_free_string().
+ */
+char* nemo_normalize_sentence_lang_with_options(
+    const char* input,
+    const char* lang,
+    uint32_t concat_compound_numbers,
+    uint32_t max_span_tokens,
+    uint32_t disable_bare_second,
+    uint32_t small_numbers_as_words
+);
+
+/**
  * Add a custom spoken-to-written normalization rule.
  * Custom rules have the highest priority, checked before all built-in taggers.
  * If a rule with the same spoken form exists, it is replaced.

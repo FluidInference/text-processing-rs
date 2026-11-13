@@ -34,6 +34,14 @@ pub struct NormalizeOptions {
     /// an extension beyond NeMo's output. See
     /// [`crate::tn::en::roman::spell_enumerators`] for the exact rules.
     pub roman_enumerators: bool,
+
+    /// ITN sentence mode only (English): keep everyday small numbers as
+    /// words, as NeMo does (issue #109). A lone `"zero"` to `"twelve"` stays a
+    /// word (`"no one knows"`), and `"three to five"` is read as a time only
+    /// when a.m. or p.m. follows (`"quarter to five"` still is). Numbers with
+    /// a unit or currency or more number words (`"five dollars"`, `"one two
+    /// three"`) still convert. Default `false`.
+    pub small_numbers_as_words: bool,
 }
 
 impl NormalizeOptions {
@@ -44,6 +52,7 @@ impl NormalizeOptions {
             max_span_tokens: None,
             disable_bare_second: false,
             roman_enumerators: false,
+            small_numbers_as_words: false,
         }
     }
 
@@ -68,6 +77,12 @@ impl NormalizeOptions {
     /// Set [`Self::roman_enumerators`].
     pub const fn with_roman_enumerators(mut self, enabled: bool) -> Self {
         self.roman_enumerators = enabled;
+        self
+    }
+
+    /// Set [`Self::small_numbers_as_words`].
+    pub const fn with_small_numbers_as_words(mut self, enabled: bool) -> Self {
+        self.small_numbers_as_words = enabled;
         self
     }
 }

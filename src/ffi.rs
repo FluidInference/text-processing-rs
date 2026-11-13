@@ -6,10 +6,10 @@ use std::ptr;
 
 use crate::{
     custom_rules, normalize, normalize_sentence, normalize_sentence_lang,
-    normalize_sentence_with_options, normalize_with_options, tn_normalize, tn_normalize_lang,
-    tn_normalize_sentence, tn_normalize_sentence_lang, tn_normalize_sentence_lang_with_options,
-    tn_normalize_sentence_with_max_span, tn_normalize_sentence_with_max_span_lang,
-    NormalizeOptions,
+    normalize_sentence_lang_with_options, normalize_sentence_with_options, normalize_with_options,
+    tn_normalize, tn_normalize_lang, tn_normalize_sentence, tn_normalize_sentence_lang,
+    tn_normalize_sentence_lang_with_options, tn_normalize_sentence_with_max_span,
+    tn_normalize_sentence_with_max_span_lang, NormalizeOptions,
 };
 
 /// One source-to-normalized TN span returned through the C ABI.
@@ -64,6 +64,7 @@ fn options_from_ffi(
         },
         disable_bare_second: disable_bare_second != 0,
         roman_enumerators: roman_enumerators != 0,
+        small_numbers_as_words: false,
     }
 }
 
@@ -238,6 +239,53 @@ pub unsafe extern "C" fn nemo_normalize_sentence_lang(
 
         let result = normalize_sentence_lang(input_str, lang_str);
 
+        match CString::new(result) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut(),
+        }
+    })
+}
+
+/// Normalize a full sentence (ITN) for a specific language with caller options.
+///
+/// `concat_compound_numbers`, `max_span_tokens` and `disable_bare_second` work
+/// as in [`nemo_normalize_sentence_with_options`]. `small_numbers_as_words`:
+/// non-zero keeps a lone "zero" to "twelve" as a word and reads "three to five"
+/// as a time only when a.m. or p.m. follows, as NeMo does (English, issue
+/// #109). Other languages honor only `max_span_tokens`.
+///
+/// # Safety
+/// - `input` and `lang` must be valid null-terminated UTF-8 strings
+/// - Returns a newly allocated string that must be freed with `nemo_free_string`
+#[no_mangle]
+pub unsafe extern "C" fn nemo_normalize_sentence_lang_with_options(
+    input: *const c_char,
+    lang: *const c_char,
+    concat_compound_numbers: u32,
+    max_span_tokens: u32,
+    disable_bare_second: u32,
+    small_numbers_as_words: u32,
+) -> *mut c_char {
+    guard(ptr::null_mut(), || {
+        if input.is_null() || lang.is_null() {
+            return ptr::null_mut();
+        }
+        let input_str = match CStr::from_ptr(input).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
+        let lang_str = match CStr::from_ptr(lang).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
+        let options = options_from_ffi(
+            concat_compound_numbers,
+            max_span_tokens,
+            disable_bare_second,
+            0,
+        )
+        .with_small_numbers_as_words(small_numbers_as_words != 0);
+        let result = normalize_sentence_lang_with_options(input_str, lang_str, options);
         match CString::new(result) {
             Ok(c_string) => c_string.into_raw(),
             Err(_) => ptr::null_mut(),
@@ -966,6 +1014,37 @@ mod tests {
                 assert_eq!(CStr::from_ptr(result).to_str().unwrap(), expected);
                 nemo_free_string(result);
             }
+        }
+    }
+
+    #[test]
+    fn test_ffi_normalize_sentence_lang_with_options_small_numbers_as_words() {
+        unsafe {
+            let input = CString::new("no one knows").unwrap();
+            let en = CString::new("en").unwrap();
+            // Default flag (0) keeps today's behavior.
+            let baseline =
+                nemo_normalize_sentence_lang_with_options(input.as_ptr(), en.as_ptr(), 0, 0, 0, 0);
+            assert_eq!(CStr::from_ptr(baseline).to_str().unwrap(), "no 1 knows");
+            nemo_free_string(baseline);
+            let opted_in =
+                nemo_normalize_sentence_lang_with_options(input.as_ptr(), en.as_ptr(), 0, 0, 0, 1);
+            assert_eq!(CStr::from_ptr(opted_in).to_str().unwrap(), "no one knows");
+            nemo_free_string(opted_in);
+
+            // Other languages keep their own sentence mode.
+            let fr_input = CString::new("j'ai vingt et un ans").unwrap();
+            let fr = CString::new("fr").unwrap();
+            let fr_result = nemo_normalize_sentence_lang_with_options(
+                fr_input.as_ptr(),
+                fr.as_ptr(),
+                0,
+                0,
+                0,
+                1,
+            );
+            assert_eq!(CStr::from_ptr(fr_result).to_str().unwrap(), "j'ai 21 ans");
+            nemo_free_string(fr_result);
         }
     }
 }

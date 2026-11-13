@@ -137,6 +137,44 @@ public enum NemoTextProcessing {
         return String(cString: resultPtr)
     }
 
+    /// Normalize a full sentence (ITN) for a specific language with options.
+    ///
+    /// - Parameters:
+    ///   - input: Sentence containing spoken-form spans
+    ///   - language: ISO 639-1 language code
+    ///   - concatCompoundNumbers: See `normalizeSentence(_:concatCompoundNumbers:maxSpanTokens:disableBareSecond:)`.
+    ///   - maxSpanTokens: Maximum consecutive tokens per span; `0` = library default (16)
+    ///   - disableBareSecond: See `normalizeSentence(_:concatCompoundNumbers:maxSpanTokens:disableBareSecond:)`.
+    ///   - smallNumbersAsWords: When true, a lone `"zero"` to `"twelve"` stays a
+    ///     word (`"no one knows"`) and `"three to five"` is read as a time only
+    ///     when a.m. or p.m. follows, as NeMo does (English only).
+    /// - Returns: Sentence with spoken-form spans replaced with written form
+    public static func normalizeSentence(
+        _ input: String,
+        language: String,
+        concatCompoundNumbers: Bool = false,
+        maxSpanTokens: UInt32 = 0,
+        disableBareSecond: Bool = false,
+        smallNumbersAsWords: Bool = false
+    ) -> String {
+        guard let inputC = input.cString(using: .utf8),
+              let langC = language.cString(using: .utf8) else {
+            return input
+        }
+        guard let resultPtr = nemo_normalize_sentence_lang_with_options(
+            inputC,
+            langC,
+            concatCompoundNumbers ? 1 : 0,
+            maxSpanTokens,
+            disableBareSecond ? 1 : 0,
+            smallNumbersAsWords ? 1 : 0
+        ) else {
+            return input
+        }
+        defer { nemo_free_string(resultPtr) }
+        return String(cString: resultPtr)
+    }
+
     /// Normalize a single spoken-form expression with caller-specified options.
     ///
     /// - Parameters:
