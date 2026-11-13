@@ -471,7 +471,7 @@ dependencies = [
 
 [[package]]
 name = "text-processing-rs"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "console_error_panic_hook",
  "flate2",

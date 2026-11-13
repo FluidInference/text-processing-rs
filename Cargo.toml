@@ -1,6 +1,6 @@
 [package]
 name = "text-processing-rs"
-version = "0.3.3"
+version = "0.3.4"
 edition = "2021"
 license = "Apache-2.0"
 description = "Text normalization (TN) and inverse text normalization (ITN): convert between written and spoken forms, ported from NeMo"
