@@ -173,6 +173,15 @@ fn article_only_before_scale(words: &[&str]) -> bool {
     })
 }
 
+/// `"and"` only joins a scale word to what follows it: `"two hundred and
+/// fifty five"`, `"one thousand and one"`. Anywhere else it sits between two
+/// numbers (`"one hundred fifty and two hundred"`), which must not merge.
+fn and_only_after_scale(words: &[&str]) -> bool {
+    words
+        .windows(2)
+        .all(|pair| pair[1] != "and" || SCALES.contains_key(pair[0]))
+}
+
 /// Convert spoken number words to integer.
 ///
 /// Two readings are accepted, in order:
@@ -199,6 +208,7 @@ pub fn words_to_number(input: &str) -> Option<i128> {
     if matches!(unfiltered.first(), Some(&"and"))
         || matches!(unfiltered.last(), Some(&"and" | &"a"))
         || !article_only_before_scale(&unfiltered)
+        || !and_only_after_scale(&unfiltered)
     {
         return None;
     }
@@ -257,6 +267,7 @@ pub fn words_to_number_aviation(input: &str) -> Option<i128> {
     if matches!(unfiltered.first(), Some(&"and"))
         || matches!(unfiltered.last(), Some(&"and" | &"a"))
         || !article_only_before_scale(&unfiltered)
+        || !and_only_after_scale(&unfiltered)
     {
         return None;
     }
@@ -400,6 +411,11 @@ fn grammatical_words_to_number(words: &[&str]) -> Option<i128> {
             found_number = true;
             last = Last::Tens;
         } else if word == "hundred" {
+            // A group has one hundreds place: "one hundred two hundred" is two
+            // numbers, not 102 × 100.
+            if current >= 100 {
+                return None;
+            }
             last = Last::Scale;
             if current == 0 {
                 current = 1;
@@ -622,6 +638,11 @@ mod tests {
             "twenty and thirty",
             "fifteen five",
             "three thousand nine hundred nine nine",
+            // "and" between two complete numbers (#110).
+            "one hundred fifty and two hundred",
+            "fifty and two hundred",
+            "one hundred and two hundred",
+            "one hundred two hundred",
         ] {
             assert_eq!(words_to_number(s), None, "{s}");
         }
@@ -629,6 +650,7 @@ mod tests {
         assert_eq!(words_to_number("one two three"), Some(123));
         assert_eq!(words_to_number("two thousand and five"), Some(2005));
         assert_eq!(words_to_number("one hundred and five"), Some(105));
+        assert_eq!(words_to_number("one thousand and one"), Some(1001));
         assert_eq!(
             words_to_number("three thousand nine hundred nine"),
             Some(3909)
