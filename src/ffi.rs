@@ -1,6 +1,7 @@
 //! C FFI bindings for Swift/ObjC interop.
 
 use std::ffi::{c_char, CStr, CString};
+use std::panic::{self, AssertUnwindSafe};
 use std::ptr;
 
 use crate::{
@@ -30,6 +31,12 @@ pub struct NemoTnAlignment {
     pub normalized: *mut c_char,
     pub spans: *mut NemoTnAlignedSpan,
     pub span_count: usize,
+}
+
+/// Runs an FFI body and returns `on_panic` if it panics. A panic must not
+/// unwind across `extern "C"`: Rust aborts the whole host process when it tries.
+fn guard<T>(on_panic: T, body: impl FnOnce() -> T) -> T {
+    panic::catch_unwind(AssertUnwindSafe(body)).unwrap_or(on_panic)
 }
 
 /// Build [`NormalizeOptions`] from FFI primitives.
@@ -67,21 +74,23 @@ fn options_from_ffi(
 /// - Returns a newly allocated string that must be freed with `nemo_free_string`
 #[no_mangle]
 pub unsafe extern "C" fn nemo_normalize(input: *const c_char) -> *mut c_char {
-    if input.is_null() {
-        return ptr::null_mut();
-    }
+    guard(ptr::null_mut(), || {
+        if input.is_null() {
+            return ptr::null_mut();
+        }
 
-    let c_str = match CStr::from_ptr(input).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
+        let c_str = match CStr::from_ptr(input).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
 
-    let result = normalize(c_str);
+        let result = normalize(c_str);
 
-    match CString::new(result) {
-        Ok(c_string) => c_string.into_raw(),
-        Err(_) => ptr::null_mut(),
-    }
+        match CString::new(result) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut(),
+        }
+    })
 }
 
 /// Normalize a full sentence, replacing spoken-form spans with written form.
@@ -94,21 +103,23 @@ pub unsafe extern "C" fn nemo_normalize(input: *const c_char) -> *mut c_char {
 /// - Returns a newly allocated string that must be freed with `nemo_free_string`
 #[no_mangle]
 pub unsafe extern "C" fn nemo_normalize_sentence(input: *const c_char) -> *mut c_char {
-    if input.is_null() {
-        return ptr::null_mut();
-    }
+    guard(ptr::null_mut(), || {
+        if input.is_null() {
+            return ptr::null_mut();
+        }
 
-    let c_str = match CStr::from_ptr(input).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
+        let c_str = match CStr::from_ptr(input).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
 
-    let result = normalize_sentence(c_str);
+        let result = normalize_sentence(c_str);
 
-    match CString::new(result) {
-        Ok(c_string) => c_string.into_raw(),
-        Err(_) => ptr::null_mut(),
-    }
+        match CString::new(result) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut(),
+        }
+    })
 }
 
 /// Unified single-expression normalize with caller-specified options.
@@ -130,22 +141,24 @@ pub unsafe extern "C" fn nemo_normalize_with_options(
     concat_compound_numbers: u32,
     disable_bare_second: u32,
 ) -> *mut c_char {
-    if input.is_null() {
-        return ptr::null_mut();
-    }
+    guard(ptr::null_mut(), || {
+        if input.is_null() {
+            return ptr::null_mut();
+        }
 
-    let c_str = match CStr::from_ptr(input).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
+        let c_str = match CStr::from_ptr(input).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
 
-    let options = options_from_ffi(concat_compound_numbers, 0, disable_bare_second, 0);
-    let result = normalize_with_options(c_str, options);
+        let options = options_from_ffi(concat_compound_numbers, 0, disable_bare_second, 0);
+        let result = normalize_with_options(c_str, options);
 
-    match CString::new(result) {
-        Ok(c_string) => c_string.into_raw(),
-        Err(_) => ptr::null_mut(),
-    }
+        match CString::new(result) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut(),
+        }
+    })
 }
 
 /// Unified sentence normalize with caller-specified options.
@@ -170,27 +183,29 @@ pub unsafe extern "C" fn nemo_normalize_sentence_with_options(
     max_span_tokens: u32,
     disable_bare_second: u32,
 ) -> *mut c_char {
-    if input.is_null() {
-        return ptr::null_mut();
-    }
+    guard(ptr::null_mut(), || {
+        if input.is_null() {
+            return ptr::null_mut();
+        }
 
-    let c_str = match CStr::from_ptr(input).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
+        let c_str = match CStr::from_ptr(input).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
 
-    let options = options_from_ffi(
-        concat_compound_numbers,
-        max_span_tokens,
-        disable_bare_second,
-        0,
-    );
-    let result = normalize_sentence_with_options(c_str, options);
+        let options = options_from_ffi(
+            concat_compound_numbers,
+            max_span_tokens,
+            disable_bare_second,
+            0,
+        );
+        let result = normalize_sentence_with_options(c_str, options);
 
-    match CString::new(result) {
-        Ok(c_string) => c_string.into_raw(),
-        Err(_) => ptr::null_mut(),
-    }
+        match CString::new(result) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut(),
+        }
+    })
 }
 
 /// Normalize a full sentence (ITN, spoken → written) for a specific language.
@@ -207,25 +222,27 @@ pub unsafe extern "C" fn nemo_normalize_sentence_lang(
     input: *const c_char,
     lang: *const c_char,
 ) -> *mut c_char {
-    if input.is_null() || lang.is_null() {
-        return ptr::null_mut();
-    }
+    guard(ptr::null_mut(), || {
+        if input.is_null() || lang.is_null() {
+            return ptr::null_mut();
+        }
 
-    let input_str = match CStr::from_ptr(input).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
-    let lang_str = match CStr::from_ptr(lang).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
+        let input_str = match CStr::from_ptr(input).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
+        let lang_str = match CStr::from_ptr(lang).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
 
-    let result = normalize_sentence_lang(input_str, lang_str);
+        let result = normalize_sentence_lang(input_str, lang_str);
 
-    match CString::new(result) {
-        Ok(c_string) => c_string.into_raw(),
-        Err(_) => ptr::null_mut(),
-    }
+        match CString::new(result) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut(),
+        }
+    })
 }
 
 /// Free a string allocated by nemo_normalize or nemo_normalize_sentence.
@@ -249,20 +266,22 @@ pub unsafe extern "C" fn nemo_free_string(s: *mut c_char) {
 /// - `spoken` and `written` must be valid null-terminated UTF-8 strings
 #[no_mangle]
 pub unsafe extern "C" fn nemo_add_rule(spoken: *const c_char, written: *const c_char) {
-    if spoken.is_null() || written.is_null() {
-        return;
-    }
+    guard((), || {
+        if spoken.is_null() || written.is_null() {
+            return;
+        }
 
-    let spoken_str = match CStr::from_ptr(spoken).to_str() {
-        Ok(s) => s,
-        Err(_) => return,
-    };
-    let written_str = match CStr::from_ptr(written).to_str() {
-        Ok(s) => s,
-        Err(_) => return,
-    };
+        let spoken_str = match CStr::from_ptr(spoken).to_str() {
+            Ok(s) => s,
+            Err(_) => return,
+        };
+        let written_str = match CStr::from_ptr(written).to_str() {
+            Ok(s) => s,
+            Err(_) => return,
+        };
 
-    custom_rules::add_rule(spoken_str, written_str);
+        custom_rules::add_rule(spoken_str, written_str);
+    })
 }
 
 /// Remove a custom normalization rule by its spoken form.
@@ -272,32 +291,36 @@ pub unsafe extern "C" fn nemo_add_rule(spoken: *const c_char, written: *const c_
 /// - Returns 1 if the rule was found and removed, 0 otherwise
 #[no_mangle]
 pub unsafe extern "C" fn nemo_remove_rule(spoken: *const c_char) -> i32 {
-    if spoken.is_null() {
-        return 0;
-    }
+    guard(0, || {
+        if spoken.is_null() {
+            return 0;
+        }
 
-    let spoken_str = match CStr::from_ptr(spoken).to_str() {
-        Ok(s) => s,
-        Err(_) => return 0,
-    };
+        let spoken_str = match CStr::from_ptr(spoken).to_str() {
+            Ok(s) => s,
+            Err(_) => return 0,
+        };
 
-    if custom_rules::remove_rule(spoken_str) {
-        1
-    } else {
-        0
-    }
+        if custom_rules::remove_rule(spoken_str) {
+            1
+        } else {
+            0
+        }
+    })
 }
 
 /// Clear all custom normalization rules.
 #[no_mangle]
 pub extern "C" fn nemo_clear_rules() {
-    custom_rules::clear_rules();
+    guard((), || {
+        custom_rules::clear_rules();
+    })
 }
 
 /// Get the number of custom rules currently registered.
 #[no_mangle]
 pub extern "C" fn nemo_rule_count() -> u32 {
-    custom_rules::rule_count() as u32
+    guard(0, || custom_rules::rule_count() as u32)
 }
 
 /// Get the library version.
@@ -319,21 +342,23 @@ pub extern "C" fn nemo_version() -> *const c_char {
 /// - Returns a newly allocated string that must be freed with `nemo_free_string`
 #[no_mangle]
 pub unsafe extern "C" fn nemo_tn_normalize(input: *const c_char) -> *mut c_char {
-    if input.is_null() {
-        return ptr::null_mut();
-    }
+    guard(ptr::null_mut(), || {
+        if input.is_null() {
+            return ptr::null_mut();
+        }
 
-    let c_str = match CStr::from_ptr(input).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
+        let c_str = match CStr::from_ptr(input).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
 
-    let result = tn_normalize(c_str);
+        let result = tn_normalize(c_str);
 
-    match CString::new(result) {
-        Ok(c_string) => c_string.into_raw(),
-        Err(_) => ptr::null_mut(),
-    }
+        match CString::new(result) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut(),
+        }
+    })
 }
 
 /// Normalize a full sentence from written to spoken form (TN).
@@ -343,21 +368,23 @@ pub unsafe extern "C" fn nemo_tn_normalize(input: *const c_char) -> *mut c_char 
 /// - Returns a newly allocated string that must be freed with `nemo_free_string`
 #[no_mangle]
 pub unsafe extern "C" fn nemo_tn_normalize_sentence(input: *const c_char) -> *mut c_char {
-    if input.is_null() {
-        return ptr::null_mut();
-    }
+    guard(ptr::null_mut(), || {
+        if input.is_null() {
+            return ptr::null_mut();
+        }
 
-    let c_str = match CStr::from_ptr(input).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
+        let c_str = match CStr::from_ptr(input).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
 
-    let result = tn_normalize_sentence(c_str);
+        let result = tn_normalize_sentence(c_str);
 
-    match CString::new(result) {
-        Ok(c_string) => c_string.into_raw(),
-        Err(_) => ptr::null_mut(),
-    }
+        match CString::new(result) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut(),
+        }
+    })
 }
 
 /// Normalize a full sentence (TN) with a configurable max span size.
@@ -370,21 +397,23 @@ pub unsafe extern "C" fn nemo_tn_normalize_sentence_with_max_span(
     input: *const c_char,
     max_span_tokens: u32,
 ) -> *mut c_char {
-    if input.is_null() {
-        return ptr::null_mut();
-    }
+    guard(ptr::null_mut(), || {
+        if input.is_null() {
+            return ptr::null_mut();
+        }
 
-    let c_str = match CStr::from_ptr(input).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
+        let c_str = match CStr::from_ptr(input).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
 
-    let result = tn_normalize_sentence_with_max_span(c_str, max_span_tokens as usize);
+        let result = tn_normalize_sentence_with_max_span(c_str, max_span_tokens as usize);
 
-    match CString::new(result) {
-        Ok(c_string) => c_string.into_raw(),
-        Err(_) => ptr::null_mut(),
-    }
+        match CString::new(result) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut(),
+        }
+    })
 }
 
 // ── Language-aware TN FFI ──────────────────────────────────────────────
@@ -402,25 +431,27 @@ pub unsafe extern "C" fn nemo_tn_normalize_lang(
     input: *const c_char,
     lang: *const c_char,
 ) -> *mut c_char {
-    if input.is_null() || lang.is_null() {
-        return ptr::null_mut();
-    }
+    guard(ptr::null_mut(), || {
+        if input.is_null() || lang.is_null() {
+            return ptr::null_mut();
+        }
 
-    let input_str = match CStr::from_ptr(input).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
-    let lang_str = match CStr::from_ptr(lang).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
+        let input_str = match CStr::from_ptr(input).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
+        let lang_str = match CStr::from_ptr(lang).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
 
-    let result = tn_normalize_lang(input_str, lang_str);
+        let result = tn_normalize_lang(input_str, lang_str);
 
-    match CString::new(result) {
-        Ok(c_string) => c_string.into_raw(),
-        Err(_) => ptr::null_mut(),
-    }
+        match CString::new(result) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut(),
+        }
+    })
 }
 
 /// Normalize a full sentence (TN) for a specific language.
@@ -433,25 +464,27 @@ pub unsafe extern "C" fn nemo_tn_normalize_sentence_lang(
     input: *const c_char,
     lang: *const c_char,
 ) -> *mut c_char {
-    if input.is_null() || lang.is_null() {
-        return ptr::null_mut();
-    }
+    guard(ptr::null_mut(), || {
+        if input.is_null() || lang.is_null() {
+            return ptr::null_mut();
+        }
 
-    let input_str = match CStr::from_ptr(input).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
-    let lang_str = match CStr::from_ptr(lang).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
+        let input_str = match CStr::from_ptr(input).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
+        let lang_str = match CStr::from_ptr(lang).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
 
-    let result = tn_normalize_sentence_lang(input_str, lang_str);
+        let result = tn_normalize_sentence_lang(input_str, lang_str);
 
-    match CString::new(result) {
-        Ok(c_string) => c_string.into_raw(),
-        Err(_) => ptr::null_mut(),
-    }
+        match CString::new(result) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut(),
+        }
+    })
 }
 
 /// Normalize a full sentence (TN) for a specific language with configurable max span.
@@ -465,26 +498,28 @@ pub unsafe extern "C" fn nemo_tn_normalize_sentence_with_max_span_lang(
     lang: *const c_char,
     max_span_tokens: u32,
 ) -> *mut c_char {
-    if input.is_null() || lang.is_null() {
-        return ptr::null_mut();
-    }
+    guard(ptr::null_mut(), || {
+        if input.is_null() || lang.is_null() {
+            return ptr::null_mut();
+        }
 
-    let input_str = match CStr::from_ptr(input).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
-    let lang_str = match CStr::from_ptr(lang).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
+        let input_str = match CStr::from_ptr(input).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
+        let lang_str = match CStr::from_ptr(lang).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
 
-    let result =
-        tn_normalize_sentence_with_max_span_lang(input_str, lang_str, max_span_tokens as usize);
+        let result =
+            tn_normalize_sentence_with_max_span_lang(input_str, lang_str, max_span_tokens as usize);
 
-    match CString::new(result) {
-        Ok(c_string) => c_string.into_raw(),
-        Err(_) => ptr::null_mut(),
-    }
+        match CString::new(result) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut(),
+        }
+    })
 }
 
 /// Byte-exact NeMo TN via the compiled-FST engine, for `lang` in
@@ -499,24 +534,26 @@ pub unsafe extern "C" fn nemo_tn_normalize_sentence_with_max_span_lang(
 /// - Returns a newly allocated string that must be freed with `nemo_free_string`
 #[no_mangle]
 pub unsafe extern "C" fn nemo_tn_fst(input: *const c_char, lang: *const c_char) -> *mut c_char {
-    if input.is_null() || lang.is_null() {
-        return ptr::null_mut();
-    }
-    let input_str = match CStr::from_ptr(input).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
-    let lang_str = match CStr::from_ptr(lang).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
-    match fst_normalize(input_str, lang_str, NormalizeOptions::new()) {
-        Some(result) => match CString::new(result) {
-            Ok(c_string) => c_string.into_raw(),
-            Err(_) => ptr::null_mut(),
-        },
-        None => ptr::null_mut(),
-    }
+    guard(ptr::null_mut(), || {
+        if input.is_null() || lang.is_null() {
+            return ptr::null_mut();
+        }
+        let input_str = match CStr::from_ptr(input).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
+        let lang_str = match CStr::from_ptr(lang).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
+        match fst_normalize(input_str, lang_str, NormalizeOptions::new()) {
+            Some(result) => match CString::new(result) {
+                Ok(c_string) => c_string.into_raw(),
+                Err(_) => ptr::null_mut(),
+            },
+            None => ptr::null_mut(),
+        }
+    })
 }
 
 /// `nemo_tn_fst` with caller options. Only `roman_enumerators` applies to the
@@ -532,25 +569,27 @@ pub unsafe extern "C" fn nemo_tn_fst_with_options(
     lang: *const c_char,
     roman_enumerators: u32,
 ) -> *mut c_char {
-    if input.is_null() || lang.is_null() {
-        return ptr::null_mut();
-    }
-    let input_str = match CStr::from_ptr(input).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
-    let lang_str = match CStr::from_ptr(lang).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
-    let options = options_from_ffi(0, 0, 0, roman_enumerators);
-    match fst_normalize(input_str, lang_str, options) {
-        Some(result) => match CString::new(result) {
-            Ok(c_string) => c_string.into_raw(),
-            Err(_) => ptr::null_mut(),
-        },
-        None => ptr::null_mut(),
-    }
+    guard(ptr::null_mut(), || {
+        if input.is_null() || lang.is_null() {
+            return ptr::null_mut();
+        }
+        let input_str = match CStr::from_ptr(input).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
+        let lang_str = match CStr::from_ptr(lang).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
+        let options = options_from_ffi(0, 0, 0, roman_enumerators);
+        match fst_normalize(input_str, lang_str, options) {
+            Some(result) => match CString::new(result) {
+                Ok(c_string) => c_string.into_raw(),
+                Err(_) => ptr::null_mut(),
+            },
+            None => ptr::null_mut(),
+        }
+    })
 }
 
 /// Normalize a full sentence (TN) for a specific language with caller options.
@@ -569,23 +608,25 @@ pub unsafe extern "C" fn nemo_tn_normalize_sentence_lang_with_options(
     max_span_tokens: u32,
     roman_enumerators: u32,
 ) -> *mut c_char {
-    if input.is_null() || lang.is_null() {
-        return ptr::null_mut();
-    }
-    let input_str = match CStr::from_ptr(input).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
-    let lang_str = match CStr::from_ptr(lang).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
-    let options = options_from_ffi(0, max_span_tokens, 0, roman_enumerators);
-    let result = tn_normalize_sentence_lang_with_options(input_str, lang_str, options);
-    match CString::new(result) {
-        Ok(c_string) => c_string.into_raw(),
-        Err(_) => ptr::null_mut(),
-    }
+    guard(ptr::null_mut(), || {
+        if input.is_null() || lang.is_null() {
+            return ptr::null_mut();
+        }
+        let input_str = match CStr::from_ptr(input).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
+        let lang_str = match CStr::from_ptr(lang).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
+        let options = options_from_ffi(0, max_span_tokens, 0, roman_enumerators);
+        let result = tn_normalize_sentence_lang_with_options(input_str, lang_str, options);
+        match CString::new(result) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut(),
+        }
+    })
 }
 
 /// Normalize with the compiled-FST engine and retain every source span.
@@ -607,63 +648,65 @@ pub unsafe extern "C" fn nemo_tn_fst_aligned(
     input: *const c_char,
     lang: *const c_char,
 ) -> *mut NemoTnAlignment {
-    if input.is_null() || lang.is_null() {
-        return ptr::null_mut();
-    }
-    let input_str = match CStr::from_ptr(input).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
-    let lang_str = match CStr::from_ptr(lang).to_str() {
-        Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
-    };
+    guard(ptr::null_mut(), || {
+        if input.is_null() || lang.is_null() {
+            return ptr::null_mut();
+        }
+        let input_str = match CStr::from_ptr(input).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
+        let lang_str = match CStr::from_ptr(lang).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
 
-    let Some(alignment) = crate::fst::normalize_aligned(input_str, lang_str) else {
-        return ptr::null_mut();
-    };
-    let Ok(normalized) = CString::new(alignment.normalized) else {
-        return ptr::null_mut();
-    };
+        let Some(alignment) = crate::fst::normalize_aligned(input_str, lang_str) else {
+            return ptr::null_mut();
+        };
+        let Ok(normalized) = CString::new(alignment.normalized) else {
+            return ptr::null_mut();
+        };
 
-    let converted = alignment
-        .spans
-        .into_iter()
-        .map(|span| {
-            Some((
-                span.input_start,
-                span.input_end,
-                CString::new(span.original).ok()?,
-                CString::new(span.normalized).ok()?,
-                CString::new(span.kind.as_str()).ok()?,
-            ))
-        })
-        .collect::<Option<Vec<_>>>();
-    let Some(converted) = converted else {
-        return ptr::null_mut();
-    };
+        let converted = alignment
+            .spans
+            .into_iter()
+            .map(|span| {
+                Some((
+                    span.input_start,
+                    span.input_end,
+                    CString::new(span.original).ok()?,
+                    CString::new(span.normalized).ok()?,
+                    CString::new(span.kind.as_str()).ok()?,
+                ))
+            })
+            .collect::<Option<Vec<_>>>();
+        let Some(converted) = converted else {
+            return ptr::null_mut();
+        };
 
-    let spans = converted
-        .into_iter()
-        .map(
-            |(input_start, input_end, original, normalized, kind)| NemoTnAlignedSpan {
-                input_start,
-                input_end,
-                original: original.into_raw(),
-                normalized: normalized.into_raw(),
-                kind: kind.into_raw(),
-            },
-        )
-        .collect::<Vec<_>>()
-        .into_boxed_slice();
-    let span_count = spans.len();
-    let spans = Box::into_raw(spans) as *mut NemoTnAlignedSpan;
+        let spans = converted
+            .into_iter()
+            .map(
+                |(input_start, input_end, original, normalized, kind)| NemoTnAlignedSpan {
+                    input_start,
+                    input_end,
+                    original: original.into_raw(),
+                    normalized: normalized.into_raw(),
+                    kind: kind.into_raw(),
+                },
+            )
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
+        let span_count = spans.len();
+        let spans = Box::into_raw(spans) as *mut NemoTnAlignedSpan;
 
-    Box::into_raw(Box::new(NemoTnAlignment {
-        normalized: normalized.into_raw(),
-        spans,
-        span_count,
-    }))
+        Box::into_raw(Box::new(NemoTnAlignment {
+            normalized: normalized.into_raw(),
+            spans,
+            span_count,
+        }))
+    })
 }
 
 #[no_mangle]
@@ -893,6 +936,36 @@ mod tests {
             assert!(nemo_normalize_sentence_lang(ptr::null(), lang.as_ptr()).is_null());
             let input = CString::new("vingt et un").unwrap();
             assert!(nemo_normalize_sentence_lang(input.as_ptr(), ptr::null()).is_null());
+        }
+    }
+
+    #[test]
+    fn test_guard_returns_default_on_panic() {
+        assert_eq!(guard(0, || 1), 1);
+        assert_eq!(guard(0, || -> i32 { panic!("boom") }), 0);
+    }
+
+    #[test]
+    fn test_ffi_inputs_that_used_to_panic() {
+        // Each of these panicked inside the library and aborted the host (#108).
+        let cases = [
+            ("é am est", "en", "é am est"),
+            ("ẞẞ zum beispiel toll", "de", "ẞẞ z.B. toll"),
+            (
+                "das alphabet beginnt mit a b c",
+                "de",
+                "das alphabet beginnt mit a b c",
+            ),
+        ];
+        unsafe {
+            for (input, lang, expected) in cases {
+                let c_input = CString::new(input).unwrap();
+                let c_lang = CString::new(lang).unwrap();
+                let result = nemo_normalize_sentence_lang(c_input.as_ptr(), c_lang.as_ptr());
+                assert!(!result.is_null(), "{input:?}");
+                assert_eq!(CStr::from_ptr(result).to_str().unwrap(), expected);
+                nemo_free_string(result);
+            }
         }
     }
 }

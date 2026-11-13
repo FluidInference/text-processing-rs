@@ -34,11 +34,20 @@ lazy_static! {
 pub fn parse(input: &str) -> Option<String> {
     let input_trim = input.trim();
     let input_lower = input_trim.to_lowercase();
+    // Byte offsets found in `input_lower` point into `input_trim` only when
+    // lowercasing kept every character's byte length ("ẞ" → "ß" drops a byte).
+    let offsets_line_up = input_trim
+        .chars()
+        .all(|c| c.to_lowercase().map(char::len_utf8).sum::<usize>() == c.len_utf8());
 
     for &(spoken, abbreviated) in WHITELIST.iter() {
         // Exact match (case-insensitive)
         if input_lower == spoken {
             return Some(abbreviated.to_string());
+        }
+        if !offsets_line_up {
+            // The matches below slice `input_trim` at offsets from `input_lower`.
+            continue;
         }
 
         // Prefix match: "doktor dao" → "Dr. dao"
@@ -100,5 +109,13 @@ mod tests {
             parse("ich mag essen zum beispiel eis"),
             Some("ich mag essen z.B. eis".to_string())
         );
+    }
+
+    #[test]
+    fn test_lowercasing_changes_byte_length() {
+        // "ẞ" lowercases to the shorter "ß", so offsets found in the lowercased
+        // input used to slice the original mid-character and panic (#108).
+        assert_eq!(parse("ẞẞ zum beispiel toll"), None);
+        assert_eq!(parse("zum beispiel"), Some("z.B.".to_string()));
     }
 }
