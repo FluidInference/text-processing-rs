@@ -38,7 +38,7 @@ use itn::en::{
 
 // With the `fst-engine` feature built in, the entry points below run NeMo's
 // compiled grammars, byte-exact with NeMo's `Normalizer` / `InverseNormalizer`.
-// Custom rules apply ahead of them. The rule-based taggers cover what NeMo
+// Custom rules take precedence over them. The rule-based taggers cover what NeMo
 // doesn't: the ITN options other than `max_span_tokens`, and builds without the
 // feature.
 
@@ -63,11 +63,17 @@ fn nemo_itn(input: &str, lang: &str) -> Option<String> {
     if rule_based_engine() {
         return None;
     }
+    // A rule for the whole input is the answer, as on the rule-based path.
+    if let Some(written) = custom_rules::parse(input) {
+        return Some(written);
+    }
     let lang = match lang {
         "de" | "es" | "fr" | "hi" | "ja" | "zh" => lang,
         _ => "en",
     };
-    fst::inverse_normalize_lang(&custom_rules::substitute(input), lang)
+    let (protected, written_forms) = custom_rules::protect(input);
+    let output = fst::inverse_normalize_lang(&protected, lang)?;
+    Some(custom_rules::restore(&output, &written_forms))
 }
 
 #[cfg(not(feature = "fst-engine"))]

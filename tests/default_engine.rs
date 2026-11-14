@@ -113,6 +113,46 @@ fn custom_rules_apply_ahead_of_nemo() {
 }
 
 #[test]
+fn custom_written_forms_are_kept_verbatim() {
+    let _lock = GLOBAL.lock().unwrap();
+    custom_rules::clear_rules();
+    // NeMo would read the written form again ("two dollars" -> "$2").
+    custom_rules::add_rule("five dollars", "two dollars");
+    assert_eq!(normalize("five dollars"), "two dollars");
+    assert_eq!(
+        normalize_sentence("it costs five dollars, not twenty one dollars."),
+        "it costs two dollars, not $21."
+    );
+    for lang in ["de", "es", "fr", "hi", "ja", "zh"] {
+        assert_eq!(
+            normalize_sentence_lang("five dollars", lang),
+            "two dollars",
+            "{lang}"
+        );
+    }
+    custom_rules::clear_rules();
+}
+
+#[test]
+fn custom_rules_match_whole_phrases_only() {
+    let _lock = GLOBAL.lock().unwrap();
+    custom_rules::clear_rules();
+    custom_rules::add_rule("gee pee tee", "GPT");
+    custom_rules::add_rule("dr.", "Doctor");
+    // Punctuation inside the phrase means it isn't the phrase.
+    assert_eq!(
+        normalize_sentence("I said gee, pee tee yesterday"),
+        "I said gee, pee tee yesterday"
+    );
+    // Punctuation around it is kept.
+    assert_eq!(normalize_sentence("(gee pee tee)."), "(GPT).");
+    // A spoken form with its own punctuation matches as registered.
+    assert_eq!(normalize("dr."), "Doctor");
+    assert_eq!(normalize_sentence("ask dr. smith"), "ask Doctor smith");
+    custom_rules::clear_rules();
+}
+
+#[test]
 fn the_switch_runs_the_taggers() {
     let _lock = GLOBAL.lock().unwrap();
     assert_eq!(normalize("five"), "five");
