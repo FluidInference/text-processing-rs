@@ -1,6 +1,9 @@
 //! English text normalization tests.
 //!
 //! Tests for written → spoken conversion (the reverse of ITN).
+// These tests pin the rule-based taggers' output. With `fst-engine` the default
+// entry points run NeMo's grammars instead (tests/default_engine.rs).
+#![cfg(not(feature = "fst-engine"))]
 
 mod common;
 

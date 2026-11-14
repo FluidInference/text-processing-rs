@@ -1,4 +1,4 @@
-# NeMo ITN output (lang=de, input_case=cased, punctuation post-processed), regenerated from NeMo-text-processing
+# NeMo ITN output (lang=de, input_case=lower_cased, punctuation post-processed), regenerated from NeMo-text-processing
 # pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: spoken~written.
 c d f at a b c punkt e d u~cdf@abc.edu
 a b c at g mail punkt a b c~abc@gmail.abc

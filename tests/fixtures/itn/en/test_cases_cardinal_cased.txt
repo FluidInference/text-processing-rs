@@ -1,11 +1,11 @@
-# NeMo ITN output (lang=en, input_case=cased, punctuation post-processed), regenerated from NeMo-text-processing
+# NeMo ITN output (lang=en, input_case=lower_cased, punctuation post-processed), regenerated from NeMo-text-processing
 # pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: spoken~written.
 nine trillion seven hundred eighty nine billion three hundred eighty two million five hundred thirty six thousand one hundred thirty~9789382536130
 two hundred and fifty four~254
 one hundred forty seven thousand four hundred fifty one~147451
 one million one hundred fifty six thousand one hundred seventy three~1156173
 one billion five hundred ninety three million seventy two thousand nine hundred sixty one~1593072961
-One Billion five hundred ninety three Million seventy two thousand nine hundred sixty one~1593072961
+One Billion five hundred ninety three Million seventy two thousand nine hundred sixty one~One Billion 593 Million 72961
 ninety seven quadrillion eight hundred eight trillion two hundred sixty four billion seven hundred seventy two million seven hundred ninety two thousand five~97808264772792005
 seventeen sextillion eight hundred fifty five quintillion thirty six quadrillion six hundred fifty seven trillion seven billion five hundred ninety six million one hundred ten thousand nine hundred forty nine~17855036657007596110949
 ten quadrillion ten trillion ten million one hundred thousand ten~10010000010100010
@@ -29,34 +29,34 @@ eleven hundred~1100
 twenty one hundred~2100
 twenty one hundred and eleven~2111
 eleven hundred twenty one~1121
-Nine trillion seven hundred eighty nine billion three hundred eighty two million five hundred thirty six thousand one hundred thirty~9789382536130
-Two hundred and fifty four~254
-One hundred forty seven thousand four hundred fifty one~147451
-One million one hundred fifty six thousand one hundred seventy three~1156173
-One billion five hundred ninety three million seventy two thousand nine hundred sixty one~1593072961
-Ninety seven quadrillion eight hundred eight trillion two hundred sixty four billion seven hundred seventy two million seven hundred ninety two thousand five~97808264772792005
-Seventeen sextillion eight hundred fifty five quintillion thirty six quadrillion six hundred fifty seven trillion seven billion five hundred ninety six million one hundred ten thousand nine hundred forty nine~17855036657007596110949
-Ten quadrillion ten trillion ten million one hundred thousand ten~10010000010100010
+Nine trillion seven hundred eighty nine billion three hundred eighty two million five hundred thirty six thousand one hundred thirty~Nine trillion 789382536130
+Two hundred and fifty four~Two hundred and 54
+One hundred forty seven thousand four hundred fifty one~One hundred 47451
+One million one hundred fifty six thousand one hundred seventy three~One million 156173
+One billion five hundred ninety three million seventy two thousand nine hundred sixty one~One billion 593072961
+Ninety seven quadrillion eight hundred eight trillion two hundred sixty four billion seven hundred seventy two million seven hundred ninety two thousand five~Ninety 7808264772792005
+Seventeen sextillion eight hundred fifty five quintillion thirty six quadrillion six hundred fifty seven trillion seven billion five hundred ninety six million one hundred ten thousand nine hundred forty nine~Seventeen sextillion 855036657007596110949
+Ten quadrillion ten trillion ten million one hundred thousand ten~Ten quadrillion 10000010100010
 Minus twenty five thousand thirty seven~-25037
-One quadrillion two hundred sixty four trillion three hundred one billion nine hundred thirty eight million one hundred four~1264301938000104
+One quadrillion two hundred sixty four trillion three hundred one billion nine hundred thirty eight million one hundred four~One quadrillion 264301938000104
 Minus sixty~-60
-Forty six thousand six hundred sixty four~46664
-Sixty~60
+Forty six thousand six hundred sixty four~Forty 6664
+Sixty~Sixty
 Zero~Zero
-Two million three~2000003
-One thousand thirteen~1013
-One thousand one~1001
-One thousand one hundred~1100
-One thousand twenty six~1026
-One thousand one hundred twenty six~1126
-Eighteen million four hundred fifty thousand nine hundred ninety~18450990
-Eighteen million nine hundred forty thousand seven hundred twenty two~18940722
-Eighteen million six hundred ninety thousand nine hundred sixteen~18690916
-Eighteen thousand eight hundred eighty~18880
-Eleven hundred~1100
-Twenty one hundred~2100
-Twenty one hundred and eleven~2111
-Eleven hundred twenty one~1121
-Nineteen~19
+Two million three~Two million three
+One thousand thirteen~One thousand 13
+One thousand one~One thousand one
+One thousand one hundred~One thousand 100
+One thousand twenty six~One thousand 26
+One thousand one hundred twenty six~One thousand 126
+Eighteen million four hundred fifty thousand nine hundred ninety~Eighteen million 450990
+Eighteen million nine hundred forty thousand seven hundred twenty two~Eighteen million 940722
+Eighteen million six hundred ninety thousand nine hundred sixteen~Eighteen million 690916
+Eighteen thousand eight hundred eighty~Eighteen thousand 880
+Eleven hundred~Eleven hundred
+Twenty one hundred~Twenty 100
+Twenty one hundred and eleven~Twenty 111
+Eleven hundred twenty one~Eleven hundred 21
+Nineteen~Nineteen
 Twelve~Twelve
 twenty one crore ninety eight lakh thirty six thousand five hundred and ninety three~219836593

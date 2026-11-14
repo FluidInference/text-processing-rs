@@ -3,7 +3,7 @@
 
 For every NeMo ITN test file (tests/nemo_text_processing/<lang>/
 data_inverse_text_normalization/test_cases_*.txt in the NeMo checkout), runs
-InverseNormalizer(lang, input_case="cased") on each spoken input, then NeMo's
+InverseNormalizer(lang, input_case="lower_cased") on each spoken input, then NeMo's
 own punctuation post-processing (the Moses detokenizer and post_process_punct,
 as NeMo's TN applies them), and writes `spoken~NeMo output` to
 tests/fixtures/itn/<lang>/. The goldens are NeMo's actual output, not the
@@ -32,7 +32,7 @@ def main():
     from nemo_text_processing.text_normalization.data_loader_utils import post_process_punct
     from sacremoses import MosesDetokenizer
 
-    normalizer = InverseNormalizer(input_case="cased", lang=args.lang, cache_dir=args.cache_dir)
+    normalizer = InverseNormalizer(input_case="lower_cased", lang=args.lang, cache_dir=args.cache_dir)
     moses = MosesDetokenizer(lang=args.lang)
     src = os.path.join(args.nemo, "tests", "nemo_text_processing", args.lang, "data_inverse_text_normalization")
     out_dir = args.out or os.path.join(os.path.dirname(__file__), "..", "tests", "fixtures", "itn", args.lang)
@@ -57,7 +57,7 @@ def main():
                 rows.append((spoken, written))
         with open(os.path.join(out_dir, os.path.basename(path)), "w", encoding="utf-8") as f:
             f.write(
-                f"# NeMo ITN output (lang={args.lang}, input_case=cased, punctuation post-processed),"
+                f"# NeMo ITN output (lang={args.lang}, input_case=lower_cased, punctuation post-processed),"
                 " regenerated from NeMo-text-processing\n"
             )
             f.write(f"# pinned commit {PINNED}. Format: spoken~written.\n")

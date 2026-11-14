@@ -36,12 +36,78 @@ use itn::en::{
     time, whitelist, word,
 };
 
+// With the `fst-engine` feature built in, the entry points below run NeMo's
+// compiled grammars, byte-exact with NeMo's `Normalizer` / `InverseNormalizer`.
+// Custom rules apply ahead of them. The rule-based taggers cover what NeMo
+// doesn't: the ITN options other than `max_span_tokens`, and builds without the
+// feature.
+
+static RULE_BASED_ENGINE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Use the rule-based taggers even when NeMo's grammars are built in
+/// (`fst-engine`), for callers that depend on their output. Process-wide; off by
+/// default. Without the feature the taggers always run.
+pub fn set_rule_based_engine(enabled: bool) {
+    RULE_BASED_ENGINE.store(enabled, std::sync::atomic::Ordering::Relaxed);
+}
+
+/// Whether [`set_rule_based_engine`] is on.
+pub fn rule_based_engine() -> bool {
+    RULE_BASED_ENGINE.load(std::sync::atomic::Ordering::Relaxed)
+}
+
+/// NeMo ITN for `lang` (other codes read as English, as on the rule-based
+/// path), or `None` to use the rule-based taggers.
+#[cfg(feature = "fst-engine")]
+fn nemo_itn(input: &str, lang: &str) -> Option<String> {
+    if rule_based_engine() {
+        return None;
+    }
+    let lang = match lang {
+        "de" | "es" | "fr" | "hi" | "ja" | "zh" => lang,
+        _ => "en",
+    };
+    fst::inverse_normalize_lang(&custom_rules::substitute(input), lang)
+}
+
+#[cfg(not(feature = "fst-engine"))]
+fn nemo_itn(_input: &str, _lang: &str) -> Option<String> {
+    None
+}
+
+/// NeMo TN for `lang` (other codes read as English), or `None` to use the
+/// rule-based taggers.
+#[cfg(feature = "fst-engine")]
+fn nemo_tn(input: &str, lang: &str) -> Option<String> {
+    if rule_based_engine() {
+        return None;
+    }
+    let lang = match lang {
+        "de" | "es" | "fr" | "hi" | "it" | "ja" | "zh" => lang,
+        _ => "en",
+    };
+    fst::normalize_lang(input, lang)
+}
+
+#[cfg(not(feature = "fst-engine"))]
+fn nemo_tn(_input: &str, _lang: &str) -> Option<String> {
+    None
+}
+
+/// Whether ITN with `options` can run on NeMo's grammars: every ITN flag is off.
+/// `max_span_tokens` doesn't matter, since NeMo reads the whole sentence.
+fn nemo_handles_itn_options(options: NormalizeOptions) -> bool {
+    !options.concat_compound_numbers
+        && !options.disable_bare_second
+        && !options.small_numbers_as_words
+}
+
 /// Normalize spoken-form text to written form.
 ///
 /// Tries taggers in order of specificity (most specific first).
 /// Returns original text if no tagger matches.
 pub fn normalize(input: &str) -> String {
-    normalize_inner(input, false)
+    nemo_itn(input, "en").unwrap_or_else(|| normalize_inner(input, false))
 }
 
 /// Single-expression dispatch with the `disable_bare_second` flag plumbed in.
@@ -155,6 +221,11 @@ fn normalize_inner(input: &str, disable_bare_second: bool) -> String {
 /// assert_eq!(normalize_with_options("hello world", opts), "hello world");
 /// ```
 pub fn normalize_with_options(input: &str, options: NormalizeOptions) -> String {
+    if nemo_handles_itn_options(options) {
+        if let Some(result) = nemo_itn(input, "en") {
+            return result;
+        }
+    }
     if !options.concat_compound_numbers {
         return normalize_inner(input, options.disable_bare_second);
     }
@@ -193,6 +264,9 @@ pub fn normalize_with_options(input: &str, options: NormalizeOptions) -> String 
 /// Supported languages: "en" (default), "fr" (French), "de" (German),
 /// "es" (Spanish), "hi" (Hindi), "ja" (Japanese), "zh" (Chinese).
 pub fn normalize_with_lang(input: &str, lang: &str) -> String {
+    if let Some(result) = nemo_itn(input, lang) {
+        return result;
+    }
     let input = input.trim();
 
     match lang {
@@ -1065,7 +1139,9 @@ fn is_zero_to_twelve(word: &str) -> bool {
 /// assert_eq!(normalize_sentence("hello world"), "hello world");
 /// ```
 pub fn normalize_sentence(input: &str) -> String {
-    normalize_sentence_inner(input, DEFAULT_MAX_SPAN_TOKENS, false, false, false)
+    nemo_itn(input, "en").unwrap_or_else(|| {
+        normalize_sentence_inner(input, DEFAULT_MAX_SPAN_TOKENS, false, false, false)
+    })
 }
 
 /// Unified sentence-mode entry point.
@@ -1093,6 +1169,11 @@ pub fn normalize_sentence(input: &str) -> String {
 /// );
 /// ```
 pub fn normalize_sentence_with_options(input: &str, options: NormalizeOptions) -> String {
+    if nemo_handles_itn_options(options) {
+        if let Some(result) = nemo_itn(input, "en") {
+            return result;
+        }
+    }
     let max_span = options.max_span_tokens.unwrap_or(DEFAULT_MAX_SPAN_TOKENS);
     normalize_sentence_inner(
         input,
@@ -1140,6 +1221,9 @@ pub fn normalize_sentence_with_max_span_lang(
     lang: &str,
     max_span_tokens: usize,
 ) -> String {
+    if let Some(result) = nemo_itn(input, lang) {
+        return result;
+    }
     match lang {
         // Scanning-based ITN: processors already replace spans across the whole
         // sentence in place, so the sliding window is unnecessary.
@@ -1569,6 +1653,9 @@ fn normalize_sentence_inner(
 /// assert_eq!(result, "five dollars fifty cents");
 /// ```
 pub fn tn_normalize(input: &str) -> String {
+    if let Some(result) = nemo_tn(input, "en") {
+        return result;
+    }
     let input = input.trim();
 
     if let Some(result) = tn::en::whitelist::parse(input) {
@@ -1713,7 +1800,7 @@ pub fn tn_normalize_sentence(input: &str) -> String {
 /// assert_eq!(tn_normalize_lang("123", "en"), "one hundred and twenty three");
 /// ```
 pub fn tn_normalize_lang(input: &str, lang: &str) -> String {
-    tn_normalize_for_lang(input, lang)
+    nemo_tn(input, lang).unwrap_or_else(|| tn_normalize_for_lang(input, lang))
 }
 
 /// Normalize a full sentence (TN) for a specific language.
@@ -1772,6 +1859,9 @@ pub fn tn_normalize_sentence_with_max_span_lang(
     lang: &str,
     max_span_tokens: usize,
 ) -> String {
+    if let Some(result) = nemo_tn(input, lang) {
+        return result;
+    }
     match lang {
         "en" | "" => tn_normalize_sentence_with_max_span(input, max_span_tokens),
         _ => {
@@ -1791,6 +1881,9 @@ pub fn tn_normalize_sentence_with_max_span_lang(
 
 /// Normalize a full sentence (TN) with a configurable max span size.
 pub fn tn_normalize_sentence_with_max_span(input: &str, max_span_tokens: usize) -> String {
+    if let Some(result) = nemo_tn(input, "en") {
+        return result;
+    }
     let trimmed = input.trim();
     if trimmed.is_empty() {
         return trimmed.to_string();
@@ -1801,7 +1894,8 @@ pub fn tn_normalize_sentence_with_max_span(input: &str, max_span_tokens: usize) 
     sentence_loop(&pretokens, max_span_tokens, None, tn_parse_span)
 }
 
-#[cfg(test)]
+// Rule-based output; with `fst-engine` the entry points run NeMo's grammars.
+#[cfg(all(test, not(feature = "fst-engine")))]
 mod tests {
     use super::*;
 

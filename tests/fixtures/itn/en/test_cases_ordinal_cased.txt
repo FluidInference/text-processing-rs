@@ -1,36 +1,36 @@
-# NeMo ITN output (lang=en, input_case=cased, punctuation post-processed), regenerated from NeMo-text-processing
+# NeMo ITN output (lang=en, input_case=lower_cased, punctuation post-processed), regenerated from NeMo-text-processing
 # pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: spoken~written.
-One hundredth~100th
-Twenty five thousand one hundred eleventh~25111th
-Second~2nd
-Zeroth~0th
-First~1st
-Second~2nd
-Third~3rd
-Fourth~4th
-Eleventh~11th
-Twelfth~12th
-Thirteenth~13th
-Twenty first~21st
-Twenty third~23rd
-One hundred eleventh~111th
-One thousandth~1000th
-One hundred twenty first~121st
-Eleven hundred twenty first~1121st
-Second~2nd
-Tenth~10th
-Sixth~6th
-Third~3rd
-Nineteenth~19th
-Third~3rd
-Twelfth~12th
-Forty eighth~48th
-Seventy first~71st
-Third~3rd
-Forty second~42nd
-Seventeenth~17th
-Twentieth~20th
-Twenty first~21st
-Seventh~7th
-Second~2nd
-Fifth~5th
+One hundredth~One hundredth
+Twenty five thousand one hundred eleventh~Twenty 5111th
+Second~Second
+Zeroth~Zeroth
+First~First
+Second~Second
+Third~Third
+Fourth~Fourth
+Eleventh~Eleventh
+Twelfth~Twelfth
+Thirteenth~Thirteenth
+Twenty first~Twenty 1st
+Twenty third~Twenty 3rd
+One hundred eleventh~One hundred 11th
+One thousandth~One thousandth
+One hundred twenty first~One hundred 21st
+Eleven hundred twenty first~Eleven hundred 21st
+Second~Second
+Tenth~Tenth
+Sixth~Sixth
+Third~Third
+Nineteenth~Nineteenth
+Third~Third
+Twelfth~Twelfth
+Forty eighth~Forty 8th
+Seventy first~Seventy 1st
+Third~Third
+Forty second~Forty 2nd
+Seventeenth~Seventeenth
+Twentieth~Twentieth
+Twenty first~Twenty 1st
+Seventh~Seventh
+Second~Second
+Fifth~Fifth

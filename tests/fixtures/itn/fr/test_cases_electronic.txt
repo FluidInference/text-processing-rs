@@ -1,4 +1,4 @@
-# NeMo ITN output (lang=fr, input_case=cased, punctuation post-processed), regenerated from NeMo-text-processing
+# NeMo ITN output (lang=fr, input_case=lower_cased, punctuation post-processed), regenerated from NeMo-text-processing
 # pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: spoken~written.
 a point b c arobase g mail point com~a.bc@gmail.com
 a point b c at g mail point com~a.bc@gmail.com

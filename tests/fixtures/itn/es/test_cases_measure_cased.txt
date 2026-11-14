@@ -1,13 +1,13 @@
-# NeMo ITN output (lang=es, input_case=cased, punctuation post-processed), regenerated from NeMo-text-processing
+# NeMo ITN output (lang=es, input_case=lower_cased, punctuation post-processed), regenerated from NeMo-text-processing
 # pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: spoken~written.
-Doscientos metros~200 m
+Doscientos metros~Doscientos metros
 tres horas~3 h
 una hora~1 h
-Doscientos cuarenta y cinco Millas Por Hora~245 mph
-Dos Kilos~2 kg
+Doscientos cuarenta y cinco Millas Por Hora~Doscientos 45 mph
+Dos Kilos~Dos Kilos
 sesenta coma dos cuatro cero cero kilogramos~60,2400 kg
 Menos sesenta coma veinticuatro cero cero kilogramos~-60,2400 kg
-menos Ocho Coma Cinco Dos por ciento~-8,52%
+menos Ocho Coma Cinco Dos por ciento~menos Ocho Coma Cinco Dos por 100
 uno Porciento~1%
 tres centímetros~3 cm
 dos más dos es igual a cuatro~2 + 2 = 4

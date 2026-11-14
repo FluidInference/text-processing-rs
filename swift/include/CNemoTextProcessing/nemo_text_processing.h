@@ -134,6 +134,12 @@ void nemo_clear_rules(void);
 uint32_t nemo_rule_count(void);
 
 /**
+ * Use the rule-based taggers (enabled != 0) even when NeMo's grammars are built in,
+ * or go back to NeMo's grammars (0, the default). Process-wide.
+ */
+void nemo_set_rule_based_engine(uint32_t enabled);
+
+/**
  * Text Normalization: convert written-form text to spoken form (TTS preprocessing).
  *
  * @param input Null-terminated UTF-8 string of written text

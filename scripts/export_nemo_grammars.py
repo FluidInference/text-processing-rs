@@ -45,7 +45,7 @@ def export_tn(lang, out_dir, cache_dir):
 def export_itn(lang, out_dir, cache_dir):
     from nemo_text_processing.inverse_text_normalization.inverse_normalize import InverseNormalizer
 
-    normalizer = InverseNormalizer(input_case="cased", lang=lang, cache_dir=cache_dir)
+    normalizer = InverseNormalizer(input_case="lower_cased", lang=lang, cache_dir=cache_dir)
     write_gz(normalizer.tagger.fst, os.path.join(out_dir, "itn_classify.fst.gz"))
     write_gz(normalizer.verbalizer.fst, os.path.join(out_dir, "itn_verbalize.fst.gz"))
 

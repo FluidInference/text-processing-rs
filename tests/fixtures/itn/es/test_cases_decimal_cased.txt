@@ -1,8 +1,8 @@
-# NeMo ITN output (lang=es, input_case=cased, punctuation post-processed), regenerated from NeMo-text-processing
+# NeMo ITN output (lang=es, input_case=lower_cased, punctuation post-processed), regenerated from NeMo-text-processing
 # pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: spoken~written.
-Uno coma dos seis~1,26
+Uno coma dos seis~Uno,26
 Menos uno coma dos seis~-1,26
-Uno Coma Veintiséis~1,26
-Cero coma Dos seis~0,26
+Uno Coma Veintiséis~Uno Coma Veintiséis
+Cero coma Dos seis~Cero,Dos seis
 cero coma veintiséis~0,26
 tres coma ciento cuarenta y uno~3,141

@@ -279,7 +279,18 @@ pub fn inverse_normalize(
         };
         parts.push(part);
     }
-    finish_normalization(parts, None, text, sep, lang)
+    let output = finish_normalization(parts, None, text, sep, lang);
+    // A written form ending in a period (`a.m.`, `Mr.`) before the sentence's own
+    // period reads `09:00 a.m..`; keep one, unless the input had a run of periods.
+    if text.contains("..") {
+        output
+    } else {
+        let mut collapsed = output;
+        while collapsed.contains("..") {
+            collapsed = collapsed.replace("..", ".");
+        }
+        collapsed
+    }
 }
 
 /// Run TN while retaining the input span consumed by every top-level NeMo
@@ -483,7 +494,10 @@ fn moses_detokenize(s: &str, lang: &str) -> String {
         } else if (lang == "fr" || lang == "it")
             && i + 1 < tokens.len()
             && is_french_contraction(token)
-            && tokens[i + 1].chars().next().is_some_and(char::is_alphabetic)
+            && tokens[i + 1]
+                .chars()
+                .next()
+                .is_some_and(char::is_alphabetic)
         {
             out.push_str(prepend_space);
             out.push_str(token);

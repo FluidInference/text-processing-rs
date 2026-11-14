@@ -1,35 +1,35 @@
-# NeMo ITN output (lang=en, input_case=cased, punctuation post-processed), regenerated from NeMo-text-processing
+# NeMo ITN output (lang=en, input_case=lower_cased, punctuation post-processed), regenerated from NeMo-text-processing
 # pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: spoken~written.
-Eight oclock g m t~08:00 gmt
-Seven a m e s t~07:00 a.m. est
-Two p m~02:00 p.m.
-Seven A M E S T~07:00 A.M. EST
-Two P M~02:00 P.M.
-Two thirty~02:30
-Three o'clock~03:00
-Quarter past one~01:15
-Half past three~03:30
-Eight fifty one~08:51
-Eight fifty two~08:52
-Eight forty~08:40
-Eight nineteen~08:19
-Eight o six~08:06
-Eight thirty eight~08:38
-Eight thirty two~08:32
-Eight twenty nine~08:29
-Eleven fifty five p m~11:55 p.m.
-Eleven fifty three p m~11:53 p.m.
-Eleven forty a m~11:40 a.m.
-Eleven forty five a m~11:45 a.m.
-Eleven forty p m~11:40 p.m.
-Eleven forty six a m~11:46 a.m.
-Eleven o six p m~11:06 p.m.
-Eleven thirteen a m~11:13 a.m.
-Half past twelve~12:30
-Quarter past one~01:15
-Quarter to one~12:45
-Quarter to twelve~11:45
+Eight oclock g m t~Eight oclock g m t
+Seven a m e s t~Seven a m e s t
+Two p m~Two p m
+Seven A M E S T~Seven A M E S T
+Two P M~Two P M
+Two thirty~Two 30
+Three o'clock~Three o'clock
+Quarter past one~Quarter past one
+Half past three~Half past three
+Eight fifty one~Eight 51
+Eight fifty two~Eight 52
+Eight forty~Eight 40
+Eight nineteen~Eight 19
+Eight o six~Eight o six
+Eight thirty eight~Eight 38
+Eight thirty two~Eight 32
+Eight twenty nine~Eight 29
+Eleven fifty five p m~Eleven 55pm
+Eleven fifty three p m~Eleven 53pm
+Eleven forty a m~Eleven 40am
+Eleven forty five a m~Eleven 45am
+Eleven forty p m~Eleven 40pm
+Eleven forty six a m~Eleven 46am
+Eleven o six p m~Eleven o6pm
+Eleven thirteen a m~Eleven 13:00 a.m.
+Half past twelve~Half past twelve
+Quarter past one~Quarter past one
+Quarter to one~Quarter to one
+Quarter to twelve~Quarter to twelve
 Set alarm at ten to eleven pm~Set alarm at 10:50 p.m.
-One min to one am~12:59 a.m.
-eleven Forty six A M~11:46 A.M.
-eleven forty six AM~11:46 A.M.
+One min to one am~One min to 01:00 a.m.
+eleven Forty six A M~eleven Forty 6AM
+eleven forty six AM~1146 AM

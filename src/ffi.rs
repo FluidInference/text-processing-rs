@@ -371,6 +371,13 @@ pub extern "C" fn nemo_rule_count() -> u32 {
     guard(0, || custom_rules::rule_count() as u32)
 }
 
+/// Use the rule-based taggers (`enabled != 0`) even when NeMo's grammars are
+/// built in, or go back to NeMo's grammars (`0`, the default). Process-wide.
+#[no_mangle]
+pub extern "C" fn nemo_set_rule_based_engine(enabled: u32) {
+    guard((), || crate::set_rule_based_engine(enabled != 0))
+}
+
 /// Get the library version.
 ///
 /// # Safety
@@ -1022,10 +1029,15 @@ mod tests {
         unsafe {
             let input = CString::new("no one knows").unwrap();
             let en = CString::new("en").unwrap();
-            // Default flag (0) keeps today's behavior.
+            // Default flag (0): NeMo's grammars keep "no one" too; the taggers read 1.
             let baseline =
                 nemo_normalize_sentence_lang_with_options(input.as_ptr(), en.as_ptr(), 0, 0, 0, 0);
-            assert_eq!(CStr::from_ptr(baseline).to_str().unwrap(), "no 1 knows");
+            let expected = if cfg!(feature = "fst-engine") {
+                "no one knows"
+            } else {
+                "no 1 knows"
+            };
+            assert_eq!(CStr::from_ptr(baseline).to_str().unwrap(), expected);
             nemo_free_string(baseline);
             let opted_in =
                 nemo_normalize_sentence_lang_with_options(input.as_ptr(), en.as_ptr(), 0, 0, 0, 1);

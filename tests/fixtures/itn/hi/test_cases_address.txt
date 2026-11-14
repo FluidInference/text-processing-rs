@@ -1,4 +1,4 @@
-# NeMo ITN output (lang=hi, input_case=cased, punctuation post-processed), regenerated from NeMo-text-processing
+# NeMo ITN output (lang=hi, input_case=lower_cased, punctuation post-processed), regenerated from NeMo-text-processing
 # pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: spoken~written.
 सात शून्य शून्य ओक स्ट्रीट~७०० ओक स्ट्रीट
 एक एक जंगल रोड~११ जंगल रोड

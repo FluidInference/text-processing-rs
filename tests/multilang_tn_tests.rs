@@ -2,6 +2,9 @@
 //!
 //! Tests the language dispatch API: tn_normalize_lang() and tn_normalize_sentence_lang().
 //! Ensures all 6 languages are wired up and producing correct output through the public API.
+// These tests pin the rule-based taggers' output. With `fst-engine` the default
+// entry points run NeMo's grammars instead (tests/default_engine.rs).
+#![cfg(not(feature = "fst-engine"))]
 
 use std::fs;
 use std::path::Path;

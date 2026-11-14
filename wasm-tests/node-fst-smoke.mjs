@@ -1,4 +1,4 @@
-import * as wasm from '../pkg-node-fst/text_processing_rs.js';
+import * as wasm from '../pkg-node/text_processing_rs.js';
 
 function assertEqual(actual, expected, message) {
   if (actual !== expected) {

@@ -30,6 +30,28 @@ Converts written-form text to spoken form (useful for TTS preprocessing):
 | 1st | first |
 | 200 km/h | two hundred kilometers per hour |
 
+## Engines
+
+With the `fst-engine` feature, every `normalize*` and `tn_normalize*` entry point
+runs NeMo's own compiled grammars, so its output is NeMo's:
+
+- **TN** matches `Normalizer(lang, deterministic=True)` byte for byte in en, de,
+  es, fr, hi, it, ja and zh.
+- **ITN** matches `InverseNormalizer(lang)` (NeMo's default, `input_case="lower_cased"`)
+  byte for byte in en, de, es, fr, hi, ja and zh. NeMo's ITN expects unpunctuated
+  input, so punctuated ASR text then gets the punctuation post-processing NeMo
+  applies after TN (`January 5 , 2024 .` → `January 5, 2024.`).
+- Custom rules apply ahead of NeMo's grammars.
+
+The Swift XCFramework and the npm package are built with `fst-engine`. A crate
+build without it, the ITN options NeMo doesn't have (`concat_compound_numbers`,
+`disable_bare_second`, `small_numbers_as_words`) and
+`set_rule_based_engine(true)` (Swift `setRuleBasedEngine`, WASM
+`setRuleBasedEngine`, C `nemo_set_rule_based_engine`) use the rule-based taggers
+instead. The grammars add about 12 MB to the binary (the npm WASM grows from 1.1
+to 12.4 MB) and take 1–25 ms per sentence, where the taggers take microseconds. `scripts/export_nemo_grammars.py`
+re-exports them from a NeMo checkout; see [docs/NEMO_PARITY.md](docs/NEMO_PARITY.md).
+
 ## Usage
 
 ### Rust
@@ -73,12 +95,11 @@ wasm.addRule("gee pee tee", "GPT");
 console.log(wasm.normalize("gee pee tee")); // "GPT"
 ```
 
-Source-aligned compiled-FST TN (`tnFstNormalizeAligned`) needs the
-`fst-engine` feature, which the npm package leaves out. Build it into
-`pkg-node-fst/` with `npm run wasm:build:node:fst`:
+The packages include the `fst-engine` grammars, so source-aligned
+compiled-FST TN (`tnFstNormalizeAligned`) is available too:
 
 ```javascript
-import * as wasm from "./pkg-node-fst/text_processing_rs.js";
+import * as wasm from "./pkg-node/text_processing_rs.js";
 
 const { normalized, spans } = wasm.tnFstNormalizeAligned("The price is $1,234.56.", "en");
 // spans[3]: { inputStart: 13, inputEnd: 22, original: "$1,234.56",
@@ -230,6 +251,9 @@ echo "2:30 PM" | nemo-tn               # → two thirty p m
 
 ## Compatibility
 
+With `fst-engine`, TN and ITN are byte-exact with NeMo (see [Engines](#engines)).
+The tables below describe the rule-based taggers.
+
 ### ITN (Spoken → Written)
 
 **98.6% compatible** with NeMo text processing test suite (1200/1217 tests passing).
@@ -292,7 +316,7 @@ cargo test
 ### WASM + JavaScript
 
 ```bash
-# Build + smoke test (Node, with and without fst-engine) + build browser artifact
+# Build + smoke test (Node) + build browser artifact, both with fst-engine
 npm run wasm:ci
 
 # Create a tarball from the browser package

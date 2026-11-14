@@ -1,4 +1,4 @@
-# NeMo ITN output (lang=en, input_case=cased, punctuation post-processed), regenerated from NeMo-text-processing
+# NeMo ITN output (lang=en, input_case=lower_cased, punctuation post-processed), regenerated from NeMo-text-processing
 # pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: spoken~written.
 a dot b c at g mail dot com~a.bc@gmail.com
 a at gmail dot com~a@gmail.com
@@ -39,23 +39,23 @@ A s d f one two three at a b c dot com~Asdf123@abc.com
 A one b two at a b c dot com~A1b2@abc.com
 A b three dot s d d dot three at g mail dot com~Ab3.sdd.3@gmail.com
 Dot three at g mail dot com~Dot 3@gmail.com
-One three at g mail dot com~13@gmail.com
+One three at g mail dot com~One 3@gmail.com
 A b three hyphen s d d dash three at g mail dot com~Ab3-sdd-3@gmail.com
-H t t p colon slash slash w w w dot o u r d a i l y n e w s dot com dot s m~http://www.ourdailynews.com.sm
-HTTP colon slash slash w w w dot o u r d a i l y n e w s dot com dot s m~http://www.ourdailynews.com.sm
-HTTP colon slash slash w w w dot o u r d a i l y n e w s dot com dot Zero one~http://www.ourdailynews.com.01
-http colon slash slash w w w dot o u r d a i l y n e w s dot com dot SM and s ~http://www.ourdailynews.com.SM and s
-Http colon slash slash w w w dot o u r d a i l y n e w s dot COM dot s m~http://www.ourdailynews.COM.sm
-H t t p colon slash slash w w w dot c o m d a i l y n e w s dot a b dot s m~http://www.comdailynews.ab.sm
-H t t p colon slash slash w w w dot c o m d a i l y n e w s dot a b slash s m~http://www.comdailynews.ab/sm
-W w w dot c o m d a i l y n e w s dot a b slash s m~www.comdailynews.ab/sm
+H t t p colon slash slash w w w dot o u r d a i l y n e w s dot com dot s m~H t t p colon//www.ourdailynews.com.sm
+HTTP colon slash slash w w w dot o u r d a i l y n e w s dot com dot s m~HTTP colon//www.ourdailynews.com.sm
+HTTP colon slash slash w w w dot o u r d a i l y n e w s dot com dot Zero one~HTTP colon//www.ourdailynews.com.Zero one
+http colon slash slash w w w dot o u r d a i l y n e w s dot com dot SM and s ~http colon//www.ourdailynews.com.SM and s
+Http colon slash slash w w w dot o u r d a i l y n e w s dot COM dot s m~Http colon//www.ourdailynews.COM.sm
+H t t p colon slash slash w w w dot c o m d a i l y n e w s dot a b dot s m~H t t p colon//www.comdailynews.ab.sm
+H t t p colon slash slash w w w dot c o m d a i l y n e w s dot a b slash s m~H t t p colon//www.comdailynews.ab/sm
+W w w dot c o m d a i l y n e w s dot a b slash s m~Www.comdailynews.ab/sm
 C o m d a i l y n e w s dot a b slash s m~Comdailynews.ab/sm
-N vidia dot com~nvidia.com
+N vidia dot com~N vidia.com
 Abc at gmail dot com~Abc@gmail.com
 Athreed at gmail dot com~Athreed@gmail.com
 Kore dot ai~Kore.ai
 NVIDIA dot com~NVIDIA.com
 NVIDIA dot COM~NVIDIA.COM
 WWW.A B C at A B C dot com~WWW.A BC@ABC.com
-W W W. A B C dot com~www.ABC.com
-w w w . o u r d a i l y n e w s dot com . s m~www.ourdailynews.com. s m
+W W W. A B C dot com~W W W. ABC.com
+w w w . o u r d a i l y n e w s dot com . s m~w w w . ourdailynews.com. s m

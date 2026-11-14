@@ -1,4 +1,4 @@
-# NeMo ITN output (lang=ja, input_case=cased, punctuation post-processed), regenerated from NeMo-text-processing
+# NeMo ITN output (lang=ja, input_case=lower_cased, punctuation post-processed), regenerated from NeMo-text-processing
 # pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: spoken~written.
 七時一分~7時1分
 七時四分~7時4分

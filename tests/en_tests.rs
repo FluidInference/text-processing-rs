@@ -2,6 +2,9 @@
 //!
 //! Test cases sourced from NVIDIA NeMo text processing:
 //! https://github.com/NVIDIA/NeMo-text-processing
+// These tests pin the rule-based taggers' output. With `fst-engine` the default
+// entry points run NeMo's grammars instead (tests/default_engine.rs).
+#![cfg(not(feature = "fst-engine"))]
 
 mod common;
 

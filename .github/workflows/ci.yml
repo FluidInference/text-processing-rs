@@ -79,7 +79,7 @@ jobs:
       - run: npm run wasm:ci
 
   fst-engine:
-    name: FST Engine Parity (8 langs vs NeMo)
+    name: FST Engine Parity (TN 8 langs, ITN 7 langs vs NeMo)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -95,3 +95,7 @@ jobs:
       # Source-aligned TN over the same fixtures, plus its C FFI surface.
       - name: Run FST-engine alignment tests
         run: cargo test --release --features ffi,fst-engine --test fst_alignment
+      - name: Run FST-engine ITN parity tests
+        run: cargo test --release --features fst-engine --test fst_itn_parity
+      - name: Run default-engine routing tests
+        run: cargo test --release --features ffi,fst-engine --test default_engine --lib

@@ -12,11 +12,15 @@
 //! Every language reaches byte-exact parity with
 //! `Normalizer(lang=…, deterministic=True)`:
 //! zh 367/367, fr 116/116, ja 542/542, en 506/506, hi 677/677, es 536/536,
-//! de 314/314, it 52/52.
+//! de 314/314, it 52/52. ITN ([`inverse_normalize_lang`]) runs NeMo's
+//! `InverseNormalizer` grammars the same way: en 1217/1217, de 288/288,
+//! es 381/381, fr 307/307, hi 352/352, ja 230/230, zh 390/390.
 //!
 //! This trades the crate's pure-Rust, tiny-bundle shape for byte-exactness and
-//! is therefore optional and off by default. Grammars are bundled gzipped
-//! (~8 MB total for all languages) and decompressed once at first use.
+//! is therefore an optional feature, off by default. When it is built in, the
+//! crate's `normalize*` and `tn_normalize*` entry points run these grammars.
+//! Grammars are bundled gzipped (~12 MB total for all languages) and
+//! decompressed once at first use.
 //!
 //! See `docs/NEMO_PARITY.md` for the measured ceilings and the fidelity fixes.
 

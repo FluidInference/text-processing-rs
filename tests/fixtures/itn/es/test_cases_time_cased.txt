@@ -1,11 +1,11 @@
-# NeMo ITN output (lang=es, input_case=cased, punctuation post-processed), regenerated from NeMo-text-processing
+# NeMo ITN output (lang=es, input_case=lower_cased, punctuation post-processed), regenerated from NeMo-text-processing
 # pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: spoken~written.
 las dieciséis cincuenta~las 16:50
 la una~la una
 Las dos~Las dos
 Las tres personas~Las tres personas
-Las Dos a eme~Las 2:00 a.m.
-la una Pe Eme~la 1:00 P.M.
+Las Dos a eme~Las Dos a eme
+la una Pe Eme~la una Pe Eme
 la una y diez~la 1:10
-la una y Diez a eme~la 1:10 a.m.
-La Una Y Diez pe eme~La 1:10 p.m.
+la una y Diez a eme~la una y Diez a eme
+La Una Y Diez pe eme~La Una Y Diez pe eme

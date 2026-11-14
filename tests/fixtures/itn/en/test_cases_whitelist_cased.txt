@@ -1,11 +1,11 @@
-# NeMo ITN output (lang=en, input_case=cased, punctuation post-processed), regenerated from NeMo-text-processing
+# NeMo ITN output (lang=en, input_case=lower_cased, punctuation post-processed), regenerated from NeMo-text-processing
 # pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: spoken~written.
-Doctor dao~Dr. dao
-Misses Smith~Mrs. Smith
-Misses smith~Mrs. smith
-Mister Dao~Mr. Dao
-Saint George~St. George
+Doctor dao~Doctor dao
+Misses Smith~Misses Smith
+Misses smith~Misses smith
+Mister Dao~Mister Dao
+Saint George~Saint George
 I like for example ice cream~I like e.g. ice cream
-S and p five hundred~S&P 500
-S and P Five hundred~S&P 500
-Seven eleven stores~7-eleven stores
+S and p five hundred~S and p 500
+S and P Five hundred~S and P Five hundred
+Seven eleven stores~Seven eleven stores

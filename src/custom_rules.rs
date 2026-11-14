@@ -64,6 +64,64 @@ pub fn parse(input: &str) -> Option<String> {
     None
 }
 
+/// Write every registered spoken form in `input` as its written form, matching
+/// whole words case-insensitively, longest rule first, and keeping the
+/// punctuation around the match (`"gee pee tee."` → `"GPT."`). This is how the
+/// rules apply ahead of NeMo's grammars, which then read the rest of the text.
+pub(crate) fn substitute(input: &str) -> std::borrow::Cow<'_, str> {
+    let rules = CUSTOM_RULES.read().unwrap();
+    if rules.is_empty() {
+        return std::borrow::Cow::Borrowed(input);
+    }
+    let mut rules: Vec<(Vec<&str>, &str)> = rules
+        .iter()
+        .map(|(spoken, written)| {
+            (
+                spoken.split_whitespace().collect::<Vec<_>>(),
+                written.as_str(),
+            )
+        })
+        .filter(|(spoken, _)| !spoken.is_empty())
+        .collect();
+    rules.sort_by_key(|(spoken, _)| std::cmp::Reverse(spoken.len()));
+
+    let tokens: Vec<&str> = input.split_whitespace().collect();
+    let is_word = |c: char| c.is_alphanumeric() || c == '\'';
+    let cores: Vec<String> = tokens
+        .iter()
+        .map(|t| t.trim_matches(|c: char| !is_word(c)).to_lowercase())
+        .collect();
+    let mut out: Vec<String> = Vec::with_capacity(tokens.len());
+    let mut changed = false;
+    let mut i = 0;
+    while i < tokens.len() {
+        let matched = rules.iter().find(|(spoken, _)| {
+            i + spoken.len() <= tokens.len()
+                && spoken
+                    .iter()
+                    .zip(&cores[i..])
+                    .all(|(word, core)| word == core)
+        });
+        let Some((spoken, written)) = matched else {
+            out.push(tokens[i].to_string());
+            i += 1;
+            continue;
+        };
+        let first = tokens[i];
+        let last = tokens[i + spoken.len() - 1];
+        let lead = &first[..first.len() - first.trim_start_matches(|c: char| !is_word(c)).len()];
+        let trail = &last[last.trim_end_matches(|c: char| !is_word(c)).len()..];
+        out.push(format!("{lead}{written}{trail}"));
+        changed = true;
+        i += spoken.len();
+    }
+    if changed {
+        std::borrow::Cow::Owned(out.join(" "))
+    } else {
+        std::borrow::Cow::Borrowed(input)
+    }
+}
+
 /// Get the number of custom rules currently registered.
 pub fn rule_count() -> usize {
     let rules = CUSTOM_RULES.read().unwrap();

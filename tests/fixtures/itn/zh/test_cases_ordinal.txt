@@ -1,4 +1,4 @@
-# NeMo ITN output (lang=zh, input_case=cased, punctuation post-processed), regenerated from NeMo-text-processing
+# NeMo ITN output (lang=zh, input_case=lower_cased, punctuation post-processed), regenerated from NeMo-text-processing
 # pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: spoken~written.
 # left out, NeMo's output leaks tag syntax: 第一億一千萬
 # left out, NeMo's output leaks tag syntax: 第一億一千一百萬

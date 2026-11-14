@@ -1,4 +1,4 @@
-# NeMo ITN output (lang=es, input_case=cased, punctuation post-processed), regenerated from NeMo-text-processing
+# NeMo ITN output (lang=es, input_case=lower_cased, punctuation post-processed), regenerated from NeMo-text-processing
 # pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: spoken~written.
 uno dos tres uno dos tres cinco seis siete ocho~123-123-5678
 uno veintitrés uno veintitrés cincuenta y seis setenta y ocho~123-123-5678
