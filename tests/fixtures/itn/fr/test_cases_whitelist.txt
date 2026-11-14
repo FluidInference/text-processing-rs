@@ -1,0 +1,10 @@
+# NeMo ITN output (lang=fr, input_case=cased, punctuation post-processed), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: spoken~written.
+docteur~Dʳ
+docteures~Dʳᵉˢ
+monsieur~M.
+messieurs~MM.
+madame~Mᵐᵉ
+mesdames~Mᵐᵉˢ
+mademoiselle~Mˡˡᵉ
+mademoiselles~Mˡˡᵉˢ

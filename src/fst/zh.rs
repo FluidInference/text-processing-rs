@@ -15,6 +15,10 @@ lazy_static! {
         load_gz(include_bytes!("../../grammars/zh/classify.fst.gz"));
     static ref VERBALIZE: VectorFst<TropicalWeight> =
         load_gz(include_bytes!("../../grammars/zh/verbalize.fst.gz"));
+    static ref ITN_CLASSIFY: VectorFst<TropicalWeight> =
+        load_gz(include_bytes!("../../grammars/zh/itn_classify.fst.gz"));
+    static ref ITN_VERBALIZE: VectorFst<TropicalWeight> =
+        load_gz(include_bytes!("../../grammars/zh/itn_verbalize.fst.gz"));
 }
 
 /// Normalize written-form Mandarin (zh) to spoken form.
@@ -29,10 +33,16 @@ lazy_static! {
 /// # }
 /// ```
 pub fn normalize(input: &str) -> String {
-    driver::normalize(&CLASSIFY, &VERBALIZE, None, input, "")
+    driver::normalize(&CLASSIFY, &VERBALIZE, None, input, "", "zh")
 }
 
 /// Normalize Mandarin text and retain the source span for every output token.
 pub fn normalize_aligned(input: &str) -> Option<AlignedNormalization> {
-    driver::normalize_aligned(&CLASSIFY, &VERBALIZE, None, input, "")
+    driver::normalize_aligned(&CLASSIFY, &VERBALIZE, None, input, "", "zh")
+}
+
+/// Inverse-normalize spoken Chinese (zh) to written form, byte-exact with NeMo's
+/// `InverseNormalizer(lang="zh", input_case="cased")`.
+pub fn inverse_normalize(input: &str) -> String {
+    driver::inverse_normalize(&ITN_CLASSIFY, &ITN_VERBALIZE, input, "", "zh")
 }

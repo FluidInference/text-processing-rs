@@ -15,6 +15,10 @@ lazy_static! {
         load_gz(include_bytes!("../../grammars/fr/classify.fst.gz"));
     static ref VERBALIZE: VectorFst<TropicalWeight> =
         load_gz(include_bytes!("../../grammars/fr/verbalize.fst.gz"));
+    static ref ITN_CLASSIFY: VectorFst<TropicalWeight> =
+        load_gz(include_bytes!("../../grammars/fr/itn_classify.fst.gz"));
+    static ref ITN_VERBALIZE: VectorFst<TropicalWeight> =
+        load_gz(include_bytes!("../../grammars/fr/itn_verbalize.fst.gz"));
 }
 
 /// Normalize written-form French (fr) to spoken form.
@@ -28,10 +32,16 @@ lazy_static! {
 /// # }
 /// ```
 pub fn normalize(input: &str) -> String {
-    driver::normalize(&CLASSIFY, &VERBALIZE, None, input, " ")
+    driver::normalize(&CLASSIFY, &VERBALIZE, None, input, " ", "fr")
 }
 
 /// Normalize French text and retain the source span for every output token.
 pub fn normalize_aligned(input: &str) -> Option<AlignedNormalization> {
-    driver::normalize_aligned(&CLASSIFY, &VERBALIZE, None, input, " ")
+    driver::normalize_aligned(&CLASSIFY, &VERBALIZE, None, input, " ", "fr")
+}
+
+/// Inverse-normalize spoken French (fr) to written form, byte-exact with NeMo's
+/// `InverseNormalizer(lang="fr", input_case="cased")`.
+pub fn inverse_normalize(input: &str) -> String {
+    driver::inverse_normalize(&ITN_CLASSIFY, &ITN_VERBALIZE, input, " ", "fr")
 }

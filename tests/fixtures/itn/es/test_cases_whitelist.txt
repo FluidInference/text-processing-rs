@@ -1,0 +1,7 @@
+# NeMo ITN output (lang=es, input_case=cased, punctuation post-processed), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: spoken~written.
+usted~Ud.
+ustedes~Uds.
+habla usted español~habla Ud. español
+hablan ustedes español~hablan Uds. español
+estados unidos~EE. UU.

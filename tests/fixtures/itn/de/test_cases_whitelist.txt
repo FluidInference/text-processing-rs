@@ -1,0 +1,8 @@
+# NeMo ITN output (lang=de, input_case=cased, punctuation post-processed), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: spoken~written.
+doktor dao~Dr. dao
+miss smith~Ms. smith
+misses smith~Mrs. smith
+mister dao~Mr. dao
+ich mag essen zum beispiel eis~ich mag essen z.B. eis
+Chanel nummer fünf~Chanel Nr. fünf

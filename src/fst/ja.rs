@@ -15,6 +15,10 @@ lazy_static! {
         load_gz(include_bytes!("../../grammars/ja/classify.fst.gz"));
     static ref VERBALIZE: VectorFst<TropicalWeight> =
         load_gz(include_bytes!("../../grammars/ja/verbalize.fst.gz"));
+    static ref ITN_CLASSIFY: VectorFst<TropicalWeight> =
+        load_gz(include_bytes!("../../grammars/ja/itn_classify.fst.gz"));
+    static ref ITN_VERBALIZE: VectorFst<TropicalWeight> =
+        load_gz(include_bytes!("../../grammars/ja/itn_verbalize.fst.gz"));
 }
 
 /// Normalize written-form Japanese (ja) to spoken form.
@@ -28,10 +32,16 @@ lazy_static! {
 /// # }
 /// ```
 pub fn normalize(input: &str) -> String {
-    driver::normalize(&CLASSIFY, &VERBALIZE, None, input, "")
+    driver::normalize(&CLASSIFY, &VERBALIZE, None, input, "", "ja")
 }
 
 /// Normalize Japanese text and retain the source span for every output token.
 pub fn normalize_aligned(input: &str) -> Option<AlignedNormalization> {
-    driver::normalize_aligned(&CLASSIFY, &VERBALIZE, None, input, "")
+    driver::normalize_aligned(&CLASSIFY, &VERBALIZE, None, input, "", "ja")
+}
+
+/// Inverse-normalize spoken Japanese (ja) to written form, byte-exact with NeMo's
+/// `InverseNormalizer(lang="ja", input_case="cased")`.
+pub fn inverse_normalize(input: &str) -> String {
+    driver::inverse_normalize(&ITN_CLASSIFY, &ITN_VERBALIZE, input, "", "ja")
 }

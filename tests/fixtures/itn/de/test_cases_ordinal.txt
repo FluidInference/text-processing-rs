@@ -1,0 +1,22 @@
+# NeMo ITN output (lang=de, input_case=cased, punctuation post-processed), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: spoken~written.
+ein hundertste~100.
+fünf und zwanzig tausend ein hundert elftem~25111.
+fünfundzwanzigtausendeinhundertelftem~25111.
+zweite~zweite
+nullte~nullte
+erster~erster
+zweiter~zweiter
+dritter~dritter
+vierter~vierter
+zehnter~10.
+elftem~11.
+dreizehntem~13.
+ein und zwanzigstes~21.
+drei und zwanzigstes~23.
+dreiundzwanzigstes~23.
+ein hundert elftes~111.
+ein tausendstem~1000.
+dem ein tausendstem~dem 1000.
+ein hundert ein und zwanzigste~121.
+einhunderteinundzwanzigste~121.

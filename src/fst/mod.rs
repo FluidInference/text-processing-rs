@@ -53,6 +53,21 @@ pub fn normalize_lang(input: &str, lang: &str) -> Option<String> {
     })
 }
 
+/// Inverse-normalize spoken `input` (ITN) with NeMo's grammars for `lang`;
+/// `None` for a language without ITN grammars.
+pub fn inverse_normalize_lang(input: &str, lang: &str) -> Option<String> {
+    Some(match lang {
+        "en" => en::inverse_normalize(input),
+        "de" => de::inverse_normalize(input),
+        "es" => es::inverse_normalize(input),
+        "fr" => fr::inverse_normalize(input),
+        "hi" => hi::inverse_normalize(input),
+        "ja" => ja::inverse_normalize(input),
+        "zh" => zh::inverse_normalize(input),
+        _ => return None,
+    })
+}
+
 /// [`normalize_lang`] with the option-gated pre-pass applied first. Only
 /// [`NormalizeOptions::roman_enumerators`] affects this path; with every flag
 /// off the output is byte-exact NeMo.
