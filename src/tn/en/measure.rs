@@ -174,6 +174,16 @@ pub fn parse(input: &str) -> Option<String> {
             return Some(format!("{} {}", scaled, unit_info.plural));
         }
 
+        // A fraction before the unit ("4 1/2 lbs" → "four and a half pounds").
+        // NeMo's measure grammar reads the unit in the plural after any
+        // fraction ("1/2 kg" → "one half kilograms").
+        if num_part.contains('/') {
+            if let Some(fraction) = super::fraction::parse(num_part) {
+                return Some(format!("{} {}", fraction, unit_info.plural));
+            }
+            continue;
+        }
+
         // Handle negative
         let (is_negative, digits) = if let Some(rest) = num_part.strip_prefix('-') {
             (true, rest.trim())
@@ -395,6 +405,16 @@ mod tests {
     fn test_in_only_attached() {
         assert_eq!(parse("27in"), Some("twenty seven inches".to_string()));
         assert_eq!(parse("5 in"), None);
+    }
+
+    #[test]
+    fn test_fraction_before_unit() {
+        assert_eq!(
+            parse("4 1/2 lbs"),
+            Some("four and a half pounds".to_string())
+        );
+        assert_eq!(parse("1/2 kg"), Some("one half kilograms".to_string()));
+        assert_eq!(parse("1/2"), None);
     }
 
     #[test]

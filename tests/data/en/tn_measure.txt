@@ -2,7 +2,7 @@
 # ("one hundred and twenty three"); "/" reads as "per"; a trailing scale word
 # is kept ("100 million kg"). Cross-class / exotic cases are omitted:
 # case-insensitive units ("12KG"), hyphen-attached decimals ("7.2-millimeter"),
-# fraction-in-measure ("4 1/2 lbs"), address "St." -> Street, and NeMo's odd
+# address "St." -> Street, and NeMo's odd
 # symbol uppercasing ("3 cc/s" -> "three CC per S", "80 s" -> "eighty S").
 12kg~twelve kilograms
 12/kg~twelve per kilogram
@@ -10,6 +10,7 @@
 1 mbps~one megabit per second
 3 mbps~three megabits per second
 100 million kg~one hundred million kilograms
+4 1/2 lbs~four and a half pounds
 2°C~two degrees Celsius
 1°C~one degree Celsius
 1234-123kg~one thousand two hundred and thirty four to one hundred and twenty three kilograms
