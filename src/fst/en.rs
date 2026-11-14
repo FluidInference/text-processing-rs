@@ -17,6 +17,10 @@ lazy_static! {
         load_gz(include_bytes!("../../grammars/en/verbalize.fst.gz"));
     static ref POST: VectorFst<TropicalWeight> =
         load_gz(include_bytes!("../../grammars/en/postprocess.fst.gz"));
+    static ref ITN_CLASSIFY: VectorFst<TropicalWeight> =
+        load_gz(include_bytes!("../../grammars/en/itn_classify.fst.gz"));
+    static ref ITN_VERBALIZE: VectorFst<TropicalWeight> =
+        load_gz(include_bytes!("../../grammars/en/itn_verbalize.fst.gz"));
 }
 
 /// Normalize written-form English (en) to spoken form.
@@ -30,10 +34,24 @@ lazy_static! {
 /// # }
 /// ```
 pub fn normalize(input: &str) -> String {
-    driver::normalize(&CLASSIFY, &VERBALIZE, Some(&POST), input, " ")
+    driver::normalize(&CLASSIFY, &VERBALIZE, Some(&POST), input, " ", "en")
 }
 
 /// Normalize English text and retain the source span for every output token.
 pub fn normalize_aligned(input: &str) -> Option<AlignedNormalization> {
-    driver::normalize_aligned(&CLASSIFY, &VERBALIZE, Some(&POST), input, " ")
+    driver::normalize_aligned(&CLASSIFY, &VERBALIZE, Some(&POST), input, " ", "en")
+}
+
+/// Inverse-normalize spoken English (en) to written form, byte-exact with NeMo's
+/// `InverseNormalizer(lang="en", input_case="cased")`.
+///
+/// ```
+/// # #[cfg(feature = "fst-engine")]
+/// # {
+/// use text_processing_rs::fst::en;
+/// assert_eq!(en::inverse_normalize("two dollars"), "$2");
+/// # }
+/// ```
+pub fn inverse_normalize(input: &str) -> String {
+    driver::inverse_normalize(&ITN_CLASSIFY, &ITN_VERBALIZE, input, " ", "en")
 }

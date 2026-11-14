@@ -3,6 +3,9 @@
 //! Covers both ITN (spoken → written) and TN (written → spoken) directions,
 //! sentence-level processing, date handling (flagged for extra testing),
 //! boundary conditions, roundtrip consistency, and cross-tagger interference.
+// These tests pin the rule-based taggers' output. With `fst-engine` the default
+// entry points run NeMo's grammars instead (tests/default_engine.rs).
+#![cfg(not(feature = "fst-engine"))]
 
 use text_processing_rs::{
     normalize, normalize_sentence, normalize_sentence_with_options, tn_normalize,

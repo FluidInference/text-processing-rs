@@ -1,0 +1,8 @@
+# NeMo ITN output (lang=es, input_case=lower_cased, punctuation post-processed), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: spoken~written.
+doce dólares y cinco centavos~$12,05
+Doce Dólares Y Cinco Céntimos~Doce Dólares Y Cinco Céntimos
+setenta y cinco Dólares sesenta y tres~75 Dólares 63
+Veintinueve dólares cincuenta centavos~Veintinueve dólares $0,50
+Catorce millones quinientos mil Pesos mexicanos~Catorce 500000 Pesos mexicanos
+diez pesos Mexicanos~$10 Mexicanos

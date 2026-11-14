@@ -7,6 +7,9 @@
 //! Two tagger architectures are exercised:
 //! - en/fr/de/es: expression-level taggers scanned with the sliding window.
 //! - hi/ja/zh: whole-sentence scanning taggers (sentence == single-expression).
+// These tests pin the rule-based taggers' output. With `fst-engine` the default
+// entry points run NeMo's grammars instead (tests/default_engine.rs).
+#![cfg(not(feature = "fst-engine"))]
 
 use text_processing_rs::{normalize_sentence_lang, normalize_sentence_with_max_span_lang};
 

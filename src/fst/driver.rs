@@ -227,6 +227,7 @@ pub fn normalize(
     post: Option<&VectorFst<TropicalWeight>>,
     input: &str,
     sep: &str,
+    lang: &str,
 ) -> String {
     let Some(tagged) = apply(classify, input) else {
         return input.to_string();
@@ -235,10 +236,61 @@ pub fn normalize(
 
     let mut parts = Vec::with_capacity(tokens.len());
     for (k, v) in tokens {
-        parts.push(verbalize_token(verbalize, k, v).unwrap_or_default());
+        // NeMo returns the input unchanged when a token can't be verbalized.
+        let Some(part) = verbalize_token(verbalize, k, v) else {
+            return input.trim().to_string();
+        };
+        parts.push(part);
     }
 
-    finish_normalization(parts, post, input, sep)
+    finish_normalization(parts, post, input, sep, lang)
+}
+
+/// Run the ITN pipeline of NeMo's `InverseNormalizer.inverse_normalize`:
+/// classify → parse → permute → verbalize → join → collapse spaces.
+///
+/// NeMo's ITN expects unpunctuated input and emits each mark as its own token
+/// (`January 5 , 2024 .`). ASR transcripts carry punctuation, so the output then
+/// gets the same punctuation re-alignment NeMo applies after TN (Moses spacing,
+/// then `post_process_punct` against the input), which leaves NeMo's output on
+/// unpunctuated input unchanged. Returns the input unchanged if classification
+/// fails.
+pub fn inverse_normalize(
+    classify: &VectorFst<TropicalWeight>,
+    verbalize: &VectorFst<TropicalWeight>,
+    input: &str,
+    sep: &str,
+    lang: &str,
+) -> String {
+    let text = input.trim();
+    if text.is_empty() {
+        return text.to_string();
+    }
+    let Some(tagged) = apply(classify, text) else {
+        return text.to_string();
+    };
+    let tokens = TagParser::new(&tagged).fields();
+    let mut parts = Vec::with_capacity(tokens.len());
+    for (k, v) in tokens {
+        // NeMo returns the input unchanged when a token can't be verbalized
+        // (Chinese tags a lone 年 as a date it can't write out).
+        let Some(part) = verbalize_token(verbalize, k, v) else {
+            return text.to_string();
+        };
+        parts.push(part);
+    }
+    let output = finish_normalization(parts, None, text, sep, lang);
+    // A written form ending in a period (`a.m.`, `Mr.`) before the sentence's own
+    // period reads `09:00 a.m..`; keep one, unless the input had a run of periods.
+    if text.contains("..") {
+        output
+    } else {
+        let mut collapsed = output;
+        while collapsed.contains("..") {
+            collapsed = collapsed.replace("..", ".");
+        }
+        collapsed
+    }
 }
 
 /// Run TN while retaining the input span consumed by every top-level NeMo
@@ -249,6 +301,7 @@ pub(super) fn normalize_aligned(
     post: Option<&VectorFst<TropicalWeight>>,
     input: &str,
     sep: &str,
+    lang: &str,
 ) -> Option<AlignedNormalization> {
     let classified = apply_with_alignment(classify, input)?;
     let tokens = TagParser::new(&classified.output).aligned_fields();
@@ -272,7 +325,13 @@ pub(super) fn normalize_aligned(
 
         let original = input[input_start..input_end].to_string();
         let kind = token_kind(&value, &original);
-        let verbalized = verbalize_token(verbalize, key, value).unwrap_or_default();
+        let verbalized = match verbalize_token(verbalize, key, value) {
+            Some(verbalized) => verbalized,
+            // English and French classify "" as an empty date that says nothing.
+            None if original.is_empty() => String::new(),
+            // Otherwise NeMo returns the input unchanged.
+            None => return None,
+        };
         let normalized = collapse_spaces(verbalized.clone());
         parts.push(verbalized);
         // English classifies empty input as an empty date token. A token that
@@ -290,7 +349,7 @@ pub(super) fn normalize_aligned(
     }
 
     Some(AlignedNormalization {
-        normalized: finish_normalization(parts, post, input, sep),
+        normalized: finish_normalization(parts, post, input, sep, lang),
         spans,
     })
 }
@@ -321,6 +380,7 @@ fn finish_normalization(
     post: Option<&VectorFst<TropicalWeight>>,
     input: &str,
     sep: &str,
+    lang: &str,
 ) -> String {
     // NeMo's post-verbalization steps (normalize.py): collapse spaces, apply the
     // post-processing FST, Moses-detokenize, then re-align punctuation spacing to
@@ -330,7 +390,7 @@ fn finish_normalization(
         Some(pp) => apply(pp, &joined).unwrap_or(joined),
         None => joined,
     };
-    post_process_punct(input, &moses_despace(&processed))
+    post_process_punct(input, &moses_detokenize(&processed, lang))
 }
 
 fn trim_source_span(input: &str, start: usize, end: usize) -> (usize, usize) {
@@ -396,15 +456,144 @@ fn collapse_spaces(s: String) -> String {
     out.trim().to_string()
 }
 
-/// The one Moses-detokenizer behavior NeMo's outputs depend on: drop a space
-/// before sentence/clause punctuation. `post_process_punct` then restores any
-/// spacing the original input actually had.
-fn moses_despace(s: &str) -> String {
-    let mut out = s.to_string();
-    for p in [" .", " ,", " !", " ?", " ;", " :"] {
-        out = out.replace(p, &p[1..]);
+/// Port of sacremoses' `MosesDetokenizer(lang).detokenize([s], unescape=False)`,
+/// which NeMo runs on the joined output before `post_process_punct`. Rules for
+/// languages the engine doesn't load (Czech, Finnish, Korean) are left out.
+fn moses_detokenize(s: &str, lang: &str) -> String {
+    // Undo the aggressive hyphen split, then work on whitespace tokens.
+    let padded = format!(" {} ", s).replace(" @-@ ", "-");
+    let tokens: Vec<&str> = padded.split_whitespace().collect();
+    let mut out = String::with_capacity(s.len());
+    let mut prepend_space = " ";
+    let mut quote_counts: Vec<(String, usize)> = Vec::new();
+    for (i, &token) in tokens.iter().enumerate() {
+        let first = token.chars().next().unwrap_or(' ');
+        if is_cjk(first) {
+            // A CJK word right after another CJK word joins it.
+            if i > 0 && tokens[i - 1].chars().last().is_some_and(is_cjk) {
+                out.push_str(token);
+            } else {
+                out.push_str(prepend_space);
+                out.push_str(token);
+            }
+            prepend_space = " ";
+        } else if token.chars().all(is_moses_currency_or_open) {
+            out.push_str(prepend_space);
+            out.push_str(token);
+            prepend_space = "";
+        } else if token.chars().all(|c| ",.?!:;\\%}])".contains(c)) {
+            // French puts a (non-breaking) space before these marks.
+            if lang == "fr" && token.chars().count() == 1 && "?!:;\\%".contains(token) {
+                out.push(' ');
+            }
+            out.push_str(token);
+            prepend_space = " ";
+        } else if lang == "en" && i > 0 && is_english_contraction(token) {
+            out.push_str(token);
+            prepend_space = " ";
+        } else if (lang == "fr" || lang == "it")
+            && i + 1 < tokens.len()
+            && is_french_contraction(token)
+            && tokens[i + 1]
+                .chars()
+                .next()
+                .is_some_and(char::is_alphabetic)
+        {
+            out.push_str(prepend_space);
+            out.push_str(token);
+            prepend_space = "";
+        } else if !token.is_empty() && token.chars().all(|c| "'\"„“`".contains(c)) {
+            let normalized = if token.chars().all(|c| "„“”".contains(c)) {
+                "\"".to_string()
+            } else {
+                token.to_string()
+            };
+            let count = match quote_counts.iter_mut().find(|(q, _)| *q == normalized) {
+                Some((_, n)) => n,
+                None => {
+                    quote_counts.push((normalized, 0));
+                    &mut quote_counts.last_mut().unwrap().1
+                }
+            };
+            if *count % 2 == 0 {
+                if lang == "en" && token == "'" && i > 0 && tokens[i - 1].ends_with('s') {
+                    // Possessive after "s": "The Jones' house".
+                    out.push_str(token);
+                    prepend_space = " ";
+                } else {
+                    out.push_str(prepend_space);
+                    out.push_str(token);
+                    prepend_space = "";
+                    *count += 1;
+                }
+            } else {
+                out.push_str(token);
+                prepend_space = " ";
+                *count += 1;
+            }
+        } else {
+            out.push_str(prepend_space);
+            out.push_str(token);
+            prepend_space = " ";
+        }
     }
-    out
+    let mut collapsed = String::with_capacity(out.len());
+    let mut prev_space = false;
+    for c in out.chars() {
+        if c == ' ' {
+            if !prev_space {
+                collapsed.push(' ');
+            }
+            prev_space = true;
+        } else {
+            collapsed.push(c);
+            prev_space = false;
+        }
+    }
+    collapsed.trim().to_string()
+}
+
+/// sacremoses' `is_cjk`, including its quirk that a range's first code point
+/// doesn't count.
+fn is_cjk(c: char) -> bool {
+    const RANGES: [(u32, u32); 11] = [
+        (4352, 4607),
+        (11904, 42191),
+        (43072, 43135),
+        (44032, 55215),
+        (63744, 64255),
+        (65072, 65103),
+        (65381, 65500),
+        (94208, 101119),
+        (110592, 110895),
+        (110960, 111359),
+        (131072, 196607),
+    ];
+    let code = c as u32;
+    for (start, end) in RANGES {
+        if code < end {
+            return code > start;
+        }
+    }
+    false
+}
+
+/// Moses' `IS_CURRENCY_SYMBOL` class: Unicode currency symbols (Perl `IsSc`)
+/// and the opening marks `( [ { ¿ ¡`.
+fn is_moses_currency_or_open(c: char) -> bool {
+    "$¢£¤¥֏؋৲৳৻૱௹฿៛₠₡₢₣₤₥₦₧₨₩₪₫€₭₮₯₰₱₲₳₴₵₶₷₸₹₺₻₼₽꠸﷼﹩＄￠￡￥￦([{¿¡".contains(c)
+}
+
+/// Moses' `IS_ENGLISH_CONTRACTION`: an apostrophe and then a letter (`'s`).
+fn is_english_contraction(token: &str) -> bool {
+    let mut chars = token.chars();
+    chars.next() == Some('\'') && chars.next().is_some_and(char::is_alphabetic)
+}
+
+/// Moses' `IS_FRENCH_CONRTACTION`: a letter and then a final apostrophe (`l'`).
+fn is_french_contraction(token: &str) -> bool {
+    let chars: Vec<char> = token.chars().collect();
+    chars.len() >= 2 && chars[chars.len() - 1] == '\'' && chars[chars.len() - 2].is_alphabetic()
 }
 
 /// Port of NeMo's `data_loader_utils.post_process_punct`: for each punctuation

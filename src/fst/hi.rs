@@ -17,6 +17,10 @@ lazy_static! {
         load_gz(include_bytes!("../../grammars/hi/verbalize.fst.gz"));
     static ref POST: VectorFst<TropicalWeight> =
         load_gz(include_bytes!("../../grammars/hi/postprocess.fst.gz"));
+    static ref ITN_CLASSIFY: VectorFst<TropicalWeight> =
+        load_gz(include_bytes!("../../grammars/hi/itn_classify.fst.gz"));
+    static ref ITN_VERBALIZE: VectorFst<TropicalWeight> =
+        load_gz(include_bytes!("../../grammars/hi/itn_verbalize.fst.gz"));
 }
 
 /// Normalize written-form Hindi (hi) to spoken form.
@@ -29,10 +33,16 @@ lazy_static! {
 /// # }
 /// ```
 pub fn normalize(input: &str) -> String {
-    driver::normalize(&CLASSIFY, &VERBALIZE, Some(&POST), input, " ")
+    driver::normalize(&CLASSIFY, &VERBALIZE, Some(&POST), input, " ", "hi")
 }
 
 /// Normalize Hindi text and retain the source span for every output token.
 pub fn normalize_aligned(input: &str) -> Option<AlignedNormalization> {
-    driver::normalize_aligned(&CLASSIFY, &VERBALIZE, Some(&POST), input, " ")
+    driver::normalize_aligned(&CLASSIFY, &VERBALIZE, Some(&POST), input, " ", "hi")
+}
+
+/// Inverse-normalize spoken Hindi (hi) to written form, byte-exact with NeMo's
+/// `InverseNormalizer(lang="hi", input_case="cased")`.
+pub fn inverse_normalize(input: &str) -> String {
+    driver::inverse_normalize(&ITN_CLASSIFY, &ITN_VERBALIZE, input, " ", "hi")
 }

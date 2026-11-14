@@ -15,6 +15,10 @@ lazy_static! {
         load_gz(include_bytes!("../../grammars/es/classify.fst.gz"));
     static ref VERBALIZE: VectorFst<TropicalWeight> =
         load_gz(include_bytes!("../../grammars/es/verbalize.fst.gz"));
+    static ref ITN_CLASSIFY: VectorFst<TropicalWeight> =
+        load_gz(include_bytes!("../../grammars/es/itn_classify.fst.gz"));
+    static ref ITN_VERBALIZE: VectorFst<TropicalWeight> =
+        load_gz(include_bytes!("../../grammars/es/itn_verbalize.fst.gz"));
 }
 
 /// Normalize written-form Spanish (es) to spoken form.
@@ -28,10 +32,16 @@ lazy_static! {
 /// # }
 /// ```
 pub fn normalize(input: &str) -> String {
-    driver::normalize(&CLASSIFY, &VERBALIZE, None, input, " ")
+    driver::normalize(&CLASSIFY, &VERBALIZE, None, input, " ", "es")
 }
 
 /// Normalize Spanish text and retain the source span for every output token.
 pub fn normalize_aligned(input: &str) -> Option<AlignedNormalization> {
-    driver::normalize_aligned(&CLASSIFY, &VERBALIZE, None, input, " ")
+    driver::normalize_aligned(&CLASSIFY, &VERBALIZE, None, input, " ", "es")
+}
+
+/// Inverse-normalize spoken Spanish (es) to written form, byte-exact with NeMo's
+/// `InverseNormalizer(lang="es", input_case="cased")`.
+pub fn inverse_normalize(input: &str) -> String {
+    driver::inverse_normalize(&ITN_CLASSIFY, &ITN_VERBALIZE, input, " ", "es")
 }

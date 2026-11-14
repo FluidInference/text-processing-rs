@@ -450,6 +450,14 @@ public enum NemoTextProcessing {
         Int(nemo_rule_count())
     }
 
+    // MARK: - Engine
+
+    /// Use the rule-based taggers even though NeMo's grammars are built in, for
+    /// callers that depend on their output. Process-wide; off by default.
+    public static func setRuleBasedEngine(_ enabled: Bool) {
+        nemo_set_rule_based_engine(enabled ? 1 : 0)
+    }
+
     // MARK: - Info
 
     /// Get the library version.

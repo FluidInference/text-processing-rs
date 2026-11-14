@@ -33,6 +33,12 @@ void nemo_add_rule(const char* spoken, const char* written);
 int32_t nemo_remove_rule(const char* spoken);
 void nemo_clear_rules(void);
 uint32_t nemo_rule_count(void);
+
+/**
+ * Use the rule-based taggers (enabled != 0) even when NeMo's grammars are built in,
+ * or go back to NeMo's grammars (0, the default). Process-wide.
+ */
+void nemo_set_rule_based_engine(uint32_t enabled);
 void nemo_free_string(char* s);
 const char* nemo_version(void);
 

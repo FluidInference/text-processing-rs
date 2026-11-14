@@ -1,0 +1,36 @@
+# NeMo ITN output (lang=en, input_case=lower_cased, punctuation post-processed), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: spoken~written.
+One hundredth~One hundredth
+Twenty five thousand one hundred eleventh~Twenty 5111th
+Second~Second
+Zeroth~Zeroth
+First~First
+Second~Second
+Third~Third
+Fourth~Fourth
+Eleventh~Eleventh
+Twelfth~Twelfth
+Thirteenth~Thirteenth
+Twenty first~Twenty 1st
+Twenty third~Twenty 3rd
+One hundred eleventh~One hundred 11th
+One thousandth~One thousandth
+One hundred twenty first~One hundred 21st
+Eleven hundred twenty first~Eleven hundred 21st
+Second~Second
+Tenth~Tenth
+Sixth~Sixth
+Third~Third
+Nineteenth~Nineteenth
+Third~Third
+Twelfth~Twelfth
+Forty eighth~Forty 8th
+Seventy first~Seventy 1st
+Third~Third
+Forty second~Forty 2nd
+Seventeenth~Seventeenth
+Twentieth~Twentieth
+Twenty first~Twenty 1st
+Seventh~Seventh
+Second~Second
+Fifth~Fifth

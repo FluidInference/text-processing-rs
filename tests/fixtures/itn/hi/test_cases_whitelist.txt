@@ -1,0 +1,10 @@
+# NeMo ITN output (lang=hi, input_case=lower_cased, punctuation post-processed), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: spoken~written.
+मास्टर निखिल तनिष~मा. निखिल तनिष
+पाव~१/४
+श्रीमती ज्योत्सना~स्मि. ज्योत्सना
+डॉक्टर~डॉ.
+आधा कप चाय~१/२ कप चाय
+श्रीमान भारत कुमार~श्री. भारत कुमार
+डॉक्टर प्रशांत~डॉ. प्रशांत
+कुमारी~कु.

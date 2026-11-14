@@ -1,0 +1,35 @@
+# NeMo ITN output (lang=en, input_case=lower_cased, punctuation post-processed), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: spoken~written.
+Eight oclock g m t~Eight oclock g m t
+Seven a m e s t~Seven a m e s t
+Two p m~Two p m
+Seven A M E S T~Seven A M E S T
+Two P M~Two P M
+Two thirty~Two 30
+Three o'clock~Three o'clock
+Quarter past one~Quarter past one
+Half past three~Half past three
+Eight fifty one~Eight 51
+Eight fifty two~Eight 52
+Eight forty~Eight 40
+Eight nineteen~Eight 19
+Eight o six~Eight o six
+Eight thirty eight~Eight 38
+Eight thirty two~Eight 32
+Eight twenty nine~Eight 29
+Eleven fifty five p m~Eleven 55pm
+Eleven fifty three p m~Eleven 53pm
+Eleven forty a m~Eleven 40am
+Eleven forty five a m~Eleven 45am
+Eleven forty p m~Eleven 40pm
+Eleven forty six a m~Eleven 46am
+Eleven o six p m~Eleven o6pm
+Eleven thirteen a m~Eleven 13:00 a.m.
+Half past twelve~Half past twelve
+Quarter past one~Quarter past one
+Quarter to one~Quarter to one
+Quarter to twelve~Quarter to twelve
+Set alarm at ten to eleven pm~Set alarm at 10:50 p.m.
+One min to one am~One min to 01:00 a.m.
+eleven Forty six A M~eleven Forty 6AM
+eleven forty six AM~1146 AM

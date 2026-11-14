@@ -232,3 +232,10 @@ pub fn clear_rules_js() {
 pub fn rule_count_js() -> u32 {
     custom_rules::rule_count() as u32
 }
+
+/// Use the rule-based taggers even when NeMo's grammars are built in, or go back
+/// to NeMo's grammars (the default).
+#[wasm_bindgen(js_name = setRuleBasedEngine)]
+pub fn set_rule_based_engine_js(enabled: bool) {
+    crate::set_rule_based_engine(enabled);
+}

@@ -1,0 +1,56 @@
+# NeMo ITN output (lang=en, input_case=lower_cased, punctuation post-processed), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: spoken~written.
+Two dollars~Two dollars
+One cent~One cent
+Four united states dollars and sixty nine cents~Four united states dollars and $0.69
+Seventy five dollars sixty three~Seventy $5.63
+Twenty nine dollars fifty cents~Twenty $9.50
+Eleven dollars and fifty one cents~Eleven dollars and $0.51
+Nine hundred ninety three dollars and ninety two cents~Nine hundred $93.92
+Four hundred sixty billion won~₩460 billion
+Thirty billion yen~¥30 billion
+Two point five billion dollars~$2.5 billion
+Forty five billion dollars~$45 billion
+Fifty million dollars~$50 million
+Fifty billion dollars~$50 billion
+Zero point two million dollars~$0.2 million
+Fifteen point two billion dollars~$15.2 billion
+One point six nine billion yuan~One .69 billion yuan
+One point four three six billion yuan~One .436 billion yuan
+Four million yuan~Four million yuan
+One dollar~One dollar
+Fifteen thousand dollars~Fifteen thousand dollars
+One dollars~One dollars
+Twenty dollar~Twenty dollar
+Twenty point five o six dollars~$20.506
+Point five o six dollars~$.506
+Eighteen dollars~Eighteen dollars
+Eighteen million nine hundred twenty five thousand dollars~Eighteen million $925000
+Eighteen thousand eight hundred fifty four dollars~Eighteen thousand $854
+Eighteen thousand eight hundred one dollars~Eighteen thousand $801
+Eighteen thousand eight hundred seventy five dollars~Eighteen thousand $875
+Eighteen thousand eighty one dollars~Eighteen thousand $81
+Eighteen thousand fifty two dollars~Eighteen thousand $52
+Eighteen thousand five hundred forty two dollars~Eighteen thousand $542
+Eighteen thousand five hundred nineteen dollars~Eighteen thousand $519
+Eighteen thousand five hundred seventy dollars~Eighteen thousand $570
+Eighteen thousand five hundred seventy eight dollars~Eighteen thousand $578
+Eighteen thousand five hundred sixteen dollars~Eighteen thousand $516
+Eighteen thousand four hundred eighty two dollars~Eighteen thousand $482
+Eighteen thousand four hundred seventy eight dollars~Eighteen thousand $478
+Eighteen thousand four hundred sixty eight dollars~Eighteen thousand $468
+Eighteen thousand nine hundred three dollars~Eighteen thousand $903
+Eighteen thousand nine hundred twenty nine dollars~Eighteen thousand $929
+Eighteen thousand ninety five dollars~Eighteen thousand $95
+Eighteen thousand one hundred seventeen dollars~Eighteen thousand $117
+Eighteen thousand one hundred twenty eight dollars~Eighteen thousand $128
+Eighteen thousand one hundred twenty five dollars~Eighteen thousand $125
+Eighteen thousand one hundred twenty four dollars~Eighteen thousand $124
+Eighteen thousand one hundred twenty nine dollars~Eighteen thousand $129
+One thousand fifty five dollars~One thousand $55
+One fifty five dollars~One $55
+Fifteen hundred dollars~Fifteen hundred dollars
+Ninety nine hundred dollars~Ninety $900
+Ninety nine hundred and fifteen dollars and one cent~Ninety $915.01
+zero point two Million Dollars~0.2 Million Dollars
+One Cent~One Cent

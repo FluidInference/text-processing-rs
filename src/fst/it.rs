@@ -29,10 +29,10 @@ lazy_static! {
 /// # }
 /// ```
 pub fn normalize(input: &str) -> String {
-    driver::normalize(&CLASSIFY, &VERBALIZE, None, input, " ")
+    driver::normalize(&CLASSIFY, &VERBALIZE, None, input, " ", "it")
 }
 
 /// Normalize Italian text and retain the source span for every output token.
 pub fn normalize_aligned(input: &str) -> Option<AlignedNormalization> {
-    driver::normalize_aligned(&CLASSIFY, &VERBALIZE, None, input, " ")
+    driver::normalize_aligned(&CLASSIFY, &VERBALIZE, None, input, " ", "it")
 }

@@ -1,0 +1,13 @@
+# NeMo ITN output (lang=es, input_case=lower_cased, punctuation post-processed), regenerated from NeMo-text-processing
+# pinned commit 1f1263579fe57ba7ed783cad3dddee710fcc5064. Format: spoken~written.
+primero~primero
+Tercera~Tercera
+Primer~Primer
+tercer~tercer
+Décima~Décima
+undécimo~11.º
+Decimoprimer~Decimoprimer
+Décimo primer~Décimo primer
+Décima Primera~Décima Primera
+(technically ungrammatical) décimo primera~(technically ungrammatical) 11.ª
+decimotercero~13.º
